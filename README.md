@@ -1,2 +1,1 @@
-# template
-템플릿
+# DDOK
