@@ -40,6 +40,27 @@ jobs:
             if (!jiraKey) throw new Error("Jira 이슈키를 찾을 수 없습니다.");
             core.setOutput("jiraKey", jiraKey);
 
+      # (추가) 매핑 파일 읽기 위해 체크아웃
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # (추가) GitHub assignee -> Jira accountId 매핑
+      - name: Resolve assignee (GitHub login -> Jira accountId)
+        id: resolve_assignee
+        run: |
+          if [ ! -f ".github/jira-users.json" ]; then
+            echo "ASSIGNEE_ID=" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          ASSIGNEES=$(jq -r '.issue.assignees[].login // empty' <<< '${{ toJson(github.event) }}')
+          SELECTED_ID=""
+          for GH in $ASSIGNEES; do
+            JIRA_ID=$(jq -r --arg k "$GH" '.[$k] // empty' .github/jira-users.json)
+            if [ -n "$JIRA_ID" ]; then SELECTED_ID="$JIRA_ID"; break; fi
+          done
+          echo "ASSIGNEE_ID=$SELECTED_ID" >> $GITHUB_ENV
+
       - name: Jira Task 필드 수정 (에픽/일정/제목/본문)
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
@@ -53,6 +74,7 @@ jobs:
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
           ISSUE_USER: ${{ github.event.issue.user.login }}
+          ASSIGNEE_ID: ${{ env.ASSIGNEE_ID }}
         run: |
           JSON=$(jq -n \
             --arg summary "$ISSUE_TITLE" \
@@ -60,6 +82,7 @@ jobs:
             --arg epic "$EPIC_KEY" \
             --arg start "$START_DATE" \
             --arg due "$DUE_DATE" \
+            --arg assigneeId "$ASSIGNEE_ID" \
             '{
               fields: {
                 summary: $summary,
@@ -68,7 +91,7 @@ jobs:
                 customfield_10015: $start,
                 duedate: $due
               }
-            }'
+            } | if $assigneeId != "" then .fields.assignee = {id: $assigneeId} else . end'
           )
           curl -X PUT \
             -u "${JIRA_USER_EMAIL}:${JIRA_API_TOKEN}" \
