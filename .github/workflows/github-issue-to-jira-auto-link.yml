@@ -60,7 +60,11 @@ jobs:
                customfield_10015: $start,
                duedate:            $due
              } | if $assId != "" then .assignee = {id: $assId} else . end')
-          echo "FIELDS_JSON=$FIELDS" >> $GITHUB_ENV
+          {
+            echo "FIELDS_JSON<<EOF"
+            echo "$FIELDS"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
       # 2. Jira 이슈(Task) 생성 - 값 항상 fields에 포함 (+assignee 자동 연결)
       - name: Jira 이슈 생성 (에픽/일정 자동 연결)
