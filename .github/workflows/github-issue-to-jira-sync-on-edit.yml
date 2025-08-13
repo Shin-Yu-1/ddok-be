@@ -2,7 +2,7 @@ name: Github 이슈 수정 시 Jira Task 자동 갱신
 
 on:
   issues:
-    types: [edited]
+    types: [edited, assigned, unassigned]
 
 permissions:
   issues: write
