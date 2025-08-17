@@ -3,10 +3,13 @@ package goorm.ddok.member.controller;
 
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.member.dto.request.EmailCheckRequest;
+import goorm.ddok.member.dto.request.PhoneVerificationRequest;
 import goorm.ddok.member.dto.request.SignUpRequest;
 import goorm.ddok.member.dto.response.EmailCheckResponse;
+import goorm.ddok.member.dto.response.PhoneVerificationResponse;
 import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.service.AuthService;
+import goorm.ddok.member.service.PhoneVerificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PhoneVerificationService phoneVerificationService;
+
 
     @Operation(summary = "회원가입")
     @PostMapping("/signup")
@@ -43,5 +48,23 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponseDto.of(
                 200, "사용 가능한 이메일입니다.", emailCheckResponse
         ));
+    }
+
+    @Operation(
+            summary = "전화번호 인증"
+    )
+    @PostMapping("/phone/send-code")
+    public ResponseEntity<ApiResponseDto<PhoneVerificationResponse>> sendCode(
+            @Valid @RequestBody PhoneVerificationRequest request) {
+
+        int time = phoneVerificationService.sendVerificationCode(
+                request.getPhoneNumber(),
+                request.getUsername(),
+                request.getAuthType()
+        );
+
+        PhoneVerificationResponse expiresIn = new PhoneVerificationResponse(time);
+
+        return ResponseEntity.ok(ApiResponseDto.of(200, "인증번호가 발송되었습니다.", expiresIn));
     }
 }
