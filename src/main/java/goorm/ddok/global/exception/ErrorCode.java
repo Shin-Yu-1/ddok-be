@@ -9,6 +9,11 @@ public enum ErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "잘못된 입력값입니다."),
     INVALID_PHONE_FORMAT(HttpStatus.BAD_REQUEST, "올바른 휴대전화 번호 형식이 아닙니다."),
     VERIFICATION_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "인증번호가 만료되었습니다."),
+    INVALID_USERNAME(HttpStatus.BAD_REQUEST, "이름은 한글 2자 이상만 입력 가능합니다."),
+    PASSWORDS_DO_NOT_MATCH(HttpStatus.BAD_REQUEST, "비밀번호와 비밀번호 확인이 일치하지 않습니다."),
+    PASSWORD_TOO_SHORT(HttpStatus.BAD_REQUEST,"비밀번호는 8자 이상이어야 합니다."),
+    INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다."),
+    PHONE_NUMBER_ALREADY_USED(HttpStatus.BAD_REQUEST, "기존 전화번호와 동일합니다."),
 
 
     // 401 UNAUTHORIZED
@@ -35,6 +40,7 @@ public enum ErrorCode {
     // 409 CONFLICT
     DUPLICATE_NAME_AND_PHONE(HttpStatus.CONFLICT, "해당 이름과 연락처로 이미 가입된 회원이 있습니다."),
     EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증이 완료된 계정입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
 
     // 500 INTERNAL SERVER ERROR
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패");
