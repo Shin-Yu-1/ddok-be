@@ -1,11 +1,11 @@
 package goorm.ddok.member.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
+@Builder
 @Schema(description = "회원가입 응답 DTO")
 public class SignUpResponse {
 
