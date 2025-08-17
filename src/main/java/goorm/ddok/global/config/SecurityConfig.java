@@ -87,7 +87,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/swagger-resources/**"),
                                 new AntPathRequestMatcher("/webjars/**"),
                                 new AntPathRequestMatcher("/h2-console/**"),
-                                new AntPathRequestMatcher("/test/**") // Sentry 테스트용
+                                new AntPathRequestMatcher("/api/auth/signup")
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
