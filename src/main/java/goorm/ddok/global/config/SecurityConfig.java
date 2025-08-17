@@ -87,8 +87,9 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/swagger-resources/**"),
                                 new AntPathRequestMatcher("/webjars/**"),
                                 new AntPathRequestMatcher("/h2-console/**"),
-                                new AntPathRequestMatcher("/api/auth/signup")
+                                new AntPathRequestMatcher("/api/auth/**")
                         ).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
