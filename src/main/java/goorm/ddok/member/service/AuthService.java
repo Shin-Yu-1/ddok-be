@@ -84,4 +84,11 @@ public class AuthService {
                 .username(user.getUsername())
                 .build();
     }
+
+    public boolean isEmailAlreadyExist(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new GlobalException(ErrorCode.DUPLICATE_EMAIL);
+        }
+        return true;
+    }
 }

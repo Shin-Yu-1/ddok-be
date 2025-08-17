@@ -2,7 +2,9 @@ package goorm.ddok.member.controller;
 
 
 import goorm.ddok.global.response.ApiResponseDto;
+import goorm.ddok.member.dto.request.EmailCheckRequest;
 import goorm.ddok.member.dto.request.SignUpRequest;
+import goorm.ddok.member.dto.response.EmailCheckResponse;
 import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,5 +30,18 @@ public class AuthController {
     public ResponseEntity<ApiResponseDto<SignUpResponse>> signUp(@Valid @RequestBody SignUpRequest signUpRequest) {
         SignUpResponse response = authService.signup(signUpRequest);
         return ResponseEntity.ok(ApiResponseDto.of(201, "회원가입이 완료되었습니다.", response));
+    }
+
+    @Operation(summary = "이메일 중복 확인")
+    @PostMapping("/email/check")
+    public ResponseEntity<ApiResponseDto<EmailCheckResponse>> checkEmail(
+            @Valid @RequestBody EmailCheckRequest emailCheckRequest) {
+        boolean isAvailable = authService.isEmailAlreadyExist(emailCheckRequest.getEmail());
+
+        EmailCheckResponse emailCheckResponse = new EmailCheckResponse(isAvailable);
+
+        return ResponseEntity.ok(ApiResponseDto.of(
+                200, "사용 가능한 이메일입니다.", emailCheckResponse
+        ));
     }
 }
