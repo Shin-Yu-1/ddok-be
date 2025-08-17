@@ -1,6 +1,6 @@
 package goorm.ddok.global.exception;
 
-import goorm.ddok.global.dto.ApiResponseDto;
+import goorm.ddok.global.response.ApiResponseDto;
 import io.sentry.IScope;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
