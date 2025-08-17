@@ -9,4 +9,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 이름 + 휴대폰번호 회원 조회
     Optional<User> findByUsernameAndPhoneNumber(String username, String phoneNumber);
+
+    // 이메일 중복 확인
+    boolean existsByEmail(String email);
+
+    // 휴대폰 번호 중복 확인
+    boolean existsByPhoneNumber(String phoneNumber);
+
 }
