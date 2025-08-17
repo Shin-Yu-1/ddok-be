@@ -56,7 +56,7 @@ dependencies {
 
     // DB
     runtimeOnly 'com.h2database:h2'
-//    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 
     // AWS S3 (파일 업로드 및 다운로드를 위한 라이브러리)
@@ -74,7 +74,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
     // Redis
-//    implementation 'io.lettuce:lettuce-core'
+    implementation 'io.lettuce:lettuce-core'
 
     // Sentry (에러 모니터링)
     implementation 'io.sentry:sentry:8.17.0'
