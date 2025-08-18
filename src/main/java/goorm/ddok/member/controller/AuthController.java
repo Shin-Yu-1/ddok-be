@@ -11,6 +11,7 @@ import goorm.ddok.member.service.PhoneVerificationService;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -120,5 +121,25 @@ public class AuthController {
 
         // response(본문)는 AccessToken만, RefreshToken은 쿠키로 헤더에 내려감!
         return ResponseEntity.ok(ApiResponseDto.of(200, "로그인에 성공했습니다.", response));
+    }
+
+    @Operation(summary = "로그아웃", security = @SecurityRequirement(name = "Authorization"))
+    @PostMapping("/signout")
+    public ResponseEntity<ApiResponseDto<Void>> signOut(
+            @RequestHeader("Authorization") String authorizationHeader,
+            HttpServletResponse response
+    ) {
+        authService.signOut(authorizationHeader, response);
+
+        // 1. 토큰에서 유저 정보 추출해서 Sentry 컨텍스트 세팅 & username 반환
+        String usernameWithNickname = sentryUserContextService.setUserContextFromToken(authorizationHeader);
+
+        // 2. 누가 로그아웃했는지 메시지 기록
+        Sentry.captureMessage("로그아웃: " + usernameWithNickname, SentryLevel.INFO);
+
+        // 3. Sentry Scope에서 유저 정보 제거
+        sentryUserContextService.clearUserContext();
+
+        return ResponseEntity.ok(ApiResponseDto.of(200, "로그아웃 되었습니다.", null));
     }
 }

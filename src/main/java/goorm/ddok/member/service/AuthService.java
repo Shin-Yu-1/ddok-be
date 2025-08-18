@@ -18,6 +18,7 @@ import goorm.ddok.member.util.NicknameGenerator;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -155,6 +156,31 @@ public class AuthService {
 
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
         return new SignInResponse(accessToken, userDto);
+    }
+
+    public void signOut(String authorizationHeader, HttpServletResponse response) {
+        expireRefreshCookie(response,  "None"); // or "Lax"
+
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+        String accessToken = authorizationHeader.substring(7);
+
+        jwtTokenProvider.validateToken(accessToken); // 유효하지 않으면 예외(401)
+
+        Long userId = jwtTokenProvider.getUserIdFromToken(accessToken);
+        refreshTokenService.delete(userId);
+    }
+
+    private void expireRefreshCookie(HttpServletResponse response, String sameSite) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite(sameSite)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
 }
