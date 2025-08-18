@@ -4,9 +4,11 @@ package goorm.ddok.member.controller;
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.member.dto.request.EmailCheckRequest;
 import goorm.ddok.member.dto.request.PhoneVerificationRequest;
+import goorm.ddok.member.dto.request.PhoneVerifyCodeRequest;
 import goorm.ddok.member.dto.request.SignUpRequest;
 import goorm.ddok.member.dto.response.EmailCheckResponse;
 import goorm.ddok.member.dto.response.PhoneVerificationResponse;
+import goorm.ddok.member.dto.response.PhoneVerifyCodeResponse;
 import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.service.AuthService;
 import goorm.ddok.member.service.PhoneVerificationService;
@@ -66,5 +68,19 @@ public class AuthController {
         PhoneVerificationResponse expiresIn = new PhoneVerificationResponse(time);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "인증번호가 발송되었습니다.", expiresIn));
+    }
+
+    @Operation(
+            summary = "전화번호 인증번호 확인"
+    )
+    @PostMapping("/phone/verify-code")
+    public ResponseEntity<ApiResponseDto<PhoneVerifyCodeResponse>> verifyCode(
+            @Valid @RequestBody PhoneVerifyCodeRequest request) {
+
+        boolean verificationResult = phoneVerificationService.verifyCode(request.getPhoneNumber(), request.getPhoneCode());
+
+        PhoneVerifyCodeResponse verificationResponse = new PhoneVerifyCodeResponse(verificationResult);
+
+        return ResponseEntity.ok(ApiResponseDto.of(200, "인증에 성공했습니다.", verificationResponse));
     }
 }
