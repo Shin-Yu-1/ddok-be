@@ -102,7 +102,16 @@ public class User {
     @Builder.Default
     private java.util.List<UserTrait> traits = new java.util.ArrayList<>();
 
-
+    @OneToMany(
+            mappedBy = "user",
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    @Builder.Default
+    private java.util.List<UserTechStack> techStacks = new java.util.ArrayList<>();
 
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
