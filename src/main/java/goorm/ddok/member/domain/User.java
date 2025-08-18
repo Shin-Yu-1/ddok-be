@@ -121,4 +121,8 @@ public class User {
         this.password = password;
         this.profileImageUrl = profileImageUrl;
     }
+
+    public void updatePassword(String newEncodedPassword) {
+        this.password = newEncodedPassword;
+    }
 }

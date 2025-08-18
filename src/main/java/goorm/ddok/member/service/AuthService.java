@@ -8,9 +8,7 @@ import goorm.ddok.global.security.token.RefreshTokenService;
 import goorm.ddok.member.domain.AuthType;
 import goorm.ddok.member.domain.PhoneVerification;
 import goorm.ddok.member.domain.User;
-import goorm.ddok.member.dto.request.FindEmailRequest;
-import goorm.ddok.member.dto.request.SignInRequest;
-import goorm.ddok.member.dto.request.SignUpRequest;
+import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.dto.response.LocationResponse;
 import goorm.ddok.member.dto.response.SignInResponse;
 import goorm.ddok.member.dto.response.SignInUserResponse;
@@ -18,6 +16,7 @@ import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.repository.PhoneVerificationRepository;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.member.util.NicknameGenerator;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -207,6 +206,73 @@ public class AuthService {
         return verificationRepository
                 .findByPhoneNumberAndPhoneCodeAndAuthType(phoneNumber, phoneCode, authType)
                 .orElseThrow(() -> new GlobalException(ErrorCode.VERIFICATION_NOT_FOUND));
+    }
+
+    @Transactional
+    public String passwordVerifyUser(PasswordVerifyUserRequest request) {
+        AuthType authType = AuthType.FIND_PASSWORD;
+
+        PhoneVerification verification = getVerification(authType, request.getPhoneNumber(), request.getPhoneCode());
+
+        if (verification.isVerified()) {
+            throw new GlobalException(ErrorCode.ALREADY_VERIFIED);
+        }
+
+        userRepository.findByUsernameAndPhoneNumber(
+                request.getUsername(), request.getPhoneNumber()
+        ).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        verification.verify();
+
+        String reauthToken = jwtTokenProvider.createReauthenticateToken(
+                request.getUsername(),
+                request.getEmail(),
+                request.getPhoneNumber(),
+                request.getPhoneCode()
+        );
+
+        reauthTokenService.save(request.getEmail(), reauthToken);
+
+        return reauthToken;
+    }
+
+    @Transactional
+    public void verifyAndResetPassword(PasswordResetRequest request, String authorizationHeader) {
+        final AuthType authType = AuthType.FIND_PASSWORD;
+
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String reauthToken = authorizationHeader.replace("Bearer ", "");
+
+        jwtTokenProvider.validateToken(reauthToken); // 예외 방식으로 수정
+
+        Claims claims = jwtTokenProvider.getClaims(reauthToken);
+        String username = claims.get("username", String.class);
+        String email = claims.get("email", String.class);
+        String phoneNumber = claims.get("phoneNumber", String.class);
+        String phoneCode = claims.get("phoneCode", String.class);
+
+        if (!reauthTokenService.isValid(email, reauthToken, username, email, phoneNumber, phoneCode)) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        PhoneVerification verification = getVerification(authType, phoneNumber, phoneCode);
+        if (!verification.isVerified()) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        User user = userRepository.findByEmailAndUsername(email, username)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        if (!request.getNewPassword().equals(request.getPasswordCheck())) {
+            throw new GlobalException(ErrorCode.PASSWORDS_DO_NOT_MATCH);
+        }
+
+        user.updatePassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        reauthTokenService.delete(email);
     }
 
 }

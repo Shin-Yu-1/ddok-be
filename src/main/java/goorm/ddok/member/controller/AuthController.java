@@ -149,4 +149,22 @@ public class AuthController {
         FindEmailResponse response = new FindEmailResponse(authService.findEmail(request));
         return ResponseEntity.ok(ApiResponseDto.of(200, "이메일(아이디)을 찾았습니다.", response));
     }
+
+    @Operation(summary = "비밀번호 변경 전 본인 인증")
+    @PostMapping("/password/verify-user")
+    public ResponseEntity<ApiResponseDto<PasswordVerifyUserResponse>> verifyUser(@Valid @RequestBody PasswordVerifyUserRequest request) {
+        String reauthToken = authService.passwordVerifyUser(request);
+        PasswordVerifyUserResponse response = new PasswordVerifyUserResponse(reauthToken);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "본인 인증에 성공했습니다.", response));
+    }
+
+    @Operation(summary = "비밀번호 재설정", security = @SecurityRequirement(name = "Authorization"))
+    @PostMapping("/password/reset")
+    public ResponseEntity<ApiResponseDto<Void>> resetPassword(
+            @Valid @RequestBody PasswordResetRequest request,
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        authService.verifyAndResetPassword(request, authorizationHeader);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "비밀번호가 재설정되었습니다.", null));
+    }
 }
