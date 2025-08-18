@@ -100,25 +100,25 @@ public class AuthController {
         return redirectView;
     }
 
-//    @Operation(summary = "로그인")
-//    @PostMapping("/signin")
-//    public ResponseEntity<ApiResponseDto<SignInResponse>> signIn(
-//            @Valid @RequestBody SignInRequest signInRequest,
-//            HttpServletResponse servletResponse
-//    ) {
-//        // 1. 서비스에서 로그인 + 토큰 2개 발급
-//        SignInResponse response = authService.signIn(signInRequest, servletResponse);
-//
-//        // ★ Sentry Scope에 유저 정보 세팅
-//        sentryUserContextService.setCurrentUserContext();
-//
-//        // ★ Sentry 메시지로 로그인 이벤트 기록
-//        Sentry.captureMessage(
-//                "로그인: " + response.getUser().getUsername() + ": " + response.getUser().getNickname(),
-//                SentryLevel.INFO
-//        );
-//
-//        // response(본문)는 AccessToken만, RefreshToken은 쿠키로 헤더에 내려감!
-//        return ResponseEntity.ok(ApiResponseDto.of(200, "로그인에 성공했습니다.", response));
-//    }
+    @Operation(summary = "로그인")
+    @PostMapping("/signin")
+    public ResponseEntity<ApiResponseDto<SignInResponse>> signIn(
+            @Valid @RequestBody SignInRequest signInRequest,
+            HttpServletResponse servletResponse
+    ) {
+        // 1. 서비스에서 로그인 + 토큰 2개 발급
+        SignInResponse response = authService.signIn(signInRequest, servletResponse);
+
+        // ★ Sentry Scope에 유저 정보 세팅
+        sentryUserContextService.setCurrentUserContext();
+
+        // ★ Sentry 메시지로 로그인 이벤트 기록
+        Sentry.captureMessage(
+                "로그인: " + response.getUser().getUsername() + ": " + response.getUser().getNickname(),
+                SentryLevel.INFO
+        );
+
+        // response(본문)는 AccessToken만, RefreshToken은 쿠키로 헤더에 내려감!
+        return ResponseEntity.ok(ApiResponseDto.of(200, "로그인에 성공했습니다.", response));
+    }
 }

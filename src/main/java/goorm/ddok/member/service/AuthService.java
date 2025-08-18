@@ -6,12 +6,19 @@ import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.security.token.ReauthTokenService;
 import goorm.ddok.global.security.token.RefreshTokenService;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.member.dto.request.SignInRequest;
 import goorm.ddok.member.dto.request.SignUpRequest;
+import goorm.ddok.member.dto.response.LocationResponse;
+import goorm.ddok.member.dto.response.SignInResponse;
+import goorm.ddok.member.dto.response.SignInUserResponse;
 import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.repository.PhoneVerificationRepository;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.member.util.NicknameGenerator;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -100,4 +107,54 @@ public class AuthService {
         user.setEmailVerified(true);
         userRepository.save(user);
     }
+
+    @Transactional
+    public SignInResponse signIn(SignInRequest request, HttpServletResponse response) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new GlobalException(ErrorCode.WRONG_PASSWORD));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new GlobalException(ErrorCode.WRONG_PASSWORD);
+        }
+
+        if (!user.isEmailVerified()) {
+            emailVerificationService.handleEmailVerification(user.getEmail());
+        }
+
+        String accessToken = jwtTokenProvider.createToken(user.getId());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+
+        refreshTokenService.save(user.getId(), refreshToken);
+
+        long ttlMs  = jwtTokenProvider.getRefreshTokenExpireMillis();
+        long ttlSec = Math.max(1, ttlMs / 1000);
+
+        String sameSite = "None";
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .maxAge(ttlSec)
+                .sameSite(sameSite)
+                .build();
+        response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
+
+
+        boolean isPreferences = false;
+
+        LocationResponse location = null;
+        if (user.getLocation() != null) {
+            var loc = user.getLocation();
+            Double lat = (loc.getActivityLatitude()  != null) ? loc.getActivityLatitude().doubleValue()  : null;
+            Double lon = (loc.getActivityLongitude() != null) ? loc.getActivityLongitude().doubleValue() : null;
+
+            String address = loc.getRoadName();
+            location = new LocationResponse(lat, lon, address);
+        }
+
+
+        SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
+        return new SignInResponse(accessToken, userDto);
+    }
+
 }
