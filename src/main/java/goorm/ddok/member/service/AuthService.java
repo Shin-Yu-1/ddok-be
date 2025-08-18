@@ -91,4 +91,13 @@ public class AuthService {
         }
         return true;
     }
+
+    @Transactional
+    public void setEmailVerificationService(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        user.setEmailVerified(true);
+        userRepository.save(user);
+    }
 }

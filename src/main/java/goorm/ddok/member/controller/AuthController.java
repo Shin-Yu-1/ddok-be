@@ -2,25 +2,22 @@ package goorm.ddok.member.controller;
 
 
 import goorm.ddok.global.response.ApiResponseDto;
-import goorm.ddok.member.dto.request.EmailCheckRequest;
-import goorm.ddok.member.dto.request.PhoneVerificationRequest;
-import goorm.ddok.member.dto.request.PhoneVerifyCodeRequest;
-import goorm.ddok.member.dto.request.SignUpRequest;
-import goorm.ddok.member.dto.response.EmailCheckResponse;
-import goorm.ddok.member.dto.response.PhoneVerificationResponse;
-import goorm.ddok.member.dto.response.PhoneVerifyCodeResponse;
-import goorm.ddok.member.dto.response.SignUpResponse;
+import goorm.ddok.global.util.sentry.SentryUserContextService;
+import goorm.ddok.member.dto.request.*;
+import goorm.ddok.member.dto.response.*;
 import goorm.ddok.member.service.AuthService;
+import goorm.ddok.member.service.EmailVerificationService;
 import goorm.ddok.member.service.PhoneVerificationService;
+import io.sentry.Sentry;
+import io.sentry.SentryLevel;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.view.RedirectView;
 
 @RestController
 @RequiredArgsConstructor
@@ -30,6 +27,8 @@ public class AuthController {
 
     private final AuthService authService;
     private final PhoneVerificationService phoneVerificationService;
+    private final SentryUserContextService sentryUserContextService;
+    private final EmailVerificationService emailVerificationService;
 
 
     @Operation(summary = "회원가입")
@@ -83,4 +82,43 @@ public class AuthController {
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "인증에 성공했습니다.", verificationResponse));
     }
+
+    @Operation(
+            summary = "이메일 인증"
+    )
+    @GetMapping("/email/send-code")
+    public RedirectView verifyEmail(@RequestParam String code) {
+        boolean result = emailVerificationService.verifyEmailCode(code);
+        String email = emailVerificationService.findVerifiedEmailByCode(code);
+
+        if (result) {
+            authService.setEmailVerificationService(email);
+        }
+
+        RedirectView redirectView = new RedirectView();
+        redirectView.setUrl("http://localhost:5173/sign-in");
+        return redirectView;
+    }
+
+//    @Operation(summary = "로그인")
+//    @PostMapping("/signin")
+//    public ResponseEntity<ApiResponseDto<SignInResponse>> signIn(
+//            @Valid @RequestBody SignInRequest signInRequest,
+//            HttpServletResponse servletResponse
+//    ) {
+//        // 1. 서비스에서 로그인 + 토큰 2개 발급
+//        SignInResponse response = authService.signIn(signInRequest, servletResponse);
+//
+//        // ★ Sentry Scope에 유저 정보 세팅
+//        sentryUserContextService.setCurrentUserContext();
+//
+//        // ★ Sentry 메시지로 로그인 이벤트 기록
+//        Sentry.captureMessage(
+//                "로그인: " + response.getUser().getUsername() + ": " + response.getUser().getNickname(),
+//                SentryLevel.INFO
+//        );
+//
+//        // response(본문)는 AccessToken만, RefreshToken은 쿠키로 헤더에 내려감!
+//        return ResponseEntity.ok(ApiResponseDto.of(200, "로그인에 성공했습니다.", response));
+//    }
 }
