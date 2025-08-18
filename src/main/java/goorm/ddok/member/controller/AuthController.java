@@ -8,6 +8,7 @@ import goorm.ddok.member.dto.response.*;
 import goorm.ddok.member.service.AuthService;
 import goorm.ddok.member.service.EmailVerificationService;
 import goorm.ddok.member.service.PhoneVerificationService;
+import goorm.ddok.member.service.TokenService;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,6 +28,7 @@ import org.springframework.web.servlet.view.RedirectView;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenService tokenService;
     private final PhoneVerificationService phoneVerificationService;
     private final SentryUserContextService sentryUserContextService;
     private final EmailVerificationService emailVerificationService;
@@ -166,5 +168,15 @@ public class AuthController {
     ) {
         authService.verifyAndResetPassword(request, authorizationHeader);
         return ResponseEntity.ok(ApiResponseDto.of(200, "비밀번호가 재설정되었습니다.", null));
+    }
+
+    @Operation(summary = "AccessToken 재발급")
+    @PostMapping("/token")
+    public ResponseEntity<ApiResponseDto<TokenResponse>> reissueAccessToken(
+            @CookieValue("refreshToken") String refreshToken
+    ) {
+        String result = tokenService.reissueAccessToken(refreshToken);
+        TokenResponse response = new TokenResponse(result);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "토큰 재발급에 성공했습니다.", response));
     }
 }
