@@ -66,6 +66,14 @@ public class User {
     @JsonIgnore
     private UserActivity activity;
 
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    private UserLocation location;
+
     @OneToMany(
             mappedBy = "user",
             fetch = FetchType.LAZY,
@@ -87,6 +95,8 @@ public class User {
     @JsonIgnore
     @Builder.Default
     private java.util.List<UserTrait> traits = new java.util.ArrayList<>();
+
+
 
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
