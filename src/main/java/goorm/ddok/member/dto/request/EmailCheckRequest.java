@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Schema(description = "이메일 중복 확인")
+@Schema(description = "이메일 중복 확인 요청 DTO")
 public class EmailCheckRequest {
 
     @NotBlank
