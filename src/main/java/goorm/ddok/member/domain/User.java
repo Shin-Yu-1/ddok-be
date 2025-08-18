@@ -16,7 +16,6 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder(toBuilder = true)
-//@ToString(exclude = "password")
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 public class User {
