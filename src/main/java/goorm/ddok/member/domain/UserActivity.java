@@ -28,8 +28,7 @@ public class UserActivity {
 
     /** User와 1:1, PK 공유 */
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @MapsId
-    @JoinColumn(name = "user_id") // FK 컬럼명 고정
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "activity_start_time", nullable = false)

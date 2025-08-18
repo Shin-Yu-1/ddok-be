@@ -58,6 +58,14 @@ public class User {
     @Setter(AccessLevel.NONE)
     private Instant updatedAt;
 
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    private UserActivity activity;
+
 
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
