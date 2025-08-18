@@ -5,7 +5,10 @@ import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.security.token.ReauthTokenService;
 import goorm.ddok.global.security.token.RefreshTokenService;
+import goorm.ddok.member.domain.AuthType;
+import goorm.ddok.member.domain.PhoneVerification;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.member.dto.request.FindEmailRequest;
 import goorm.ddok.member.dto.request.SignInRequest;
 import goorm.ddok.member.dto.request.SignUpRequest;
 import goorm.ddok.member.dto.response.LocationResponse;
@@ -15,7 +18,6 @@ import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.repository.PhoneVerificationRepository;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.member.util.NicknameGenerator;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -181,6 +183,30 @@ public class AuthService {
                 .sameSite(sameSite)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    @Transactional
+    public String findEmail(FindEmailRequest request) {
+        AuthType authType = AuthType.FIND_ID;
+
+        PhoneVerification verification = getVerification(authType, request.getPhoneNumber(), request.getPhoneCode());
+
+        if (verification.isVerified()) {
+            throw new GlobalException(ErrorCode.ALREADY_VERIFIED);
+        }
+
+        User user = userRepository.findByUsernameAndPhoneNumber(
+                request.getUsername(), request.getPhoneNumber()
+        ).orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        verification.verify();
+        return user.getEmail();
+    }
+
+    public PhoneVerification getVerification(AuthType authType, String phoneNumber, String phoneCode) {
+        return verificationRepository
+                .findByPhoneNumberAndPhoneCodeAndAuthType(phoneNumber, phoneCode, authType)
+                .orElseThrow(() -> new GlobalException(ErrorCode.VERIFICATION_NOT_FOUND));
     }
 
 }

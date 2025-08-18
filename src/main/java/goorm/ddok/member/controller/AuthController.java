@@ -142,4 +142,11 @@ public class AuthController {
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "로그아웃 되었습니다.", null));
     }
+
+    @Operation(summary = "이메일(아이디) 찾기")
+    @PostMapping("/email/find")
+    public ResponseEntity<ApiResponseDto<FindEmailResponse>> findEmail(@Valid @RequestBody FindEmailRequest request) {
+        FindEmailResponse response = new FindEmailResponse(authService.findEmail(request));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "이메일(아이디)을 찾았습니다.", response));
+    }
 }
