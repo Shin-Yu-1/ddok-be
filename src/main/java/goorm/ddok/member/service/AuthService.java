@@ -323,6 +323,8 @@ public class AuthService {
             user.setNickname(nickname);
         }
 
+        String profileImageUrl = profileImageService.generateProfileImageUrl(user.getNickname(), 48);
+        user.setProfileImageUrl(profileImageUrl);
 
         return buildPreferenceResponse(user, userLocation, request);
     }
