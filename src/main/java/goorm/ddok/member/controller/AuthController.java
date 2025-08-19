@@ -2,6 +2,7 @@ package goorm.ddok.member.controller;
 
 
 import goorm.ddok.global.response.ApiResponseDto;
+import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.sentry.SentryUserContextService;
 import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.dto.response.*;
@@ -18,8 +19,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.view.RedirectView;
+
+import java.net.URI;
 
 @RestController
 @RequiredArgsConstructor
@@ -178,5 +182,15 @@ public class AuthController {
         String result = tokenService.reissueAccessToken(refreshToken);
         TokenResponse response = new TokenResponse(result);
         return ResponseEntity.ok(ApiResponseDto.of(200, "토큰 재발급에 성공했습니다.", response));
+    }
+
+    @Operation(summary = "개인화 설정 생성")
+    @PostMapping("/preference")
+    public ResponseEntity<ApiResponseDto<PreferenceResponse>> createPreference(
+            @AuthenticationPrincipal CustomUserDetails user,
+            @Valid @RequestBody PreferenceRequest request
+    ) {
+        PreferenceResponse response = authService.createPreference(user.getId(), request);
+        return ResponseEntity.ok(ApiResponseDto.of(201, "개인화 설정이 완료되었습니다.", response));
     }
 }
