@@ -302,6 +302,28 @@ public class AuthService {
         // 6. 활동 시간 저장
         saveUserActivity(user, request.getActiveHours());
 
+        if (user.getNickname() == null || user.getNickname().trim().isEmpty()) {
+            String nickname = NicknameGenerator.generate(request.getMainPosition());
+
+            int attempts = 0;
+            while (userRepository.existsByNickname(nickname) && attempts < 10) {
+                nickname = NicknameGenerator.generate(request.getMainPosition());
+                attempts++;
+            }
+
+            if (userRepository.existsByNickname(nickname)) {
+                int suffix = 1;
+                String baseNickname = nickname;
+                while (userRepository.existsByNickname(nickname)) {
+                    nickname = baseNickname + suffix;
+                    suffix++;
+                }
+            }
+
+            user.setNickname(nickname);
+        }
+
+
         return buildPreferenceResponse(user, userLocation, request);
     }
 
