@@ -51,6 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     // 정확하게 허용할 /api/auth 경로만 명시
                     uri.equals("/api/auth/signin") ||
+                    uri.equals("/api/auth/signin/kakao") ||
                     uri.equals("/api/auth/signup") ||
                     uri.equals("/api/auth/email/find") ||
                     uri.equals("/api/auth/email/check") ||
@@ -60,7 +61,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     uri.equals("/api/auth/phone/send-code") ||
                     uri.equals("/api/auth/phone/verify-code") ||
                     uri.equals("/api/auth/email/send-code") ||
-                    uri.equals("/api/auth/github/callback")
+                    uri.equals("/api/auth/kakao/callback") ||
+                    uri.equals("/oauth/kakao/callback") ||
+                    uri.equals("/oauth/kakao") ||
+                    uri.equals("/api/auth/signin/kakao/token")
 
             ) {
                 chain.doFilter(request, response);

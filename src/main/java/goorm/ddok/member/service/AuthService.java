@@ -15,7 +15,6 @@ import goorm.ddok.member.dto.response.SignInUserResponse;
 import goorm.ddok.member.dto.response.SignUpResponse;
 import goorm.ddok.member.repository.PhoneVerificationRepository;
 import goorm.ddok.member.repository.UserRepository;
-import goorm.ddok.member.util.NicknameGenerator;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
