@@ -1,6 +1,7 @@
 package goorm.ddok.member.dto.response;
 
 import goorm.ddok.member.domain.User;
+import goorm.ddok.member.domain.UserPosition;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 
@@ -23,6 +24,9 @@ public class SignInUserResponse {
     @Schema(description = "프로필 이미지 URL", example = "https://cdn.pixabay.com/photo/2013/07/12/14/15/boy-148071_1280.png")
     private final String profileImageUrl;
 
+    @Schema(description = "대표 포지션", example = "백엔드")
+    private final String mainPosition;
+
     @Schema(description = "개인화 설정 여부", example = "true")
     private final boolean IsPreference;
 
@@ -35,7 +39,19 @@ public class SignInUserResponse {
         this.email = user.getEmail();
         this.nickname = user.getNickname();
         this.profileImageUrl = user.getProfileImageUrl();
+        this.mainPosition = getMainPositionFromUser(user);
         this.IsPreference = isPreference;
         this.location = location;
+    }
+
+    private String getMainPositionFromUser(User user) {
+        if (user.getPositions() != null && !user.getPositions().isEmpty()) {
+            return user.getPositions().stream()
+                    .filter(position -> position.getType() == goorm.ddok.member.domain.UserPositionType.PRIMARY)
+                    .findFirst()
+                    .map(UserPosition::getPositionName)
+                    .orElse(null);
+        }
+        return null;
     }
 }

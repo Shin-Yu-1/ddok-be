@@ -144,7 +144,7 @@ public class AuthService {
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
 
-        boolean isPreferences = false;
+        boolean isPreferences = checkIfUserHasPreferences(user);
 
         LocationResponse location = null;
         if (user.getLocation() != null) {
@@ -159,6 +159,14 @@ public class AuthService {
 
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
         return new SignInResponse(accessToken, userDto);
+    }
+
+    private boolean checkIfUserHasPreferences(User user) {
+        return user.getLocation() != null &&
+                !user.getPositions().isEmpty() &&
+                !user.getTraits().isEmpty() &&
+                user.getBirthDate() != null &&
+                user.getActivity() != null;
     }
 
     public void signOut(String authorizationHeader, HttpServletResponse response) {
@@ -422,15 +430,26 @@ public class AuthService {
                 .end(request.getActiveHours().getEnd())
                 .build();
 
-        return PreferenceResponse.builder()
-                .id(user.getId())
+        PreferenceDetailResponse preferences = PreferenceDetailResponse.builder()
                 .mainPosition(request.getMainPosition())
                 .subPosition(request.getSubPosition())
                 .techStacks(request.getTechStacks())
+                .location(locationResponse)
                 .traits(request.getTraits())
                 .birthDate(request.getBirthDate())
-                .location(locationResponse)
                 .activeHours(activeHoursResponse)
+                .build();
+
+
+        return PreferenceResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .mainPosition(request.getMainPosition())
+                .profileImageUrl(user.getProfileImageUrl())
+                .nickname(user.getNickname())
+                .isPreferences(true)
+                .preferences(preferences)
                 .build();
     }
 }
