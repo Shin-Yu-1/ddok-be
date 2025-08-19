@@ -12,11 +12,11 @@ import java.util.List;
 @Builder
 public class PreferenceResponse {
     private Long id;
+    private String username;
+    private String email;
     private String mainPosition;
-    private List<String> subPosition;
-    private List<String> techStacks;
-    private List<String> traits;
-    private LocalDate birthDate;
-    private LocationResponse location;
-    private ActiveHoursResponse activeHours;
+    private String profileImageUrl;
+    private String nickname;
+    private boolean isPreferences;
+    private PreferenceDetailResponse preferences;
 }
