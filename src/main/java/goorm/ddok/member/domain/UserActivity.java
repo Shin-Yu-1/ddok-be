@@ -32,10 +32,14 @@ public class UserActivity {
     private User user;
 
     @Column(name = "activity_start_time", nullable = false)
-    private Instant activityStartTime;
+    @jakarta.validation.constraints.Min(0)
+    @jakarta.validation.constraints.Max(24)
+    private Integer activityStartTime;
 
     @Column(name = "activity_end_time", nullable = false)
-    private Instant activityEndTime;
+    @jakarta.validation.constraints.Min(0)
+    @jakarta.validation.constraints.Max(24)
+    private Integer activityEndTime;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
