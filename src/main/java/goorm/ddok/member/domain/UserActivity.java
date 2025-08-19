@@ -17,7 +17,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @EntityListeners(AuditingEntityListener.class)
 @Check(constraints = "activity_end_time >= activity_start_time")
 public class UserActivity {
