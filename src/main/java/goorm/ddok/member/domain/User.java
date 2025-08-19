@@ -2,12 +2,14 @@ package goorm.ddok.member.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Past;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 
 @Entity
@@ -16,7 +18,6 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@ToString(exclude = "password")
 @EntityListeners(AuditingEntityListener.class)
 @Table(name = "users")
 public class User {
@@ -48,6 +49,11 @@ public class User {
     @Builder.Default
     private boolean emailVerified = false;
 
+    @Column(name = "birth_date")
+    @Past
+    private LocalDate birthDate;
+
+
     @CreatedDate
     @Column(nullable = false, updatable = false)
     @Setter(AccessLevel.NONE)
@@ -58,6 +64,54 @@ public class User {
     @Setter(AccessLevel.NONE)
     private Instant updatedAt;
 
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    private UserActivity activity;
+
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    private UserLocation location;
+
+    @OneToMany(
+            mappedBy = "user",
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    @Builder.Default
+    private java.util.List<UserPosition> positions = new java.util.ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "user",
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    @Builder.Default
+    private java.util.List<UserTrait> traits = new java.util.ArrayList<>();
+
+    @OneToMany(
+            mappedBy = "user",
+            fetch = FetchType.LAZY,
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    @Builder.Default
+    private java.util.List<UserTechStack> techStacks = new java.util.ArrayList<>();
 
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
@@ -66,5 +120,9 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.password = password;
         this.profileImageUrl = profileImageUrl;
+    }
+
+    public void updatePassword(String newEncodedPassword) {
+        this.password = newEncodedPassword;
     }
 }
