@@ -47,11 +47,6 @@ public class SocialAuthService {
                 });
     }
 
-    /**
-     * 기존 유저 필드 업데이트:
-     * - username  : 카카오 닉네임(표시용)
-     * - nickname  : k_ + (카카오ID 뒤 10자리)  → 12자 고정(컬럼 제약 고려)
-     */
     private void updateUserFields(User u, String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
         // username ← 카카오 닉네임(사람 이름/표시용)
         String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
@@ -73,11 +68,6 @@ public class SocialAuthService {
         }
     }
 
-    /**
-     * 신규 가입 생성 규칙:
-     * - username  : 카카오 닉네임(표시용)
-     * - nickname  : k_ + (카카오ID 뒤 10자리)  → 12자 고정
-     */
     private User createNewUserFromKakao(String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
         String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
         String desiredNickname = compactKakaoNickFromId(kakaoId);   // 12자

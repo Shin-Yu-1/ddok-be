@@ -24,19 +24,18 @@ public class OAuthKakaoController {
     private final SocialSignInService socialSignInService;
     private final SentryUserContextService sentryUserContextService;
 
-    // 카카오 콘솔 값 (application-env.properties에 존재해야 함)
     @Value("${oauth.kakao.client-id}")
     private String clientId;
 
-    // 인가/토큰교환 양쪽에서 "동일 값" 사용해야 함
+
     @Value("${oauth.kakao.redirect-uri}")
     private String redirectUriProp;
 
-    // 필요 scope (추가 동의가 막혀있으면 기본값 profile_nickname만)
+
     @Value("${oauth.kakao.scope:profile_nickname}")
     private String scope;
 
-    @GetMapping("/oauth/kakao")
+    @GetMapping("/api/auth/signin/kakao")
     public void redirectToKakao(HttpServletResponse res) throws Exception {
         String encodedRedirect = URLEncoder.encode(redirectUriProp, StandardCharsets.UTF_8);
         String encodedScope    = URLEncoder.encode(scope, StandardCharsets.UTF_8);
@@ -50,7 +49,7 @@ public class OAuthKakaoController {
         res.sendRedirect(url);
     }
 
-    @GetMapping("/oauth/kakao/callback")
+    @GetMapping("/api/auth/signin/kakao/callback")
     public ResponseEntity<ApiResponseDto<SignInResponse>> kakaoCallback(
             @RequestParam("code") String code,
             HttpServletResponse servletResponse

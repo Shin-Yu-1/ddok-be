@@ -61,9 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     uri.equals("/api/auth/phone/send-code") ||
                     uri.equals("/api/auth/phone/verify-code") ||
                     uri.equals("/api/auth/email/send-code") ||
-                    uri.equals("/api/auth/kakao/callback") ||
-                    uri.equals("/oauth/kakao/callback") ||
-                    uri.equals("/oauth/kakao") ||
+                    uri.equals("/api/auth/signin/kakao/callback") ||
                     uri.equals("/api/auth/signin/kakao/token")
 
             ) {
