@@ -5,45 +5,132 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.SocialAccountRepository;
 import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class SocialAuthService {
 
-    private final SocialAccountRepository socialRepo;
-    private final UserRepository userRepo;
+    private final SocialAccountRepository socialAccountRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    private static final String PROVIDER_KAKAO = "KAKAO";
 
     @Transactional
-    public User upsertKakaoUser(String kakaoId, String email, String nickname, String profileImageUrl) {
-        // 1) 소셜 계정으로 기존 사용자 찾기
-        var linked = socialRepo.findByProviderAndProviderUserId("KAKAO", kakaoId)
-                .map(SocialAccount::getUser);
-        if (linked.isPresent()) return linked.get();
-
-        // 2) 이메일로 기존 사용자 매칭(있으면 연결)
-        User user = null;
-        if (email != null) {
-            user = userRepo.findByEmail(email).orElse(null);
-        }
-        if (user == null) {
-            // 3) 새 사용자 생성 (User 필드명에 맞게 최소값만)
-            user = User.builder()
-                    .email(email)
-                    .nickname(nickname != null ? nickname : "user-" + kakaoId)
-                    .build();
-            user = userRepo.save(user);
+    public User upsertKakaoUser(String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
+        if (kakaoId == null || kakaoId.isBlank()) {
+            throw new IllegalArgumentException("kakaoId is required");
         }
 
-        // 4) 소셜 계정 링크 저장
-        SocialAccount sa = SocialAccount.builder()
-                .provider("KAKAO")
-                .providerUserId(kakaoId)
-                .user(user)
-                .build();
-        socialRepo.save(sa);
+        return socialAccountRepository.findByProviderAndProviderUserId(PROVIDER_KAKAO, kakaoId)
+                .map(sa -> {
+                    User u = sa.getUser();
+                    // 기존 유저도 원하는 규칙으로 동기화
+                    updateUserFields(u, kakaoId, email, kakaoNickname, profileImageUrl);
+                    return u;
+                })
+                .orElseGet(() -> {
+                    // 신규 유저 생성 + 소셜계정 연결
+                    User u = createNewUserFromKakao(kakaoId, email, kakaoNickname, profileImageUrl);
+                    SocialAccount sa = SocialAccount.builder()
+                            .provider(PROVIDER_KAKAO)
+                            .providerUserId(kakaoId)
+                            .user(u)
+                            .build();
+                    socialAccountRepository.save(sa);
+                    return u;
+                });
+    }
 
-        return user;
+    /**
+     * 기존 유저 필드 업데이트:
+     * - username  : 카카오 닉네임(표시용)
+     * - nickname  : k_ + (카카오ID 뒤 10자리)  → 12자 고정(컬럼 제약 고려)
+     */
+    private void updateUserFields(User u, String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
+        // username ← 카카오 닉네임(사람 이름/표시용)
+        String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
+        if (!desiredUsername.equals(u.getUsername())) {
+            u.setUsername(desiredUsername);
+        }
+
+        // nickname ← k_ + 뒤 10자리 (12자 제약)
+        String desiredNickname = compactKakaoNickFromId(kakaoId); // 예: k_4039894700
+        if (!desiredNickname.equals(u.getNickname())) {
+            u.setNickname(desiredNickname);
+        }
+
+        if (email != null && !email.isBlank() && !email.equals(u.getEmail())) {
+            u.setEmail(email);
+        }
+        if (profileImageUrl != null && !profileImageUrl.isBlank()) {
+            u.setProfileImageUrl(profileImageUrl);
+        }
+    }
+
+    /**
+     * 신규 가입 생성 규칙:
+     * - username  : 카카오 닉네임(표시용)
+     * - nickname  : k_ + (카카오ID 뒤 10자리)  → 12자 고정
+     */
+    private User createNewUserFromKakao(String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
+        String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
+        String desiredNickname = compactKakaoNickFromId(kakaoId);   // 12자
+
+        String safeEmail  = syntheticEmail(kakaoId, email);         // NOT NULL + UNIQUE
+        String safePhone  = syntheticPhone(kakaoId);                 // NOT NULL + UNIQUE
+        String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString()); // NOT NULL
+
+        return userRepository.save(
+                User.builder()
+                        .username(desiredUsername)      // ← 카카오 닉네임
+                        .nickname(desiredNickname)      // ← k_ + 뒤 10자리 (12자)
+                        .email(safeEmail)
+                        .phoneNumber(safePhone)
+                        .password(encodedPw)
+                        .profileImageUrl(profileImageUrl)
+                        .build()
+        );
+    }
+
+    // 사람 표시용 username: 카카오 닉네임 없으면 기본값
+    private String safeUsernameFromKakaoNickname(String kakaoNickname) {
+        String base = (kakaoNickname == null || kakaoNickname.isBlank()) ? "카카오사용자" : kakaoNickname.trim();
+        // username에는 길이 제한 어노테이션이 없으므로 그대로 사용(원하면 자르기)
+        return base;
+    }
+
+    // nickname은 DB 제약 length=12 → "k_" + 뒤10자리 = 정확히 12자
+    private String compactKakaoNickFromId(String kakaoId) {
+        String digits = kakaoId.replaceAll("\\D", "");
+        String last10 = (digits.length() >= 10) ? digits.substring(digits.length() - 10) : pad10(digits);
+        return "k_" + last10;
+    }
+
+    private String pad10(String s) {
+        String seed = (s == null ? "" : s) + UUID.randomUUID().toString().replaceAll("\\D", "");
+        return seed.substring(0, 10);
+    }
+
+    // 이메일 동의 OFF일 때 synthetic 이메일 생성 (UNIQUE)
+    private String syntheticEmail(String kakaoId, String email) {
+        if (email != null && !email.isBlank()) return email;
+        return "kakao+" + kakaoId + "+" + UUID.randomUUID() + "@no-email.kakao";
+    }
+
+    // 전화번호 NOT NULL + UNIQUE 제약 충족: kakaoId 기반 11자리 생성
+    private String syntheticPhone(String kakaoId) {
+        String digits = kakaoId.replaceAll("\\D", "");
+        if (digits.length() >= 10) {
+            String last10 = digits.substring(digits.length() - 10);
+            return "9" + last10; // 11자리
+        }
+        String pad = (digits + UUID.randomUUID().toString().replaceAll("\\D", "")).substring(0, 10);
+        return "9" + pad;
     }
 }
