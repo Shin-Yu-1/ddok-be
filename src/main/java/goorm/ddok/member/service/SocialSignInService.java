@@ -63,9 +63,8 @@ public class SocialSignInService {
             location = new LocationResponse(lat, lon, address);
         }
 
-        boolean isPreferences = false; // 일반 로그인과 동일 정책
+        boolean isPreferences = false;
 
-        // 8) 응답 DTO (Map.of NPE 방지 위해 DTO 사용)
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
         return new SignInResponse(accessToken, userDto);
     }

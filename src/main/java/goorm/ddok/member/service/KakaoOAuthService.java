@@ -2,6 +2,8 @@ package goorm.ddok.member.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -47,9 +49,18 @@ public class KakaoOAuthService {
             }
             return om.readTree(res.getBody()).get("access_token").asText();
         } catch (org.springframework.web.client.HttpClientErrorException e) {
-            // ★ 핵심: 카카오가 주는 에러 본문을 로그로 남겨 정확한 사유 확인
+
             String resp = e.getResponseBodyAsString();
             System.err.println("[KAKAO TOKEN ERROR] status=" + e.getStatusCode() + " body=" + resp);
+            if (e.getStatusCode().value() == 400 || e.getStatusCode().value() == 401) {
+                if (resp != null && (
+                        resp.contains("invalid_grant") ||
+                                resp.contains("Invalid authorization code") ||
+                                resp.contains("KOE320")
+                )) {
+                    throw new GlobalException(ErrorCode.KAKAO_INVALID_CODE);
+                }
+            }
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Invalid token response", e);
