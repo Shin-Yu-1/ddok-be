@@ -2,30 +2,22 @@ package goorm.ddok.cafe.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter @Builder
 @AllArgsConstructor
-@Builder(toBuilder = true)
-@EntityListeners(AuditingEntityListener.class)
-@Table(
-        name = "cafe",
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "cafe",
         indexes = {
                 @Index(name = "idx_cafe_name", columnList = "name"),
                 @Index(name = "idx_cafe_lat_lng", columnList = "activity_latitude, activity_longitude")
-        }
-)
+        })
 public class Cafe {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(length = 120, nullable = false)
@@ -34,39 +26,42 @@ public class Cafe {
     @Column(columnDefinition = "text")
     private String bannerImageUrl;
 
-    @Column(length = 50)
-    private String region1depthName;
+    @Column(name = "region_1depth_name",length = 50) private String region1depthName;
+    @Column(name = "region_2depth_name",length = 50) private String region2depthName;
+    @Column(name = "region_3depth_name",length = 50) private String region3depthName;
+    @Column(name = "road_name",length = 50) private String roadName;
+    @Column(name = "zone_no",length = 50) private String zoneNo;
 
-    @Column(length = 50)
-    private String region2depthName;
-
-    @Column(length = 50)
-    private String region3depthName;
-
-    @Column(length = 50)
-    private String roadName;
-
-    @Column(length = 50)
-    private String zoneNo;
-
-    @Column(length = 64)
+    @Column(name = "kakao_place_id",length = 64)
     private String kakaoPlaceId;
 
-    // numeric(9,6)
-    @Column(precision = 9, scale = 6)
+    @Column(name="activity_latitude", precision = 9, scale = 6)
     private BigDecimal activityLatitude;
 
-    @Column(precision = 9, scale = 6)
+    @Column(name="activity_longitude", precision = 9, scale = 6)
     private BigDecimal activityLongitude;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
+    @Column(name="created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
-    @LastModifiedDate
-    @Column(nullable = false)
-    private Instant updatedAt;
+    @Column(name="updated_at")
+    private LocalDateTime updatedAt;
 
-    @Column
-    private Instant deletedAt;
+    @Column(name="deleted_at")
+    private LocalDateTime deletedAt;
+
+    @PrePersist
+    void prePersist() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    @PreUpdate
+    void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }

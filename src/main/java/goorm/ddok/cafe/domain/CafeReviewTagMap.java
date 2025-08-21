@@ -4,22 +4,20 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Getter @Builder
 @AllArgsConstructor
-@Builder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "cafe_review_tag_map")
 public class CafeReviewTagMap {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "review_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tagmap_review"))
+    @JoinColumn(name = "review_id", nullable = false)
     private CafeReview review;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "tag_id", nullable = false, foreignKey = @ForeignKey(name = "fk_tagmap_tag"))
+    @JoinColumn(name = "tag_id", nullable = false)
     private CafeReviewTag tag;
 }
