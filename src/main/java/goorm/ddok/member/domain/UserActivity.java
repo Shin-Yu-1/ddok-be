@@ -17,7 +17,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @EntityListeners(AuditingEntityListener.class)
 @Check(constraints = "activity_end_time >= activity_start_time")
 public class UserActivity {
@@ -26,16 +26,19 @@ public class UserActivity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** User와 1:1, PK 공유 */
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     @Column(name = "activity_start_time", nullable = false)
-    private Instant activityStartTime;
+    @jakarta.validation.constraints.Min(0)
+    @jakarta.validation.constraints.Max(24)
+    private Integer activityStartTime;
 
     @Column(name = "activity_end_time", nullable = false)
-    private Instant activityEndTime;
+    @jakarta.validation.constraints.Min(0)
+    @jakarta.validation.constraints.Max(24)
+    private Integer activityEndTime;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

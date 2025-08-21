@@ -6,13 +6,31 @@ import lombok.Getter;
 
 @Getter
 @Builder
-@Schema(description = "회원가입 응답 DTO")
+@Schema(
+        name = "SignUpResponse",
+        description = "회원가입 응답 DTO",
+        example = """
+    {
+      "id": 1,
+      "username": "홍길동"
+    }
+    """
+)
 public class SignUpResponse {
 
-    @Schema(description = "사용자 id", example = "1")
+    @Schema(
+            description = "사용자 id",
+            example = "1",
+            type = "integer",
+            format = "int64",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private Long id;
 
-    @Schema(description = "사용자 실명", example = "홍길동")
+    @Schema(
+            description = "사용자 실명",
+            example = "홍길동",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private String username;
-
 }

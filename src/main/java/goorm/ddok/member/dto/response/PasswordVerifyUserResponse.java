@@ -6,8 +6,19 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-@Schema(description = "비밀번호 찾기 본인 인증 및 reauthToken 발급 응답 DTO")
+@Schema(
+        name = "PasswordVerifyUserResponse",
+        description = "비밀번호 찾기 본인 인증 및 reauthToken 발급 응답 DTO",
+        example = """
+    { "reauthToken": "REAUTH_TOKEN_VALUE" }
+    """
+)
 public class PasswordVerifyUserResponse {
-    @Schema(description = "재인증 토큰", example = "REAUTH_TOKEN_VALUE")
+
+    @Schema(
+            description = "재인증 토큰",
+            example = "REAUTH_TOKEN_VALUE",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private String reauthToken;
 }

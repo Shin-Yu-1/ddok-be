@@ -8,19 +8,45 @@ import lombok.Setter;
 
 @Getter
 @Setter
-@Schema(description = "아이디(이메일) 찾기 요청 DTO")
+@Schema(
+        name = "FindEmailRequest",
+        description = "아이디(이메일) 찾기 요청 DTO",
+        requiredProperties = {"username", "phoneNumber", "phoneCode"},
+        example = """
+    {
+      "username": "홍길동",
+      "phoneNumber": "01012345678",
+      "phoneCode": "012345"
+    }
+    """
+)
 public class FindEmailRequest {
 
     @NotBlank(message = "이름 입력이 누락되었습니다.")
-    @Schema(description = "사용자 이름", example = "홍길동")
+    @Schema(
+            description = "사용자 이름",
+            example = "홍길동",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private String username;
 
     @NotBlank(message = "전화번호 입력이 누락되었습니다.")
     @Pattern(regexp = "^01[0-9]\\d{7,8}$", message = "올바른 형식의 전화번호여야 합니다.")
+    @Schema(
+            description = "전화번호(010으로 시작, 숫자 10~11자리)",
+            example = "01012345678",
+            pattern = "^01[0-9]\\d{7,8}$",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private String phoneNumber;
 
     @NotBlank(message = "인증코드 입력이 누락되었습니다.")
     @Pattern(regexp = "^\\d{6}$", message = "인증번호는 숫자 6자리여야 합니다.")
-    @Schema(description = "인증코드", example = "012345")
+    @Schema(
+            description = "인증코드(숫자 6자리)",
+            example = "012345",
+            pattern = "^\\d{6}$",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private String phoneCode;
 }

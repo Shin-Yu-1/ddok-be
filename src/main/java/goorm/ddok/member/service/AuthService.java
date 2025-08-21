@@ -5,16 +5,10 @@ import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.security.token.ReauthTokenService;
 import goorm.ddok.global.security.token.RefreshTokenService;
-import goorm.ddok.member.domain.AuthType;
-import goorm.ddok.member.domain.PhoneVerification;
-import goorm.ddok.member.domain.User;
+import goorm.ddok.member.domain.*;
 import goorm.ddok.member.dto.request.*;
-import goorm.ddok.member.dto.response.LocationResponse;
-import goorm.ddok.member.dto.response.SignInResponse;
-import goorm.ddok.member.dto.response.SignInUserResponse;
-import goorm.ddok.member.dto.response.SignUpResponse;
-import goorm.ddok.member.repository.PhoneVerificationRepository;
-import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.member.dto.response.*;
+import goorm.ddok.member.repository.*;
 import goorm.ddok.member.util.NicknameGenerator;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +19,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
@@ -33,6 +28,13 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PhoneVerificationRepository verificationRepository;
+    private final UserLocationRepository userLocationRepository;
+    private final UserPositionRepository userPositionRepository;
+    private final UserTechStackRepository userTechStackRepository;
+    private final UserActivityRepository userActivityRepository;
+    private final UserTraitRepository userTraitRepository;
+    private final TechStackRepository techStackRepository;
+
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final ProfileImageService profileImageService;
@@ -142,7 +144,7 @@ public class AuthService {
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
 
-        boolean isPreferences = false;
+        boolean isPreferences = checkIfUserHasPreferences(user);
 
         LocationResponse location = null;
         if (user.getLocation() != null) {
@@ -157,6 +159,14 @@ public class AuthService {
 
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
         return new SignInResponse(accessToken, userDto);
+    }
+
+    private boolean checkIfUserHasPreferences(User user) {
+        return user.getLocation() != null &&
+                !user.getPositions().isEmpty() &&
+                !user.getTraits().isEmpty() &&
+                user.getBirthDate() != null &&
+                user.getActivity() != null;
     }
 
     public void signOut(String authorizationHeader, HttpServletResponse response) {
@@ -275,4 +285,171 @@ public class AuthService {
         reauthTokenService.delete(email);
     }
 
+    @Transactional
+    public PreferenceResponse createPreference(Long userId, PreferenceRequest request) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        // 1. 포지션 정보 저장
+        saveUserPositions(user, request.getMainPosition(), request.getSubPosition());
+
+        // 2. 기술 스택 저장
+        saveUserTechStacks(user, request.getTechStacks());
+
+        // 3. 주 활동 지역 저장
+        UserLocation userLocation = saveUserLocation(user, request.getLocation());
+
+        // 4. 특성(Traits) 저장
+        saveUserTraits(user, request.getTraits());
+
+        // 5. 생년월일 저장
+        user.setBirthDate(request.getBirthDate());
+        userRepository.save(user);
+
+        // 6. 활동 시간 저장
+        saveUserActivity(user, request.getActiveHours());
+
+        if (user.getNickname() == null || user.getNickname().trim().isEmpty()) {
+            String nickname = NicknameGenerator.generate(request.getMainPosition());
+
+            int attempts = 0;
+            while (userRepository.existsByNickname(nickname) && attempts < 10) {
+                nickname = NicknameGenerator.generate(request.getMainPosition());
+                attempts++;
+            }
+
+            if (userRepository.existsByNickname(nickname)) {
+                int suffix = 1;
+                String baseNickname = nickname;
+                while (userRepository.existsByNickname(nickname)) {
+                    nickname = baseNickname + suffix;
+                    suffix++;
+                }
+            }
+
+            user.setNickname(nickname);
+        }
+
+        String profileImageUrl = profileImageService.generateProfileImageUrl(user.getNickname(), 48);
+        user.setProfileImageUrl(profileImageUrl);
+
+        return buildPreferenceResponse(user, userLocation, request);
+    }
+
+    private void saveUserPositions(User user, String mainPosition, List<String> subPositions) {
+        UserPosition primaryPosition = UserPosition.primaryOf(user, mainPosition);
+        userPositionRepository.save(primaryPosition);
+
+        for (int i = 0; i < subPositions.size(); i++) {
+            String subPosition = subPositions.get(i);
+            if (subPosition != null && !subPosition.trim().isEmpty()) {
+                UserPosition secondaryPosition = UserPosition.secondaryOf(user, subPosition, (short)(i + 1));
+                userPositionRepository.save(secondaryPosition);
+            }
+        }
+    }
+
+    private void saveUserTechStacks(User user, List<String> techStacks) {
+
+        if (techStacks != null && !techStacks.isEmpty()) {
+            for (String techStackName : techStacks) {
+                if (techStackName != null && !techStackName.trim().isEmpty()) {
+                    TechStack techStack = techStackRepository.findByName(techStackName)
+                            .orElseGet(() -> techStackRepository.save(
+                                    TechStack.builder()
+                                            .name(techStackName.trim())
+                                            .build()
+                            ));
+                    UserTechStack userTechStack = UserTechStack.builder()
+                            .user(user)
+                            .techStack(techStack)
+                            .build();
+                    userTechStackRepository.save(userTechStack);
+                }
+            }
+        }
+    }
+
+    private UserLocation saveUserLocation(User user, LocationRequest locationRequest) {
+        UserLocation userLocation = userLocationRepository.findByUserId(user.getId())
+                .orElse(UserLocation.builder().user(user).build());
+
+        userLocation = userLocation.toBuilder()
+                .roadName(locationRequest.getAddress())
+                .activityLatitude(locationRequest.getLatitude() == null ? null
+                        : new java.math.BigDecimal(String.format(java.util.Locale.US, "%.6f", locationRequest.getLatitude())))
+                .activityLongitude(locationRequest.getLongitude() == null ? null
+                        : new java.math.BigDecimal(String.format(java.util.Locale.US, "%.6f", locationRequest.getLongitude())))
+                .build();
+
+        return userLocationRepository.save(userLocation);
+    }
+
+    private void saveUserTraits(User user, List<String> traits) {
+        if (traits != null && !traits.isEmpty()) {
+            for (String traitName : traits) {
+                if (traitName != null && !traitName.trim().isEmpty()) {
+                    UserTrait userTrait = UserTrait.builder()
+                            .user(user)
+                            .traitName(traitName.trim())
+                            .build();
+                    userTraitRepository.save(userTrait);
+                }
+            }
+        }
+    }
+
+    private void saveUserActivity(User user, ActiveHoursRequest activeHoursRequest) {
+        Integer startHour = Integer.parseInt(activeHoursRequest.getStart());
+        Integer endHour = Integer.parseInt(activeHoursRequest.getEnd());
+
+        UserActivity userActivity = userActivityRepository.findByUserId(user.getId())
+                .orElse(UserActivity.builder().user(user).build());
+
+        userActivity = userActivity.toBuilder()
+                .activityStartTime(startHour)
+                .activityEndTime(endHour)
+                .build();
+
+        userActivityRepository.save(userActivity);
+    }
+
+    private PreferenceResponse buildPreferenceResponse(User user, UserLocation userLocation, PreferenceRequest request) {
+        LocationResponse locationResponse = null;
+        if (userLocation != null) {
+            Double lat = (userLocation.getActivityLatitude() != null)
+                    ? userLocation.getActivityLatitude().doubleValue() : null;
+            Double lon = (userLocation.getActivityLongitude() != null)
+                    ? userLocation.getActivityLongitude().doubleValue() : null;
+            locationResponse = new LocationResponse(lat, lon, userLocation.getRoadName());
+        }
+
+        ActiveHoursResponse activeHoursResponse = ActiveHoursResponse.builder()
+                .start(request.getActiveHours().getStart())
+                .end(request.getActiveHours().getEnd())
+                .build();
+
+        PreferenceDetailResponse preferences = PreferenceDetailResponse.builder()
+                .mainPosition(request.getMainPosition())
+                .subPosition(request.getSubPosition())
+                .techStacks(request.getTechStacks())
+                .location(locationResponse)
+                .traits(request.getTraits())
+                .birthDate(request.getBirthDate())
+                .activeHours(activeHoursResponse)
+                .build();
+
+
+        return PreferenceResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .mainPosition(request.getMainPosition())
+                .profileImageUrl(user.getProfileImageUrl())
+                .nickname(user.getNickname())
+                .isPreferences(true)
+                .preferences(preferences)
+                .build();
+    }
 }
