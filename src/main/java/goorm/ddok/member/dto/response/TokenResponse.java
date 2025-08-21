@@ -6,7 +6,19 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
+@Schema(
+        name = "TokenResponse",
+        description = "액세스 토큰 재발급 응답 DTO",
+        example = """
+    { "accessToken": "eyJhbGciOi..." }
+    """
+)
 public class TokenResponse {
-    @Schema(description = "재발급된 토큰", example = "ACCESS_TOKEN_VALUE")
+
+    @Schema(
+            description = "재발급된 액세스 토큰 (JWT)",
+            example = "eyJhbGciOi...",
+            accessMode = Schema.AccessMode.READ_ONLY
+    )
     private String accessToken;
 }
