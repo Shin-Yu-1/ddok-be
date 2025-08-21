@@ -72,8 +72,8 @@ public class SocialAuthService {
         String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
         String desiredNickname = compactKakaoNickFromId(kakaoId);   // 12자
 
-        String safeEmail  = syntheticEmail(kakaoId, email);         // NOT NULL + UNIQUE
-        String safePhone  = syntheticPhone(kakaoId);                 // NOT NULL + UNIQUE
+        String safeEmail  = "";         // 그냥 없는 거로 처리
+        String safePhone  = "";                 // 그냥 없는 거로 처리
         String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString()); // NOT NULL
 
         return userRepository.save(
@@ -107,20 +107,4 @@ public class SocialAuthService {
         return seed.substring(0, 10);
     }
 
-    // 이메일 동의 OFF일 때 synthetic 이메일 생성 (UNIQUE)
-    private String syntheticEmail(String kakaoId, String email) {
-        if (email != null && !email.isBlank()) return email;
-        return "kakao+" + kakaoId + "+" + UUID.randomUUID() + "@no-email.kakao";
-    }
-
-    // 전화번호 NOT NULL + UNIQUE 제약 충족: kakaoId 기반 11자리 생성
-    private String syntheticPhone(String kakaoId) {
-        String digits = kakaoId.replaceAll("\\D", "");
-        if (digits.length() >= 10) {
-            String last10 = digits.substring(digits.length() - 10);
-            return "9" + last10; // 11자리
-        }
-        String pad = (digits + UUID.randomUUID().toString().replaceAll("\\D", "")).substring(0, 10);
-        return "9" + pad;
-    }
 }
