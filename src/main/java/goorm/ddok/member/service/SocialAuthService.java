@@ -54,11 +54,6 @@ public class SocialAuthService {
             u.setUsername(desiredUsername);
         }
 
-        // nickname ← k_ + 뒤 10자리 (12자 제약)
-        String desiredNickname = compactKakaoNickFromId(kakaoId); // 예: k_4039894700
-        if (!desiredNickname.equals(u.getNickname())) {
-            u.setNickname(desiredNickname);
-        }
 
         if (email != null && !email.isBlank() && !email.equals(u.getEmail())) {
             u.setEmail(email);
@@ -70,16 +65,15 @@ public class SocialAuthService {
 
     private User createNewUserFromKakao(String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
         String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
-        String desiredNickname = compactKakaoNickFromId(kakaoId);   // 12자
 
-        String safeEmail  = "";         // 그냥 없는 거로 처리
-        String safePhone  = "";                 // 그냥 없는 거로 처리
+        String safeEmail  = ""; // 그냥 없는 거로 처리
+        String safePhone  = ""; // 그냥 없는 거로 처리
         String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString()); // NOT NULL
 
         return userRepository.save(
                 User.builder()
-                        .username(desiredUsername)      // ← 카카오 닉네임
-                        .nickname(desiredNickname)      // ← k_ + 뒤 10자리 (12자)
+                        .username(desiredUsername)      // 카카오 닉네임 → username
+                        .nickname(null)
                         .email(safeEmail)
                         .phoneNumber(safePhone)
                         .password(encodedPw)
@@ -91,7 +85,7 @@ public class SocialAuthService {
     // 사람 표시용 username: 카카오 닉네임 없으면 기본값
     private String safeUsernameFromKakaoNickname(String kakaoNickname) {
         String base = (kakaoNickname == null || kakaoNickname.isBlank()) ? "카카오사용자" : kakaoNickname.trim();
-        // username에는 길이 제한 어노테이션이 없으므로 그대로 사용(원하면 자르기)
+
         return base;
     }
 

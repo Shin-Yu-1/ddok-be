@@ -503,7 +503,7 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "사용자 없음",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class)))
     })
-    @PostMapping("/preference")
+    @PostMapping("/preferences")
     public ResponseEntity<ApiResponseDto<PreferenceResponse>> createPreference(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody PreferenceRequest request
