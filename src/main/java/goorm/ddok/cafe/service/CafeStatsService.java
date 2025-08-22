@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -39,6 +40,11 @@ public class CafeStatsService {
 
         List<TagCountResponse> tags = tagProjections.stream()
                 .map(p -> new TagCountResponse(p.getTagName(), p.getTagCount()))
+                .sorted(
+                        Comparator
+                                .comparingLong(TagCountResponse::tagCount).reversed()
+                                .thenComparing(TagCountResponse::tagName)
+                )
                 .toList();
 
         return new CafeStatsResponse(
