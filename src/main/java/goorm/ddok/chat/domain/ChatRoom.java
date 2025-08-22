@@ -67,4 +67,9 @@ public class ChatRoom {
     @Column(nullable = false)
     @Setter(AccessLevel.NONE)
     private Instant updatedAt;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) createdAt = Instant.now();
+    }
 }

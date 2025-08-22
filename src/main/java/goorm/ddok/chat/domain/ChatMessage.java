@@ -24,17 +24,14 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long roomId;
+    @MapsId("roomId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
+    private ChatRoom roomId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(insertable = false, updatable = false)
-    @ToString.Exclude
-    @JsonIgnore
-    private ChatRoom chatRoom;
-
-    @Column()
-    private Long senderId;
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_sender"))
+    private User senderId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -47,14 +44,9 @@ public class ChatMessage {
     @Column(columnDefinition = "TEXT")
     private String fileUrl;
 
-    @Column()
-    private Long replyToId;
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(insertable = false, updatable = false)
-    @ToString.Exclude
-    @JsonIgnore
-    private ChatMessage replyTo;
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_reply_to"))
+    private ChatMessage replyToId;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -63,4 +55,9 @@ public class ChatMessage {
 
     @Column()
     private Instant deletedAt;
+
+    @PrePersist
+    void onCreate() {
+        if (createdAt == null) createdAt = Instant.now();
+    }
 }

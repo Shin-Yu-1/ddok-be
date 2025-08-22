@@ -1,5 +1,6 @@
 package goorm.ddok.chat.domain;
 
+import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -21,11 +22,17 @@ public class ChatRoomMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long roomId;
+    private Long id;
 
-    @Id
-    @Column(nullable = false)
-    private Long userId;
+    @MapsId("roomId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
+    private ChatRoom roomId;
+
+    @MapsId("userId")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_user"))
+    private User userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -34,12 +41,15 @@ public class ChatRoomMember {
     @Column(nullable = false)
     private Boolean muted = false;
 
-    @Column()
-    private Long lastReadMessageId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_last_read"))
+    private ChatMessage lastReadMessageId;
 
-    @CreatedDate
     @Column(nullable = false, updatable = false)
-    @Setter(AccessLevel.NONE)
     private Instant joinedAt;
 
+    @PrePersist
+    void onCreate() {
+        if (joinedAt == null) joinedAt = Instant.now();
+    }
 }
