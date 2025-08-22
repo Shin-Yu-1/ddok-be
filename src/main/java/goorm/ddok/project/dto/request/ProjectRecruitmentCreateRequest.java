@@ -26,7 +26,7 @@ import java.util.List;
           "title": "구지라지",
           "expectedStart": "2025-08-16",
           "expectedMonth": 3,
-          "mode": "offline",
+          "mode": "OFFLINE",
           "location": {
             "latitude": 37.5665,
             "longitude": 126.9780,
@@ -56,7 +56,8 @@ public class ProjectRecruitmentCreateRequest {
     private LocalDate expectedStart;
 
     @NotNull(message = "예상 진행 개월 수는 필수 입력값입니다.")
-    @Min(value = 1) @Max(value = 64)
+    @Min(value = 1, message = "예상 진행 개월 수는 최소 1개월 이상이어야 합니다.")
+    @Max(value = 64, message = "예상 진행 개월 수는 최대 64개월 이하이어야 합니다.")
     @Schema(description = "예상 진행 개월 수", example = "3", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer expectedMonth;
 
@@ -71,7 +72,8 @@ public class ProjectRecruitmentCreateRequest {
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")
-    @Min(1) @Max(7)
+    @Min(value = 1, message = "모집 정원은 최소 1명 이상이어야 합니다.")
+    @Max(value = 7, message = "모집 정원은 최대 7명 이하이어야 합니다.")
     @Schema(description = "모집 정원", example = "6", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer capacity;
 
