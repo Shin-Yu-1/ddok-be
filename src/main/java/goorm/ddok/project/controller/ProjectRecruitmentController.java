@@ -6,6 +6,7 @@ import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
 import goorm.ddok.project.dto.response.ProjectRecruitmentResponse;
 import goorm.ddok.project.service.ProjectRecruitmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,10 +28,17 @@ public class ProjectRecruitmentController {
 
     private final ProjectRecruitmentService projectRecruitmentService;
 
+    @Operation(
+            summary = "프로젝트 모집 글 생성",
+            description = "프로젝트 모집 글과 배너 이미지를 업로드합니다."
+    )
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "프로젝트 모집 글 생성", description = "프로젝트 모집 글을 생성합니다.")
     public ResponseEntity<ApiResponseDto<ProjectRecruitmentResponse>> createProject(
             @RequestPart("request") @Valid ProjectRecruitmentCreateRequest request,
+            @Parameter(
+                    description = "배너 이미지 파일 (선택). 허용 확장자: jpeg, png, webp / 최대 5MB",
+                    required = false
+            )
             @RequestPart(value = "bannerImage", required = false) MultipartFile bannerImage,
             @AuthenticationPrincipal CustomUserDetails user
     ) {
