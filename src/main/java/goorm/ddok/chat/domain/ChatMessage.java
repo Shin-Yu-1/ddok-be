@@ -36,12 +36,6 @@ public class ChatMessage {
     @Column()
     private Long senderId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(insertable = false, updatable = false)
-    @ToString.Exclude
-    @JsonIgnore
-    private User sender;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
