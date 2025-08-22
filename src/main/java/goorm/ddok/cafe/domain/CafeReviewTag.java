@@ -3,7 +3,7 @@ package goorm.ddok.cafe.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter @Builder
@@ -22,10 +22,10 @@ public class CafeReviewTag {
     private String name;
 
     @Column(name="created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @PrePersist
     void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
     }
 }

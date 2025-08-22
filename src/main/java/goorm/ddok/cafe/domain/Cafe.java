@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Entity
 @Getter @Builder
@@ -42,26 +42,26 @@ public class Cafe {
     private BigDecimal activityLongitude;
 
     @Column(name="created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
     @Column(name="updated_at")
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
 
     @Column(name="deleted_at")
-    private LocalDateTime deletedAt;
+    private Instant deletedAt;
 
     @PrePersist
     void prePersist() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
         this.updatedAt = this.createdAt;
     }
 
     @PreUpdate
     void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
+        this.updatedAt = Instant.now();
     }
 
     public void softDelete() {
-        this.deletedAt = LocalDateTime.now();
+        this.deletedAt = Instant.now();
     }
 }
