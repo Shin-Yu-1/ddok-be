@@ -36,8 +36,6 @@ public class ProjectRecruitment {
 
     /** 공고 제목 (2~30자, 필수) */
     @Column(nullable = false, length = 100)
-    @Size(min = 2, max = 30)
-    @NotBlank
     private String title;
 
     /** 팀 상태 : RECRUTING / ONGOING / CLOSED */
@@ -51,7 +49,6 @@ public class ProjectRecruitment {
 
     /** 예상 진행 개월 수 (최소 1개월, 최대 64개월) */
     @Column(nullable = false)
-    @Min(1) @Max(64)
     private int expectedMonths;
 
     /** 프로젝트 진행 방식 : ONLINE / OFFLINE */
@@ -92,19 +89,14 @@ public class ProjectRecruitment {
 
     /** 모집 정원 (1-7명) */
     @Column(nullable = false)
-    @Min(1)
-    @Max(7)
     private int capacity;
 
     /** 배너 이미지 URL (필수)*/
     @Column(nullable = false, length = 1024)
-    @NotBlank
     private String bannerImageUrl;
 
     /** 공고 상세 설명 (10-2000 자) */
-    @Column(nullable = false, columnDefinition = "TEXT")
-    @Size(min = 10, max = 2000)
-    @NotBlank
+    @Column(nullable = false, columnDefinition = "TEXT", length = 2000)
     private String contentMd;
 
     /** 생성 시각 (자동 입력) */
