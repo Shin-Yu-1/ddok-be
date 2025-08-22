@@ -26,11 +26,11 @@ public class CafeReviewQueryService {
 
     @Transactional(readOnly = true)
     public CafeReviewListResponse getCafeReviews(Long cafeId, int page, int size, String sort) {
-        // 1) 카페 존재 확인
+
         Cafe cafe = cafeRepository.findById(cafeId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.CAFE_NOT_FOUND));
 
-        // 2) 정렬 파라미터 → Pageable
+
         Sort sortSpec = switch (Optional.ofNullable(sort).orElse("recent")) {
             case "rating_desc" -> Sort.by(Sort.Order.desc("rating").ignoreCase());
             case "rating_asc"  -> Sort.by(Sort.Order.asc("rating").ignoreCase());
@@ -38,15 +38,15 @@ public class CafeReviewQueryService {
         };
         Pageable pageable = PageRequest.of(page, size, sortSpec);
 
-        // 3) 리뷰 페이지 조회 (user 조인 포함)
+
         Page<CafeReview> pageResult = reviewRepository.findPageActiveByCafeId(cafeId, pageable);
 
-        // 4) 현재 페이지의 리뷰 IDs
+
         List<Long> reviewIds = pageResult.getContent().stream()
                 .map(CafeReview::getId)
                 .toList();
 
-        // 5) 태그 이름 묶기 (reviewId → [tagName...])
+
         Map<Long, List<String>> tagMap = tagMapRepository.findTagNamesByReviewIds(reviewIds)
                 .stream()
                 .collect(Collectors.groupingBy(
@@ -54,7 +54,7 @@ public class CafeReviewQueryService {
                         Collectors.mapping(CafeReviewTagMapRepository.ReviewTagProjection::getTagName, Collectors.toList())
                 ));
 
-        // 6) 아이템 변환
+
         List<CafeReviewItemResponse> items = pageResult.getContent().stream()
                 .map(r -> new CafeReviewItemResponse(
                         r.getUser().getId(),
@@ -67,7 +67,7 @@ public class CafeReviewQueryService {
                 ))
                 .toList();
 
-        // 7) 페이지메타 + 상위 응답
+
         PageMetaResponse pagination = new PageMetaResponse(
                 pageResult.getNumber(),
                 pageResult.getSize(),

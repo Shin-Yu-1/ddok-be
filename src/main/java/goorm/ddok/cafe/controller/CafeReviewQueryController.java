@@ -21,7 +21,7 @@ public class CafeReviewQueryController {
             @PathVariable Long cafeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sort // optional: recent | rating_desc | rating_asc
+            @RequestParam(required = false) String sort
     ) {
         CafeReviewListResponse data = service.getCafeReviews(cafeId, page, size, sort);
 
