@@ -1,5 +1,6 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.project.domain.*;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +26,7 @@ public class ProjectRecruitmentService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final ProjectParticipantRepository participantRepository;
     private final ProjectBannerImageService projectBannerImageService;
+    private final FileService fileService;
 
     public ProjectRecruitmentResponse createProject(
             ProjectRecruitmentCreateRequest request,
@@ -33,9 +36,19 @@ public class ProjectRecruitmentService {
         User user = userDetails.getUser(); // 로그인 유저 엔티티
 
         // 1. 배너 이미지 업로드 기본값 처리
-        String bannerImageUrl = projectBannerImageService.generateBannerImageUrl(
+        String bannerImageUrl;
+
+        if (bannerImage != null && !bannerImage.isEmpty()) {
+            try {
+                bannerImageUrl = fileService.upload(bannerImage);
+            } catch (IOException e) {
+                throw new RuntimeException("배너 이미지 업로드 실패", e);
+            }
+        } else {
+            bannerImageUrl = projectBannerImageService.generateBannerImageUrl(
                     request.getTitle(), 1200, 600
-        );
+            );
+        }
 
         // 2. ProjectRecruitment 생성
         ProjectRecruitment recruitment = ProjectRecruitment.builder()
