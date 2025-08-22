@@ -25,27 +25,23 @@ public class CafeReviewQueryService {
     private final CafeReviewTagMapRepository tagMapRepository;
 
     @Transactional(readOnly = true)
-    public CafeReviewListResponse getCafeReviews(Long cafeId, int page, int size, String sort) {
+    public CafeReviewListResponse getCafeReviews(Long cafeId, int page, int size) {
 
         Cafe cafe = cafeRepository.findById(cafeId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.CAFE_NOT_FOUND));
 
 
-        Sort sortSpec = switch (Optional.ofNullable(sort).orElse("recent")) {
-            case "rating_desc" -> Sort.by(Sort.Order.desc("rating").ignoreCase());
-            case "rating_asc"  -> Sort.by(Sort.Order.asc("rating").ignoreCase());
-            default            -> Sort.by(Sort.Order.desc("createdAt")); // recent
-        };
+        Sort sortSpec = Sort.by(
+                Sort.Order.desc("createdAt"),
+                Sort.Order.desc("id")
+        );
         Pageable pageable = PageRequest.of(page, size, sortSpec);
 
-
         Page<CafeReview> pageResult = reviewRepository.findPageActiveByCafeId(cafeId, pageable);
-
 
         List<Long> reviewIds = pageResult.getContent().stream()
                 .map(CafeReview::getId)
                 .toList();
-
 
         Map<Long, List<String>> tagMap = tagMapRepository.findTagNamesByReviewIds(reviewIds)
                 .stream()
@@ -53,7 +49,6 @@ public class CafeReviewQueryService {
                         CafeReviewTagMapRepository.ReviewTagProjection::getReviewId,
                         Collectors.mapping(CafeReviewTagMapRepository.ReviewTagProjection::getTagName, Collectors.toList())
                 ));
-
 
         List<CafeReviewItemResponse> items = pageResult.getContent().stream()
                 .map(r -> new CafeReviewItemResponse(
@@ -66,7 +61,6 @@ public class CafeReviewQueryService {
                         r.getUpdatedAt()
                 ))
                 .toList();
-
 
         PageMetaResponse pagination = new PageMetaResponse(
                 pageResult.getNumber(),

@@ -20,10 +20,9 @@ public class CafeReviewQueryController {
     public ResponseEntity<?> getReviews(
             @PathVariable Long cafeId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String sort
+            @RequestParam(defaultValue = "10") int size
     ) {
-        CafeReviewListResponse data = service.getCafeReviews(cafeId, page, size, sort);
+        CafeReviewListResponse data = service.getCafeReviews(cafeId, page, size);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "카페 후기 리스트 조회에 성공하였습니다.", data));
     }
