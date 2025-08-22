@@ -17,7 +17,7 @@ import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import org.springframework.web.bind.annotation.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -45,7 +45,7 @@ public class AuthController {
     @Operation(
             summary = "회원가입",
             description = "사용자 회원가입을 수행합니다. 이메일 인증 메일이 발송됩니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = SignUpRequest.class),
@@ -90,7 +90,7 @@ public class AuthController {
     @Operation(
             summary = "이메일 중복 확인",
             description = "입력한 이메일로 가입 가능 여부를 확인합니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = EmailCheckRequest.class),
@@ -123,7 +123,7 @@ public class AuthController {
     @Operation(
             summary = "전화번호 인증 코드 발송",
             description = "입력한 전화번호로 6자리 인증번호를 발송합니다. (유효시간 초 단위 반환)",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PhoneVerificationRequest.class),
@@ -167,7 +167,7 @@ public class AuthController {
     @Operation(
             summary = "전화번호 인증번호 확인",
             description = "수신한 인증번호를 검증합니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PhoneVerifyCodeRequest.class),
@@ -235,7 +235,7 @@ public class AuthController {
     @Operation(
             summary = "로그인",
             description = "이메일/비밀번호로 로그인합니다. Access Token은 본문에, Refresh Token은 HttpOnly 쿠키로 반환됩니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = SignInRequest.class),
@@ -314,7 +314,7 @@ public class AuthController {
     @Operation(
             summary = "이메일(아이디) 찾기",
             description = "휴대폰 인증(코드 검증) 후 이름+전화번호로 가입 이메일을 조회합니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = FindEmailRequest.class),
@@ -344,7 +344,7 @@ public class AuthController {
     @Operation(
             summary = "비밀번호 변경 전 본인 인증",
             description = "이름/이메일/전화번호/인증코드 검증 후 재인증 토큰(reauthToken)을 발급합니다.",
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PasswordVerifyUserRequest.class),
@@ -386,7 +386,7 @@ public class AuthController {
                             description = "Bearer {reauthToken}",
                             examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
             },
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PasswordResetRequest.class),
@@ -451,7 +451,7 @@ public class AuthController {
             summary = "개인화 설정 생성",
             description = "대표/관심 포지션, 기술스택, 위치, 특성, 생년월일, 활동시간을 등록합니다.",
             security = @SecurityRequirement(name = "Authorization"),
-            requestBody = @RequestBody(
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
                             schema = @Schema(implementation = PreferenceRequest.class),
@@ -503,7 +503,7 @@ public class AuthController {
             @ApiResponse(responseCode = "404", description = "사용자 없음",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class)))
     })
-    @PostMapping("/preference")
+    @PostMapping("/preferences")
     public ResponseEntity<ApiResponseDto<PreferenceResponse>> createPreference(
             @AuthenticationPrincipal CustomUserDetails user,
             @Valid @RequestBody PreferenceRequest request
