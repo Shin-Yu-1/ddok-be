@@ -3,7 +3,6 @@ package goorm.ddok.project.dto.request;
 
 import goorm.ddok.project.domain.ProjectMode;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -12,6 +11,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Schema(
         name = "ProjectCreateRequest",
         description = "프로젝트 모집글 생성 요청 DTO",

@@ -119,7 +119,7 @@ public class ProjectRecruitment {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ProjectRecruitmentPosition> positions = new ArrayList<>();
+    private List<ProjectRecruitmentPosition> positions;
 
     /** 모집 성향 리스트 (1:N) */
     @OneToMany(
@@ -127,7 +127,7 @@ public class ProjectRecruitment {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ProjectRecruitmentTrait> traits = new ArrayList<>();
+    private List<ProjectRecruitmentTrait> traits;
 
     @PrePersist
     @PreUpdate
