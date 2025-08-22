@@ -52,7 +52,7 @@ public class EmailVerificationService {
     // 이메일 인증 요청 메일 발송
     public void sendVerificationEmail(String email, String code) {
 
-        String link = String.format("%s/api/auth/email/verify?code=%s", baseUrl, code);
+        String link = String.format("%s/api/auth/email/send-code?code=%s", baseUrl, code);
 
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
