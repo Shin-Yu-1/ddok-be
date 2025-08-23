@@ -3,7 +3,7 @@ package goorm.ddok.cafe.repository;
 import goorm.ddok.cafe.domain.Cafe;
 import goorm.ddok.cafe.domain.CafeReview;
 import goorm.ddok.member.domain.User;
-import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
