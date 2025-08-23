@@ -1,5 +1,6 @@
 package goorm.ddok.study.service;
 
+import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.study.domain.*;
@@ -22,7 +23,7 @@ public class StudyRecruitmentService {
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final StudyParticipantRepository participantRepository;
     private final StudyBannerImageService studyBannerImageService;
-    private final FileSevice fileService;
+    private final FileService fileService;
 
     public StudyRecruitmentCreateResponse createStudy(
             StudyRecruitmentCreateRequest request,
