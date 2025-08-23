@@ -1,5 +1,7 @@
 package goorm.ddok.study.service;
 
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +33,32 @@ public class StudyRecruitmentService {
             MultipartFile bannerImage,
             CustomUserDetails userDetails
     ) {
+        // 로그인 유저 검증
+        if (userDetails == null || userDetails.getUser() == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
         User user = userDetails.getUser();
+
+        // 시작일 검증 (과거 날짜 금지)
+        if (request.getExpectedStart().isBefore(LocalDate.now())) {
+            throw new GlobalException(ErrorCode.INVALID_START_DATE);
+        }
+
+        // 오프라인 모드인데 위치가 없거나 위/경도가 없는 경우
+        if (request.getMode() == StudyMode.OFFLINE) {
+            if (request.getLocation() == null
+                    || request.getLocation().getLatitude() == null
+                    || request.getLocation().getLongitude() == null) {
+                throw new GlobalException(ErrorCode.INVALID_LOCATION);
+            }
+        }
+
+        // 연령대 범위 검증
+        if (request.getPreferredAges() != null &&
+                request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+
 
         // 1. 배너 이미지 업로드 or 기본값
         String bannerImageUrl;
@@ -53,7 +81,7 @@ public class StudyRecruitmentService {
                 .teamStatus(TeamStatus.RECRUITING)
                 .startDate(request.getExpectedStart())
                 .expectedMonths(request.getExpectedMonth())
-                .mode(StudyMode.valueOf(request.getMode().toUpperCase()))
+                .mode(request.getMode())
                 .region1DepthName(resolveRegion1(request))
                 .region2DepthName(resolveRegion2(request))
                 .region3DepthName(resolveRegion3(request))
@@ -64,7 +92,7 @@ public class StudyRecruitmentService {
                 .ageMax(request.getPreferredAges() != null ? request.getPreferredAges().getAgeMax() : null)
                 .capacity(request.getCapacity())
                 .bannerImageUrl(bannerImageUrl)
-                .studyType(StudyType.valueOf(request.getStudyType().toUpperCase()))
+                .studyType(request.getStudyType())
                 .contentMd(request.getDetail())
                 .build();
 
@@ -81,7 +109,11 @@ public class StudyRecruitmentService {
         }
 
         // 4. 저장
-        studyRecruitmentRepository.save(study);
+        try {
+            studyRecruitmentRepository.save(study);
+        } catch (Exception e) {
+            throw new GlobalException(ErrorCode.STUDY_SAVE_FAILED);
+        }
 
         // 5. 리더 Participant 등록
         StudyParticipant leader = StudyParticipant.builder()
@@ -96,11 +128,11 @@ public class StudyRecruitmentService {
                 .studyId(study.getId())
                 .userId(user.getId())
                 .nickname(user.getNickname())
-                .teamStatus(study.getTeamStatus().name())
+                .teamStatus(study.getTeamStatus())
                 .title(study.getTitle())
                 .expectedStart(study.getStartDate())
                 .expectedMonth(study.getExpectedMonths())
-                .mode(study.getMode().name())
+                .mode(study.getMode())
                 .location(StudyRecruitmentCreateResponse.LocationDto.builder()
                         .latitude(study.getLatitude())
                         .longitude(study.getLongitude())
@@ -113,7 +145,7 @@ public class StudyRecruitmentService {
                 .capacity(study.getCapacity())
                 .bannerImageUrl(study.getBannerImageUrl())
                 .traits(study.getTraits().stream().map(StudyRecruitmentTrait::getTraitName).toList())
-                .studyType(study.getStudyType().name())
+                .studyType(study.getStudyType())
                 .detail(study.getContentMd())
                 .build();
     }
