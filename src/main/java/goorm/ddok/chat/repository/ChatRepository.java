@@ -1,0 +1,104 @@
+package goorm.ddok.chat.repository;
+
+import goorm.ddok.chat.domain.ChatMessage;
+import goorm.ddok.chat.domain.ChatRoom;
+import goorm.ddok.chat.domain.ChatRoomMember;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface ChatRepository {
+
+    // 사용자의 개인 채팅(1:1) 목록 조회
+    @Query("""
+        SELECT DISTINCT cr FROM ChatRoom cr
+        LEFT JOIN ChatRoomMember crm ON cr.id = crm.roomId.id
+        WHERE cr.roomType = 'PRIVATE'
+        AND (cr.privateAUserId.id = :userId OR cr.privateBUserId.id = :userId)
+        ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
+        """)
+    Page<ChatRoom> findPrivateChatsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    // 사용자의 그룹 채팅 목록 조회
+    @Query("""
+        SELECT DISTINCT cr FROM ChatRoom cr
+        INNER JOIN ChatRoomMember crm ON cr.id = crm.roomId.id
+        WHERE cr.roomType = 'GROUP'
+        AND crm.userId.id = :userId
+        ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
+        """)
+    Page<ChatRoom> findTeamChatsByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    // 사용자의 모든 채팅 목록에서 검색 (이름 기준)
+    @Query("""
+        SELECT DISTINCT cr FROM ChatRoom cr
+        LEFT JOIN ChatRoomMember crm ON cr.id = crm.roomId.id
+        WHERE (
+            (cr.roomType = 'PRIVATE' AND (cr.privateAUserId.id = :userId OR cr.privateBUserId.id = :userId)) OR
+            (cr.roomType = 'GROUP' AND crm.userId.id = :userId)
+        )
+        AND (
+            (:roomType IS NULL) OR
+            (:roomType = 'all') OR
+            (:roomType = 'private' AND cr.roomType = 'PRIVATE') OR
+            (:roomType = 'team' AND cr.roomType = 'GROUP')
+        )
+        AND (
+            LOWER(cr.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+            (:roomType = 'private' AND cr.roomType = 'PRIVATE' AND (
+                LOWER(cr.privateAUserId.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+                LOWER(cr.privateBUserId.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            ))
+        )
+        ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
+        """)
+    Page<ChatRoom> searchChatsByKeyword(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword,
+            @Param("roomType") String roomType,
+            Pageable pageable
+    );
+
+    // 특정 채팅방에 대한 사용자의 멤버십 조회
+    @Query("""
+        SELECT crm FROM ChatRoomMember crm
+        WHERE crm.roomId.id = :roomId AND crm.userId.id = :userId
+        """)
+    Optional<ChatRoomMember> findMembershipByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    // 특정 채팅방의 멤버 수 조회
+    @Query("""
+        SELECT COUNT(crm) FROM ChatRoomMember crm
+        WHERE crm.roomId.id = :roomId
+        """)
+    Long countMembersByRoomId(@Param("roomId") Long roomId);
+
+    // 특정 채팅방의 마지막 메시지 조회
+    @Query(value = """
+        SELECT * FROM chat_message cm
+        WHERE cm.room_id = :roomId
+        AND cm.deleted_at IS NULL
+        ORDER BY cm.created_at DESC
+        LIMIT 1
+        """, nativeQuery = true)
+    Optional<ChatMessage> findLastMessageByRoomId(@Param("roomId") Long roomId);
+
+    // 사용자의 특정 채팅방 읽지 않은 메시지 수 조회
+    @Query("""
+        SELECT COUNT(cm) FROM ChatMessage cm
+        LEFT JOIN ChatRoomMember crm ON crm.roomId.id = cm.roomId.id AND crm.userId.id = :userId
+        WHERE cm.roomId.id = :roomId
+        AND cm.deletedAt IS NULL
+        AND (
+            crm.lastReadMessageId IS NULL OR 
+            cm.id > crm.lastReadMessageId.id
+        )
+        AND cm.senderId.id != :userId
+        """)
+    Integer countUnreadMessagesByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+}
