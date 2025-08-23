@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +14,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 @Schema(
         name = "ProjectCreateRequest",
         description = "프로젝트 모집글 생성 요청 DTO",
@@ -94,6 +95,9 @@ public class ProjectRecruitmentCreateRequest {
     private String detail;
 
     @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     @Schema(name = "LocationDto", description = "오프라인 위치 정보")
     public static class LocationDto {
         @Schema(description = "위도", example = "37.5665")
@@ -107,6 +111,9 @@ public class ProjectRecruitmentCreateRequest {
     }
 
     @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     @Schema(name = "PreferredAgesDto", description = "선호 연령대")
     public static class PreferredAgesDto {
         @Schema(description = "최소 연령", example = "20")
