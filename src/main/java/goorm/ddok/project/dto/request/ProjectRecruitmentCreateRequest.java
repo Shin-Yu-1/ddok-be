@@ -6,7 +6,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.awt.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -117,9 +116,9 @@ public class ProjectRecruitmentCreateRequest {
     @Schema(name = "PreferredAgesDto", description = "선호 연령대")
     public static class PreferredAgesDto {
         @Schema(description = "최소 연령", example = "20")
-        private int ageMin;
+        private Integer ageMin;
 
         @Schema(description = "최대 연령", example = "30")
-        private int ageMax;
+        private Integer ageMax;
     }
 }
