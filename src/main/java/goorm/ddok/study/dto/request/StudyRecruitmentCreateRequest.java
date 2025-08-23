@@ -1,5 +1,7 @@
 package goorm.ddok.study.dto.request;
 
+import goorm.ddok.study.domain.StudyMode;
+import goorm.ddok.study.domain.StudyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -61,7 +63,7 @@ public class StudyRecruitmentCreateRequest {
 
     @NotNull(message = "스터디 진행 방식은 필수 입력값입니다.")
     @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String mode;
+    private StudyMode mode;
 
     @Schema(description = "스터디 진행 장소 (OFFLINE일 경우만 입력)")
     private LocationDto location;
@@ -78,9 +80,9 @@ public class StudyRecruitmentCreateRequest {
     @Schema(description = "모집 성향 리스트", example = "[\"정리의 신\", \"실행력 갓\", \"내향인\"]")
     private List<String> traits;
 
-    @NotBlank(message = "스터디 유형은 필수 입력값입니다.")
+    @NotNull(message = "스터디 유형은 필수 입력값입니다.")
     @Schema(description = "스터디 유형 (ENUM)", example = "JOB_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED)
-    private String studyType;
+    private StudyType studyType;
 
     @NotBlank(message = "상세 설명은 필수 입력값입니다.")
     @Size(min = 10, max = 2000, message = "상세 설명은 10자 이상 2000자 이하여야 합니다.")
@@ -104,9 +106,9 @@ public class StudyRecruitmentCreateRequest {
     @Schema(name = "PreferredAgesDto", description = "선호 연령대")
     public static class PreferredAgesDto {
         @Schema(description = "최소 연령", example = "20")
-        private int ageMin;
+        private Integer ageMin;
 
         @Schema(description = "최대 연령", example = "30")
-        private int ageMax;
+        private Integer ageMax;
     }
 }
