@@ -18,6 +18,7 @@ public enum ErrorCode {
     INVALID_CAPACITY(HttpStatus.BAD_REQUEST, "모집 인원은 1명 이상이어야 합니다."),
     INVALID_AGE_RANGE(HttpStatus.BAD_REQUEST, "선호 연령 범위가 올바르지 않습니다."),
     INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
+    INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
 
 
 
