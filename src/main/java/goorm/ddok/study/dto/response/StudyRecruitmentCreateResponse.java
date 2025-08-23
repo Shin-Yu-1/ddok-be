@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -91,25 +92,27 @@ public class StudyRecruitmentCreateResponse {
     private String detail;
 
     @Getter
+    @Builder
     @Schema(name = "LocationDto", description = "오프라인 위치 정보")
     public static class LocationDto {
         @Schema(description = "위도", example = "37.5665")
-        private Double latitude;
+        private BigDecimal latitude;
 
         @Schema(description = "경도", example = "126.9780")
-        private Double longitude;
+        private BigDecimal longitude;
 
         @Schema(description = "주소", example = "서울특별시 강남구 테헤란로…")
         private String address;
     }
 
     @Getter
+    @Builder
     @Schema(name = "PreferredAgesDto", description = "선호 연령대")
     public static class PreferredAgesDto {
         @Schema(description = "최소 연령", example = "20")
-        private Integer ageMin;
+        private int ageMin;
 
         @Schema(description = "최대 연령", example = "30")
-        private Integer ageMax;
+        private int ageMax;
     }
 }
