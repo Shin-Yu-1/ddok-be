@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,14 +58,17 @@ public class ProjectRecruitmentService {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
-        // 리도 포지션이 모집 포지션에 없는 경우
+        // 리더 포지션이 모집 포지션에 없는 경우
         if (!request.getPositions().contains(request.getLeaderPosition())) {
             throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
         }
 
-        if (request.getCapacity() <= 0) {
-            throw new GlobalException(ErrorCode.INVALID_CAPACITY);
+        // 예상 시작일 검증 (과거 날짜 금지)
+        if (request.getExpectedStart().isBefore(LocalDate.now())) {
+            throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
+
+
 
         // 1. 배너 이미지 업로드 기본값 처리
         String bannerImageUrl;
@@ -109,7 +113,7 @@ public class ProjectRecruitmentService {
                         .projectRecruitment(recruitment)
                         .positionName(pos)
                         .build())
-                .collect(Collectors.toList());
+                .toList();
 
         List<ProjectRecruitmentTrait> traits = request.getTraits() != null
                 ? request.getTraits().stream()
@@ -117,7 +121,7 @@ public class ProjectRecruitmentService {
                         .projectRecruitment(recruitment)
                         .traitName(tr)
                         .build())
-                .collect(Collectors.toList())
+                .toList()
                 : List.of();
 
         recruitment.getPositions().addAll(positions);
