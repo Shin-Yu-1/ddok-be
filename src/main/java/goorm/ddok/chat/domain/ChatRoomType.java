@@ -1,3 +1,3 @@
 package goorm.ddok.chat.domain;
 
-public enum ChatRoomType { PRIVATE, TEAM }
+public enum ChatRoomType { PRIVATE, GROUP }
