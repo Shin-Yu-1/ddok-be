@@ -120,10 +120,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new GlobalException(ErrorCode.WRONG_PASSWORD);
         }
-
-        if (!user.isEmailVerified()) {
-            emailVerificationService.handleEmailVerification(user.getEmail());
-        }
+// 아직 이메일할 필요가 없으니까 이건 일단 빼놓고
+//        if (!user.isEmailVerified()) {
+//            emailVerificationService.handleEmailVerification(user.getEmail());
+//        }
 
         String accessToken = jwtTokenProvider.createToken(user.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
