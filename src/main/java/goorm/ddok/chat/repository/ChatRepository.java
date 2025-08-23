@@ -102,4 +102,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
         AND cm.senderId.id != :userId
         """)
     Integer countUnreadMessagesByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
+
+    @Query("select u.id from User u where u.email = :email")
+    Optional<Long> findIdByEmail(@Param("email") String email);
 }
