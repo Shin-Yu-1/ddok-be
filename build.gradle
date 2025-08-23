@@ -75,6 +75,7 @@ dependencies {
 
     // Redis
     implementation 'io.lettuce:lettuce-core'
+    implementation 'org.springframework.session:spring-session-data-redis'
 
     // Sentry (에러 모니터링)
     implementation 'io.sentry:sentry:8.17.0'

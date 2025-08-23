@@ -3,6 +3,7 @@ package goorm.ddok.chat.repository;
 import goorm.ddok.chat.domain.ChatMessage;
 import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
+import goorm.ddok.chat.domain.ChatRoomType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,33 +36,30 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
         """)
     Page<ChatRoom> findTeamChatsByUserId(@Param("userId") Long userId, Pageable pageable);
 
-    // 사용자의 모든 채팅 목록에서 검색 (이름 기준)
+    // 사용자의 모든 채팅 목록에서 검색 (채팅방 이름, 닉네임 기준)
     @Query("""
-        SELECT DISTINCT cr FROM ChatRoom cr
-        LEFT JOIN ChatRoomMember crm ON cr.id = crm.roomId.id
-        WHERE (
-            (cr.roomType = 'PRIVATE' AND (cr.privateAUserId.id = :userId OR cr.privateBUserId.id = :userId)) OR
-            (cr.roomType = 'GROUP' AND crm.userId.id = :userId)
-        )
-        AND (
-            (:roomType IS NULL) OR
-            (:roomType = 'all') OR
-            (:roomType = 'private' AND cr.roomType = 'PRIVATE') OR
-            (:roomType = 'team' AND cr.roomType = 'GROUP')
-        )
-        AND (
-            LOWER(cr.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-            (:roomType = 'private' AND cr.roomType = 'PRIVATE' AND (
-                LOWER(cr.privateAUserId.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
-                LOWER(cr.privateBUserId.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
-            ))
-        )
-        ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
-        """)
+    SELECT DISTINCT cr FROM ChatRoom cr
+    LEFT JOIN ChatRoomMember crm ON cr.id = crm.roomId.id
+    LEFT JOIN cr.privateAUserId ua
+    LEFT JOIN cr.privateBUserId ub
+    WHERE (
+        (cr.roomType = 'PRIVATE' AND (cr.privateAUserId.id = :userId OR cr.privateBUserId.id = :userId)) OR
+        (cr.roomType = 'GROUP' AND crm.userId.id = :userId)
+    )
+    AND cr.roomType = :roomType
+    AND (
+        LOWER(cr.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+        (cr.roomType = 'PRIVATE' AND (
+            LOWER(ua.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+            LOWER(ub.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        ))
+    )
+    ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
+    """)
     Page<ChatRoom> searchChatsByKeyword(
             @Param("userId") Long userId,
             @Param("keyword") String keyword,
-            @Param("roomType") String roomType,
+            @Param("roomType") ChatRoomType roomType,
             Pageable pageable
     );
 
