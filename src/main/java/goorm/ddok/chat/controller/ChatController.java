@@ -39,9 +39,9 @@ public class ChatController {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Long userId = Long.valueOf(authentication.getName());
+        String email = authentication.getName();
 
-        ChatListResponseDto response = chatService.getPrivateChats(userId, pageable);
+        ChatListResponseDto response = chatService.getPrivateChats(email, pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(
                 200,
@@ -62,9 +62,9 @@ public class ChatController {
         }
 
         Pageable pageable = PageRequest.of(page, size);
-        Long userId = Long.valueOf(authentication.getName());
+        String email = authentication.getName();
 
-        ChatListResponseDto response = chatService.getTeamChats(userId, pageable);
+        ChatListResponseDto response = chatService.getTeamChats(email, pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(
                 200,
