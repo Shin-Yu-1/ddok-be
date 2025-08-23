@@ -24,13 +24,13 @@ public class ChatMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @MapsId("roomId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
+    @JoinColumn(name = "room_id", foreignKey = @ForeignKey(name = "fk_chat_message_room"))
     private ChatRoom roomId;
 
+    // 2. JoinColumn에 name 속성 추가
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_sender"))
+    @JoinColumn(name = "sender_id", foreignKey = @ForeignKey(name = "fk_chat_message_sender"))
     private User senderId;
 
     @Enumerated(EnumType.STRING)
@@ -45,7 +45,7 @@ public class ChatMessage {
     private String fileUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_reply_to"))
+    @JoinColumn(name = "reply_to_id", foreignKey = @ForeignKey(name = "fk_chat_message_reply_to"))
     private ChatMessage replyToId;
 
     @CreatedDate

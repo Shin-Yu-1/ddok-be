@@ -16,7 +16,6 @@ import java.time.Instant;
 @Entity
 @Table(name = "chat_room_member",
         indexes = { @Index(name = "idx_chat_member_user", columnList = "user_id") })
-@IdClass(ChatRoomMember.class)
 @EntityListeners(AuditingEntityListener.class)
 public class ChatRoomMember {
 
@@ -24,14 +23,13 @@ public class ChatRoomMember {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @MapsId("roomId")
+    // @MapsId와 @IdClass 제거하고 일반적인 @ManyToOne 관계로 변경
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
+    @JoinColumn(name = "room_id", foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
     private ChatRoom roomId;
 
-    @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_user"))
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_chat_room_member_user"))
     private User userId;
 
     @Enumerated(EnumType.STRING)
@@ -42,7 +40,7 @@ public class ChatRoomMember {
     private Boolean muted = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_last_read"))
+    @JoinColumn(name = "last_read_message_id", foreignKey = @ForeignKey(name = "fk_chat_room_member_last_read"))
     private ChatMessage lastReadMessageId;
 
     @Column(nullable = false, updatable = false)

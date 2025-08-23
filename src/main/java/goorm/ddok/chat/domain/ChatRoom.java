@@ -32,25 +32,25 @@ public class ChatRoom {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private  ChatRoomType roomType;
+    private ChatRoomType roomType;
 
     @Column()
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_owner_user"))
+    @JoinColumn(name = "owner_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_owner_user"))
     @ToString.Exclude
     @JsonIgnore
     private User ownerUserId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_private_a_user"))
+    @JoinColumn(name = "private_a_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_private_a_user"))
     @ToString.Exclude
     @JsonIgnore
     private User privateAUserId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_private_b_user"))
+    @JoinColumn(name = "private_b_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_private_b_user"))
     @ToString.Exclude
     @JsonIgnore
     private User privateBUserId;
