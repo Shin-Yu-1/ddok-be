@@ -1,5 +1,8 @@
 package goorm.ddok.study.dto.response;
 
+import goorm.ddok.study.domain.StudyMode;
+import goorm.ddok.study.domain.StudyType;
+import goorm.ddok.study.domain.TeamStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -56,7 +59,7 @@ public class StudyRecruitmentCreateResponse {
     private String nickname;
 
     @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "RECRUITING")
-    private String teamStatus;
+    private TeamStatus teamStatus;
 
     @Schema(description = "스터디 제목", example = "구지라지")
     private String title;
@@ -68,7 +71,7 @@ public class StudyRecruitmentCreateResponse {
     private Integer expectedMonth;
 
     @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE")
-    private String mode;
+    private StudyMode mode;
 
     @Schema(description = "스터디 진행 장소 (OFFLINE일 경우만 존재)")
     private LocationDto location;
@@ -86,7 +89,7 @@ public class StudyRecruitmentCreateResponse {
     private List<String> traits;
 
     @Schema(description = "스터디 유형 (ENUM)", example = "JOB_INTERVIEW")
-    private String studyType;
+    private StudyType studyType;
 
     @Schema(description = "상세 설명 (Markdown)", example = "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?")
     private String detail;
@@ -110,9 +113,9 @@ public class StudyRecruitmentCreateResponse {
     @Schema(name = "PreferredAgesDto", description = "선호 연령대")
     public static class PreferredAgesDto {
         @Schema(description = "최소 연령", example = "20")
-        private int ageMin;
+        private Integer ageMin;
 
         @Schema(description = "최대 연령", example = "30")
-        private int ageMax;
+        private Integer ageMax;
     }
 }
