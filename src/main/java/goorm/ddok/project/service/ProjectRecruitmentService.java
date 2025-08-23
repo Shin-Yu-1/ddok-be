@@ -84,7 +84,7 @@ public class ProjectRecruitmentService {
         ProjectRecruitment recruitment = ProjectRecruitment.builder()
                 .user(user)
                 .title(request.getTitle())
-                .teamStatus(TeamStatus.RECRUTING)
+                .teamStatus(TeamStatus.RECRUITING)
                 .startDate(request.getExpectedStart())
                 .expectedMonths(request.getExpectedMonth())
                 .projectMode(request.getMode())
