@@ -5,6 +5,7 @@ import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface ChatRepository {
+public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
     // 사용자의 개인 채팅(1:1) 목록 조회
     @Query("""
