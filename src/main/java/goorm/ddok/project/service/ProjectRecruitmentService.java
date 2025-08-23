@@ -1,5 +1,7 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
@@ -33,16 +35,44 @@ public class ProjectRecruitmentService {
             MultipartFile bannerImage,
             CustomUserDetails userDetails
     ) {
+        // 로그인 유저 검증
+        if (userDetails == null || userDetails.getUser() == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
         User user = userDetails.getUser(); // 로그인 유저 엔티티
+
+        // 오프라인 모드인데 위치가 없거나 위/경도가 없는 경우
+        if (request.getMode() == ProjectMode.OFFLINE){
+            if(request.getLocation() == null
+                    || request.getLocation().getLatitude() == null
+                    || request.getLocation().getLongitude() ==null) {
+                throw new GlobalException(ErrorCode.INVALID_LOCATION);
+            }
+        }
+
+        // 연령대 범위 검증
+        if(request.getPreferredAges() != null &&
+            request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+
+        // 리도 포지션이 모집 포지션에 없는 경우
+        if (!request.getPositions().contains(request.getLeaderPosition())) {
+            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
+        }
+
+        if (request.getCapacity() <= 0) {
+            throw new GlobalException(ErrorCode.INVALID_CAPACITY);
+        }
 
         // 1. 배너 이미지 업로드 기본값 처리
         String bannerImageUrl;
-
         if (bannerImage != null && !bannerImage.isEmpty()) {
             try {
                 bannerImageUrl = fileService.upload(bannerImage);
-            } catch (IOException e) {
-                throw new RuntimeException("배너 이미지 업로드 실패", e);
+            } catch (IOException e) {   // 배너 이미지 업로드 실패
+                throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
             }
         } else {
             bannerImageUrl = projectBannerImageService.generateBannerImageUrl(
@@ -94,14 +124,18 @@ public class ProjectRecruitmentService {
         recruitment.getTraits().addAll(traits);
 
         // 4. 저장
-        projectRecruitmentRepository.save(recruitment);
+        try {
+            projectRecruitmentRepository.save(recruitment);
+        } catch (Exception e) {
+            throw new GlobalException(ErrorCode.PROJECT_SAVE_FAILED);
+        }
 
         // 5. 리더 Participant 등록
         //    leaderPosition 이름 찾아서 매핑
         ProjectRecruitmentPosition leaderPos = positions.stream()
                 .filter(p -> p.getPositionName().equals(request.getLeaderPosition()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("리더 포지션이 모집 포지션에 존재하지 않습니다."));
+                .orElseThrow(() -> new GlobalException(ErrorCode.INVALID_LEADER_POSITION));
 
         ProjectParticipant leader = ProjectParticipant.builder()
                 .projectRecruitment(recruitment)
