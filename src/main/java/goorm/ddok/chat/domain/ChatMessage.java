@@ -1,6 +1,5 @@
 package goorm.ddok.chat.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
