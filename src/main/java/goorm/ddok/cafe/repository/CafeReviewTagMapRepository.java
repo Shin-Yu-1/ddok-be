@@ -13,6 +13,24 @@ public interface CafeReviewTagMapRepository extends JpaRepository<CafeReviewTagM
     List<CafeReviewTagMap> findAllByReview(CafeReview review);
     List<CafeReviewTagMap> findAllByTag(CafeReviewTag tag);
 
+
+    interface TagCountProjection {
+        String getTagName();
+        long getTagCount();
+    }
+
+    @Query("""
+        select t.name as tagName, count(m.id) as tagCount
+        from CafeReviewTagMap m
+          join m.review r
+          join m.tag t
+        where r.cafe.id = :cafeId
+          and r.status = goorm.ddok.cafe.domain.CafeReviewStatus.ACTIVE
+          and r.deletedAt is null
+        group by t.name
+        order by count(m.id) desc, t.name asc
+        """)
+    List<TagCountProjection> countTagsByCafeId(Long cafeId);
     interface ReviewTagProjection {
         Long getReviewId();
         String getTagName();

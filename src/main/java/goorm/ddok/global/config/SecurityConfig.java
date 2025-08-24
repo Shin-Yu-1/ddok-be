@@ -87,7 +87,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/swagger-resources/**"),
                                 new AntPathRequestMatcher("/webjars/**"),
                                 new AntPathRequestMatcher("/h2-console/**"),
-                                new AntPathRequestMatcher("/api/auth/**")
+                                new AntPathRequestMatcher("/api/auth/**"),
+                                new AntPathRequestMatcher("/api/map/**")
                         ).permitAll()
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
