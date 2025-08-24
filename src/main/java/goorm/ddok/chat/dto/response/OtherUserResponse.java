@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "간단한 사용자 정보")
-public class UserSimpleDto {
+@Schema(description = "상대방 사용자 정보")
+public class OtherUserResponse {
+
     @Schema(description = "사용자 ID")
     private Long id;
 

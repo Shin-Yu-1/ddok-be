@@ -14,7 +14,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "마지막 메세지 정보")
-public class LastMessageDto {
+public class LastMessageResponse {
 
     @Schema(description = "메시지 ID")
     private Long messageId;

@@ -13,11 +13,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "ㅊㅐ팅 목록 응답")
-public class ChatListResponseDto {
+public class ChatListResponseResponse {
 
     @Schema(description = "채팅방 목록")
-    private List<ChatRoomDto> chats;
+    private List<ChatRoomResponse> chats;
 
     @Schema(description = "페이징 정보")
-    private PaginationDto pagination;
+    private PaginationResponse pagination;
 }

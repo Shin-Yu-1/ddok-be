@@ -10,9 +10,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "상대방 사용자 정보")
-public class OtherUserDto {
-
+@Schema(description = "간단한 사용자 정보")
+public class UserSimpleResponse {
     @Schema(description = "사용자 ID")
     private Long id;
 
@@ -21,7 +20,4 @@ public class OtherUserDto {
 
     @Schema(description = "프로필 이미지 URL")
     private String profileImage;
-
-    @Schema(description = "음소거 여부")
-    private Boolean muted;
 }

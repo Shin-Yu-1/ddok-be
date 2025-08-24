@@ -17,7 +17,7 @@ import java.time.Instant;
 @AllArgsConstructor
 @Schema(description = "채팅방 정보")
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ChatRoomDto {
+public class ChatRoomResponse {
 
     @Schema(description = "채팅방 ID", example = "1")
     private Long roomId;
@@ -38,16 +38,13 @@ public class ChatRoomDto {
     private ChatMemberRole myRole;
 
     @Schema(description = "방장 정보 (그룹 채팅만)")
-    private UserSimpleDto owner;
+    private UserSimpleResponse owner;
 
     @Schema(description = "상대방 정보 (개인 채팅만)")
-    private OtherUserDto otherUser;
+    private OtherUserResponse otherUser;
 
     @Schema(description = "마지막 메시지")
-    private LastMessageDto lastMessage;
-
-    @Schema(description = "읽지 않은 메시지 수")
-    private Integer unreadCount;
+    private LastMessageResponse lastMessage;
 
     @Schema(description = "마지막 업데이트 시간")
     private Instant updatedAt;

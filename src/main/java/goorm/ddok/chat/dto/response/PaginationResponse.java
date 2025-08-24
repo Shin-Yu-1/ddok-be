@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "페이징 정보")
-public class PaginationDto {
+public class PaginationResponse {
 
     @Schema(description = "현재 페이지")
     private Integer currentPage;
