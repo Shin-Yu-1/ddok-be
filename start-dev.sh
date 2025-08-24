@@ -19,12 +19,19 @@ fi
 
 echo "🧱 Redis 컨테이너 실행 중..."
 docker-compose up -d redis
-
 if [ $? -ne 0 ]; then
   echo "❌ Redis 실행 실패. 도커 설치 상태나 포트를 확인하세요."
   exit 1
 fi
-
 echo "✅ Redis 실행 완료."
+
+echo "🔎 Elasticsearch 컨테이너 실행 중..."
+docker-compose up -d elasticsearch
+if [ $? -ne 0 ]; then
+  echo "❌ Elasticsearch 실행 실패. 도커 설치 상태나 포트를 확인하세요."
+  exit 1
+fi
+echo "✅ Elasticsearch 실행 완료."
+
 echo "🚀 Spring Boot 서버 실행 중..."
 ./gradlew bootRun
