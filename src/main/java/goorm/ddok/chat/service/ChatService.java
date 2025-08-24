@@ -1,9 +1,11 @@
 package goorm.ddok.chat.service;
 
 import goorm.ddok.chat.domain.ChatRoom;
+import goorm.ddok.chat.domain.ChatRoomMember;
 import goorm.ddok.chat.domain.ChatRoomType;
 import goorm.ddok.chat.dto.response.*;
 import goorm.ddok.chat.repository.ChatRepository;
+import goorm.ddok.chat.repository.ChatRoomMemberRepository;
 import goorm.ddok.chat.util.ChatMapper;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -25,118 +27,130 @@ import java.util.stream.Collectors;
 public class ChatService {
 
     private final ChatRepository chatRepository;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final UserRepository userRepository;
     private final ChatMapper chatMapper;
 
 
     // 1:1 채팅 목록 조회
-    public ChatListResponseDto getPrivateChats(String email, Pageable pageable) {
-
-        Long userId = userRepository.findByEmail(email).orElseThrow(RuntimeException::new).getId();
-
-        if (userId == null) {
-            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
-        }
+    public ChatListResponseResponse getPrivateChats(String email, Pageable pageable) {
+        Long userId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
+                .getId();
 
         Page<ChatRoom> chatRoomPage = chatRepository.findPrivateChatsByUserId(userId, pageable);
 
-        List<ChatRoomDto> chatRoomDtos = chatRoomPage.getContent().stream()
+        List<ChatRoomResponse> chatRoomDtos = chatRoomPage.getContent().stream()
                 .map(chatRoom -> chatMapper.toChatRoomDto(chatRoom, userId))
                 .collect(Collectors.toList());
 
-        PaginationDto pagination = PaginationDto.builder()
+        PaginationResponse pagination = PaginationResponse.builder()
                 .currentPage(chatRoomPage.getNumber())
                 .pageSize(chatRoomPage.getSize())
                 .totalPages(chatRoomPage.getTotalPages())
                 .totalItems(chatRoomPage.getTotalElements())
                 .build();
 
-        return ChatListResponseDto.builder()
+        return ChatListResponseResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
     // 팀 채팅 목록 조회
-    public ChatListResponseDto getTeamChats(String email, Pageable pageable) {
+    public ChatListResponseResponse getTeamChats(String email, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(RuntimeException::new).getId();
-
-        if (userId == null) {
-            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
-        }
+        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
         Page<ChatRoom> chatRoomPage = chatRepository.findTeamChatsByUserId(userId, pageable);
 
-        List<ChatRoomDto> chatRoomDtos = chatRoomPage.getContent().stream()
+        List<ChatRoomResponse> chatRoomDtos = chatRoomPage.getContent().stream()
                 .map(chatRoom -> chatMapper.toChatRoomDto(chatRoom, userId))
                 .collect(Collectors.toList());
 
-        PaginationDto pagination = PaginationDto.builder()
+        PaginationResponse pagination = PaginationResponse.builder()
                 .currentPage(chatRoomPage.getNumber())
                 .pageSize(chatRoomPage.getSize())
                 .totalPages(chatRoomPage.getTotalPages())
                 .totalItems(chatRoomPage.getTotalElements())
                 .build();
 
-        return ChatListResponseDto.builder()
+        return ChatListResponseResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
     // 채팅 검색 - 채팅방 이름, 팀원 닉네임으로 검색
-    public ChatListResponseDto searchPrivateChats(String email, String search, Pageable pageable) {
+    public ChatListResponseResponse searchPrivateChats(String email, String search, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(RuntimeException::new).getId();
-
-        if (userId == null) {
-            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
-        }
+        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
         Page<ChatRoom> chatRoomPage = chatRepository.searchChatsByKeyword(userId, search.trim(), ChatRoomType.PRIVATE, pageable);
 
-        List<ChatRoomDto> chatRoomDtos = chatRoomPage.getContent().stream()
+        List<ChatRoomResponse> chatRoomDtos = chatRoomPage.getContent().stream()
                 .map(chatRoom -> chatMapper.toChatRoomDto(chatRoom, userId))
                 .collect(Collectors.toList());
 
-        PaginationDto pagination = PaginationDto.builder()
+        PaginationResponse pagination = PaginationResponse.builder()
                 .currentPage(chatRoomPage.getNumber())
                 .pageSize(chatRoomPage.getSize())
                 .totalPages(chatRoomPage.getTotalPages())
                 .totalItems(chatRoomPage.getTotalElements())
                 .build();
 
-        return ChatListResponseDto.builder()
+        return ChatListResponseResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
-    public ChatListResponseDto searchTeamChats(String email, String search, Pageable pageable) {
+    public ChatListResponseResponse searchTeamChats(String email, String search, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(RuntimeException::new).getId();
-
-        if (userId == null) {
-            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
-        }
+        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
         Page<ChatRoom> chatRoomPage = chatRepository.searchChatsByKeyword(userId, search.trim(), ChatRoomType.GROUP, pageable);
 
-        List<ChatRoomDto> chatRoomDtos = chatRoomPage.getContent().stream()
+        List<ChatRoomResponse> chatRoomDtos = chatRoomPage.getContent().stream()
                 .map(chatRoom -> chatMapper.toChatRoomDto(chatRoom, userId))
                 .collect(Collectors.toList());
 
-        PaginationDto pagination = PaginationDto.builder()
+        PaginationResponse pagination = PaginationResponse.builder()
                 .currentPage(chatRoomPage.getNumber())
                 .pageSize(chatRoomPage.getSize())
                 .totalPages(chatRoomPage.getTotalPages())
                 .totalItems(chatRoomPage.getTotalElements())
                 .build();
 
-        return ChatListResponseDto.builder()
+        return ChatListResponseResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
+                .build();
+    }
+
+    public ChatMembersResponse getRoomMembers(Long roomID, String email) {
+
+        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+
+        List<ChatRoomMember> roomMemberList = chatRoomMemberRepository.findAllByRoomIdWithUser(roomID);
+
+        List<ChatMembersResponse.Member> members = roomMemberList.stream()
+                .map(roomMember -> ChatMembersResponse.Member.builder()
+                        .userId(roomMember.getUserId().getId())
+                        .nickname(roomMember.getUserId().getNickname())
+                        .profileImage(roomMember.getUserId().getProfileImageUrl())
+                        .role(String.valueOf(roomMember.getRole()))
+                        .joinedAt(roomMember.getCreatedAt())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ChatMembersResponse.builder()
+                .members(members)
+                .totalCount(members.size())
                 .build();
     }
 }
