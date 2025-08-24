@@ -1,16 +1,20 @@
 package goorm.ddok.chat.controller;
 
 
+import goorm.ddok.chat.dto.request.ChatMaessageRequest;
 import goorm.ddok.chat.dto.response.ChatListResponseResponse;
 import goorm.ddok.chat.dto.response.ChatMembersResponse;
+import goorm.ddok.chat.dto.response.ChatMessageResponse;
 import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.response.ApiResponseDto;
+import goorm.ddok.member.dto.request.SignUpRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -120,6 +124,34 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponseDto.of(
                 200,
                 "채팅방 인원 조회 성공",
+                response
+        ));
+    }
+
+
+    @PostMapping("/{roomId}/messages")
+    @Operation(
+            summary = "채팅 메세지 전송",
+            description = "roomId로 채팅 내용을 저장합니다."
+    )
+    public ResponseEntity<ApiResponseDto<ChatMessageResponse>> sendMessage(
+            @Parameter(
+                    description = "채팅방 ID",
+                    example = "1",
+                    required = true,
+                    in = ParameterIn.PATH  // 이 부분이 중요!
+            )
+            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            @Valid @RequestBody ChatMaessageRequest request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        ChatMessageResponse response = chatService.sendMessage(email, roomId, request);
+
+        return ResponseEntity.ok(ApiResponseDto.of(
+                200,
+                "메시지 전송 성공",
                 response
         ));
     }
