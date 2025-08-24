@@ -16,7 +16,7 @@ import java.time.Instant;
 @Builder
 @Entity
 @Table(name = "chat_message",
-        indexes = {@Index(name = "idx_chat_message_room_created", columnList = "room_id, created_at")})
+        indexes = {@Index(columnList = "room_id, created_at")})
 @EntityListeners(AuditingEntityListener.class)
 public class ChatMessage {
 
@@ -25,12 +25,12 @@ public class ChatMessage {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "room_id", foreignKey = @ForeignKey(name = "fk_chat_message_room"))
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_room"))
     private ChatRoom roomId;
 
     // 2. JoinColumn에 name 속성 추가
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", foreignKey = @ForeignKey(name = "fk_chat_message_sender"))
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_sender"))
     private User senderId;
 
     @Enumerated(EnumType.STRING)
@@ -45,7 +45,7 @@ public class ChatMessage {
     private String fileUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "reply_to_id", foreignKey = @ForeignKey(name = "fk_chat_message_reply_to"))
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_message_reply_to"))
     private ChatMessage replyToId;
 
     @CreatedDate

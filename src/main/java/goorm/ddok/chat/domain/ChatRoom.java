@@ -4,19 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.Check;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
 import java.time.Instant;
 
-@Check(constraints = """
-    (room_type = 'PRIVATE' AND private_a_user_id IS NOT NULL AND private_b_user_id IS NOT NULL
-     AND private_a_user_id <> private_b_user_id AND owner_user_id IS NULL)
-    OR
-    (room_type = 'GROUP' AND owner_user_id IS NOT NULL
-     AND private_a_user_id IS NULL AND private_b_user_id IS NULL)
-""")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -38,22 +30,10 @@ public class ChatRoom {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "owner_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_owner_user"))
+    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_owner_user"))
     @ToString.Exclude
     @JsonIgnore
     private User ownerUserId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "private_a_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_private_a_user"))
-    @ToString.Exclude
-    @JsonIgnore
-    private User privateAUserId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(name = "private_b_user_id", foreignKey = @ForeignKey(name = "fk_chat_room_private_b_user"))
-    @ToString.Exclude
-    @JsonIgnore
-    private User privateBUserId;
 
     @Column()
     private Instant lastMessageAt;
@@ -67,6 +47,9 @@ public class ChatRoom {
     @Column(nullable = false)
     @Setter(AccessLevel.NONE)
     private Instant updatedAt;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
 
     @PrePersist
     void onCreate() {
