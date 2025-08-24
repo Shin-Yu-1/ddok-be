@@ -1,25 +1,22 @@
 package goorm.ddok.chat.controller;
 
 
-import goorm.ddok.chat.dto.response.ChatListResponseDto;
+import goorm.ddok.chat.dto.response.ChatListResponseResponse;
+import goorm.ddok.chat.dto.response.ChatMembersResponse;
 import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.response.ApiResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -31,7 +28,7 @@ public class ChatController {
 
     @GetMapping("/private")
     @Operation(summary = "개인 채팅 목록 조회", description = "사용자의 1:1 개인 채팅 목록을 조회합니다.")
-    public ResponseEntity<ApiResponseDto<ChatListResponseDto>> getPrivateChats(
+    public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getPrivateChats(
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
@@ -48,9 +45,7 @@ public class ChatController {
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-//        ChatListResponseDto response = chatService.getPrivateChats(email, pageable);
-
-        ChatListResponseDto response;
+        ChatListResponseResponse response;
         if (search == null) {
             // 검색 파라미터 아예 없음 → 기존 목록 조회
             response = chatService.getPrivateChats(email, pageable);
@@ -68,7 +63,7 @@ public class ChatController {
 
     @GetMapping("/team")
     @Operation(summary = "팀 채팅 목록 조회", description = "사용자의 그룹 채팅 목록을 조회합니다.")
-    public ResponseEntity<ApiResponseDto<ChatListResponseDto>> getTeamChats(
+    public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getTeamChats(
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
@@ -85,9 +80,7 @@ public class ChatController {
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-//        ChatListResponseDto response = chatService.getTeamChats(email, pageable);
-
-        ChatListResponseDto response;
+        ChatListResponseResponse response;
         if (search == null) {
             response = chatService.getTeamChats(email, pageable);
         } else {
@@ -97,6 +90,36 @@ public class ChatController {
         return ResponseEntity.ok(ApiResponseDto.of(
                 200,
                 "팀 채팅 목록 조회 성공",
+                response
+        ));
+    }
+
+    @GetMapping("/{roomId}/members")
+    @Operation(
+            summary = "채팅방 전체 인원 조회",
+            description = "roomId로 지정된 채팅방의 모든 멤버 정보를 조회합니다."
+    )
+    public ResponseEntity<ApiResponseDto<ChatMembersResponse>> getMembers(
+            @Parameter(
+                    description = "채팅방 ID",
+                    example = "123",
+                    required = true,
+                    in = ParameterIn.PATH  // 이 부분이 중요!
+            )
+            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            Authentication authentication
+    ) {
+        if (roomId == null || roomId <= 0) {
+            throw new GlobalException(ErrorCode.INVALID_ROOM_ID);
+        }
+
+        String email = authentication.getName();
+
+        ChatMembersResponse response = chatService.getRoomMembers(roomId, email);
+
+        return ResponseEntity.ok(ApiResponseDto.of(
+                200,
+                "채팅방 인원 조회 성공",
                 response
         ));
     }
