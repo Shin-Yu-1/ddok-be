@@ -14,6 +14,12 @@ public enum ErrorCode {
     PASSWORD_TOO_SHORT(HttpStatus.BAD_REQUEST,"비밀번호는 8자 이상이어야 합니다."),
     INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다."),
     PHONE_NUMBER_ALREADY_USED(HttpStatus.BAD_REQUEST, "기존 전화번호와 동일합니다."),
+    INVALID_LEADER_POSITION(HttpStatus.BAD_REQUEST, "리더 포지션이 모집 포지션 목록에 존재하지 않습니다."),
+    INVALID_CAPACITY(HttpStatus.BAD_REQUEST, "모집 인원은 1명 이상이어야 합니다."),
+    INVALID_AGE_RANGE(HttpStatus.BAD_REQUEST, "선호 연령 범위가 올바르지 않습니다."),
+    INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
+    INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
+
 
 
     // 401 UNAUTHORIZED
@@ -47,7 +53,9 @@ public enum ErrorCode {
 
 
     // 500 INTERNAL SERVER ERROR
-    SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패");
+    SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패"),
+    PROJECT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "프로젝트 저장 중 오류가 발생했습니다."),
+    BANNER_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배너 이미지 업로드에 실패했습니다.");
 
 
     private final HttpStatus status;
