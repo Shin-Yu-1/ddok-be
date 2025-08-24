@@ -103,11 +103,14 @@ public class StudyRecruitment {
 
     /** 연관관계 */
     @OneToMany(mappedBy = "studyRecruitment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<StudyRecruitmentTrait> traits = new ArrayList<>();
 
     @OneToMany(mappedBy = "studyRecruitment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<StudyApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "studyRecruitment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<StudyParticipant> participants = new ArrayList<>();
 }

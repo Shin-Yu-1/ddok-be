@@ -55,6 +55,7 @@ public enum ErrorCode {
     // 500 INTERNAL SERVER ERROR
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패"),
     PROJECT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "프로젝트 저장 중 오류가 발생했습니다."),
+    STUDY_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "스터디 저장 중 오류가 발생했습니다."),
     BANNER_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배너 이미지 업로드에 실패했습니다.");
 
 
