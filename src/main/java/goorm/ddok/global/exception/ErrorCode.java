@@ -15,6 +15,7 @@ public enum ErrorCode {
     INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다."),
     PHONE_NUMBER_ALREADY_USED(HttpStatus.BAD_REQUEST, "기존 전화번호와 동일합니다."),
     INVALID_SEARCH_KEYWORD(HttpStatus.BAD_REQUEST, "잘못된 검색어입니다."),
+    INVALID_ROOM_ID(HttpStatus.BAD_REQUEST, "유효하지 않은 roomID 입니다."),
 
 
     // 401 UNAUTHORIZED
