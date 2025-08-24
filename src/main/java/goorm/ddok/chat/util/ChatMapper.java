@@ -4,16 +4,19 @@ import goorm.ddok.chat.domain.ChatMessage;
 import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
 import goorm.ddok.chat.domain.ChatRoomType;
-import goorm.ddok.chat.dto.response.ChatRoomDto;
-import goorm.ddok.chat.dto.response.LastMessageDto;
-import goorm.ddok.chat.dto.response.OtherUserDto;
-import goorm.ddok.chat.dto.response.UserSimpleDto;
+import goorm.ddok.chat.dto.response.ChatRoomResponse;
+import goorm.ddok.chat.dto.response.LastMessageResponse;
+import goorm.ddok.chat.dto.response.OtherUserResponse;
+import goorm.ddok.chat.dto.response.UserSimpleResponse;
 import goorm.ddok.chat.repository.ChatRepository;
+import goorm.ddok.chat.repository.ChatRoomMemberRepository;
 import goorm.ddok.member.domain.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -21,10 +24,12 @@ import java.util.Optional;
 @Slf4j
 public class ChatMapper {
     private final ChatRepository chatRepository;
+    private final ChatRoomMemberRepository chatRoomMemberRepository;
+    private final RestClient.Builder builder;
 
-    // ChatRoom을 ChatRoomDto로 변환
-    public ChatRoomDto toChatRoomDto(ChatRoom chatRoom, Long currentUserId) {
-        ChatRoomDto.ChatRoomDtoBuilder builder = ChatRoomDto.builder()
+    // ChatRoom을 ChatRoomResponse로 변환
+    public ChatRoomResponse toChatRoomDto(ChatRoom chatRoom, Long currentUserId) {
+        ChatRoomResponse.ChatRoomResponseBuilder builder = ChatRoomResponse.builder()
                 .roomId(chatRoom.getId())
                 .roomType(chatRoom.getRoomType())
                 .isPinned(false) // TODO: 고정 기능 구현 시 실제 값으로 변경
@@ -41,29 +46,37 @@ public class ChatMapper {
         // 마지막 메시지 설정
         setLastMessage(builder, chatRoom);
 
-        // 읽지 않은 메시지 수 설정
-        setUnreadCount(builder, chatRoom, currentUserId);
-
         return builder.build();
     }
 
     // 개인 채팅 정보 설정
-     private void setPrivateChatInfo(ChatRoomDto.ChatRoomDtoBuilder builder,
+    private void setPrivateChatInfo(ChatRoomResponse.ChatRoomResponseBuilder builder,
                                     ChatRoom chatRoom, Long currentUserId) {
-        // 상대방 찾기
-        User otherUser = chatRoom.getPrivateAUserId().getId().equals(currentUserId)
-                ? chatRoom.getPrivateBUserId()
-                : chatRoom.getPrivateAUserId();
+        // ChatRoomMember를 통해 상대방 찾기 (User 정보 포함)
+        List<ChatRoomMember> members = chatRoomMemberRepository.findAllByRoomIdWithUser(chatRoom.getId());
+
+        // 현재 사용자가 아닌 상대방 찾기
+        User otherUser = members.stream()
+                .filter(member -> !member.getUserId().getId().equals(currentUserId))
+                .map(ChatRoomMember::getUserId)
+                .findFirst()
+                .orElse(null);
+
+        if (otherUser == null) {
+            log.warn("개인 채팅방에서 상대방을 찾을 수 없습니다 - roomId: {}, currentUserId: {}",
+                    chatRoom.getId(), currentUserId);
+            builder.name("알 수 없는 사용자");
+            return;
+        }
 
         // 상대방 정보로 채팅방 이름 설정 (이름이 없는 경우)
         String roomName = chatRoom.getName() != null ? chatRoom.getName() : getNickname(otherUser);
 
         builder.name(roomName)
-                .otherUser(OtherUserDto.builder()
+                .otherUser(OtherUserResponse.builder()
                         .id(otherUser.getId())
                         .nickname(getNickname(otherUser))
-                        .profileImage(getProfileImageUrl(otherUser)) // Helper 메서드 사용
-                        .muted(false) // TODO: 음소거 기능 구현 시 실제 값으로 변경
+                        .profileImage(getProfileImageUrl(otherUser))
                         .build());
     }
 
@@ -93,7 +106,7 @@ public class ChatMapper {
     }
 
     // 그룹 채팅 정보 설정
-    private void setGroupChatInfo(ChatRoomDto.ChatRoomDtoBuilder builder,
+    private void setGroupChatInfo(ChatRoomResponse.ChatRoomResponseBuilder builder,
                                   ChatRoom chatRoom, Long currentUserId) {
         builder.name(chatRoom.getName());
 
@@ -103,7 +116,7 @@ public class ChatMapper {
 
         // 방장 정보 설정
         if (chatRoom.getOwnerUserId() != null) {
-            builder.owner(UserSimpleDto.builder()
+            builder.owner(UserSimpleResponse.builder()
                     .id(chatRoom.getOwnerUserId().getId())
                     .nickname(getNickname(chatRoom.getOwnerUserId()))
                     .profileImage(getProfileImageUrl(chatRoom.getOwnerUserId()))
@@ -117,13 +130,13 @@ public class ChatMapper {
     }
 
     // 마지막 메시지 정보 설정
-    private void setLastMessage(ChatRoomDto.ChatRoomDtoBuilder builder, ChatRoom chatRoom) {
+    private void setLastMessage(ChatRoomResponse.ChatRoomResponseBuilder builder, ChatRoom chatRoom) {
         Optional<ChatMessage> lastMessage = chatRepository.findLastMessageByRoomId(chatRoom.getId());
 
         lastMessage.ifPresent(message -> {
             String content = getMessageContent(message);
 
-            builder.lastMessage(LastMessageDto.builder()
+            builder.lastMessage(LastMessageResponse.builder()
                     .messageId(message.getId())
                     .type(message.getContentType())
                     .content(content)
@@ -142,13 +155,5 @@ public class ChatMapper {
             case FILE -> "파일";
             case SYSTEM -> message.getContentText();
         };
-    }
-
-    // 읽지 않은 메시지 수 설정
-    private void setUnreadCount(ChatRoomDto.ChatRoomDtoBuilder builder,
-                                ChatRoom chatRoom, Long currentUserId) {
-        Integer unreadCount = chatRepository.countUnreadMessagesByRoomIdAndUserId(
-                chatRoom.getId(), currentUserId);
-        builder.unreadCount(unreadCount != null ? unreadCount : 0);
     }
 }
