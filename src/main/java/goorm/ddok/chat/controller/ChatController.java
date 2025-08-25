@@ -4,6 +4,7 @@ package goorm.ddok.chat.controller;
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.response.ChatListResponseResponse;
 import goorm.ddok.chat.dto.response.ChatMembersResponse;
+import goorm.ddok.chat.dto.response.ChatMessageListResponse;
 import goorm.ddok.chat.dto.response.ChatMessageResponse;
 import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
@@ -147,6 +148,40 @@ public class ChatController {
         String email = authentication.getName();
 
         ChatMessageResponse response = chatService.sendMessage(email, roomId, request);
+
+        return ResponseEntity.ok(ApiResponseDto.of(
+                200,
+                "메시지 전송 성공",
+                response
+        ));
+    }
+
+    @GetMapping("/{roomId}/messages")
+    @Operation(
+            summary = "채팅방 메세지 조회",
+            description = "키워드로 채팅 내용을 조회합니다."
+    )
+    public ResponseEntity<ApiResponseDto<ChatMessageListResponse>> getMessages(
+            @Parameter(
+                    description = "채팅방 ID",
+                    example = "123",
+                    required = true,
+                    in = ParameterIn.PATH  // 이 부분이 중요!
+            )
+            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            @RequestParam(value = "search", required = false) String search,
+            @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
+            Authentication authentication
+    ) {
+        if (search != null && search.trim().isEmpty()) {
+            throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+        String email = authentication.getName();
+
+        ChatMessageListResponse response = chatService.getChatMessages(email, roomId, pageable, search);
 
         return ResponseEntity.ok(ApiResponseDto.of(
                 200,
