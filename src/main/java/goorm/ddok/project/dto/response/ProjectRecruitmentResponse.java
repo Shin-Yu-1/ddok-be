@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
           "nickname": "고라니",
           "leaderPosition": "백엔드",
           "title": "구지라지",
-          "teamStatus": "RECRUTING",
+          "teamStatus": "RECRUITING",
           "expectedStart": "2025-08-16",
           "expectedMonth": 3,
           "mode": "offline",
@@ -64,7 +64,7 @@ public class ProjectRecruitmentResponse {
     @Schema(description = "공고 제목", example = "구지라지")
     private String title;
 
-    @Schema(description = "팀 상태", example = "RECRUTING")
+    @Schema(description = "팀 상태", example = "RECRUITING")
     private TeamStatus teamStatus;
 
     @Schema(description = "프로젝트 시작 예정일", example = "2025-08-16")
