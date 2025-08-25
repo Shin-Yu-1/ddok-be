@@ -30,4 +30,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
         AND crm.deletedAt IS NULL
         """)
     List<Object[]> findAllByRoomIdWithUserInfo(@Param("roomId") Long roomId);
+
+    // 특정 룸에 사용자가 속했는지 확인
+    boolean existsByRoomIdAndUserIdAndDeletedAtIsNull(Long roomId, Long userId);
 }
