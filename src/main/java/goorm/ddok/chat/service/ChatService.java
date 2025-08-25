@@ -376,4 +376,16 @@ public class ChatService {
                 .createdAt(savedMessage.getCreatedAt())
                 .build();
     }
+
+    public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
+        User sender = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        ChatRoom chatRoom = chatRepository.findById(roomId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+
+        List<ChatMessage> messages = chatMessageRepository.findAllByRoomIdInAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
+
+
+    }
 }
