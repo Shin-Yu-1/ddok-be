@@ -14,6 +14,10 @@ import goorm.ddok.global.response.ApiResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +72,22 @@ public class ChatController {
 
     @GetMapping("/team")
     @Operation(summary = "팀 채팅 목록 조회", description = "사용자의 그룹 채팅 목록을 조회합니다.")
+    @ApiResponse(
+            responseCode = "404",
+            description = "잘못된 채팅방 ID 기입 시",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponseDto.class),
+                    examples = @ExampleObject(name = "잘못된 채팅방 ID 기입 예시",
+                            value = """
+                {
+                  "status": 404,
+                  "message": "채팅방을 찾을 수 없습니다.",
+                  "data": null
+                }
+                """)
+            )
+    )
     public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getTeamChats(
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
@@ -104,14 +124,30 @@ public class ChatController {
             summary = "채팅방 전체 인원 조회",
             description = "roomId로 지정된 채팅방의 모든 멤버 정보를 조회합니다."
     )
+    @ApiResponse(
+            responseCode = "403",
+            description = "참여하지 않은 채팅방 인원 조회 시",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponseDto.class),
+                    examples = @ExampleObject(name = "참여하지 않은 채팅방 인원 조회 예시",
+                            value = """
+                {
+                  "status": 403,
+                  "message": "채팅방에 참여하지 않은 사용자입니다.",
+                  "data": null
+                }
+                """)
+            )
+    )
     public ResponseEntity<ApiResponseDto<ChatMembersResponse>> getMembers(
             @Parameter(
                     description = "채팅방 ID",
                     example = "123",
                     required = true,
-                    in = ParameterIn.PATH  // 이 부분이 중요!
+                    in = ParameterIn.PATH
             )
-            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            @PathVariable Long roomId,
             Authentication authentication
     ) {
         if (roomId == null || roomId <= 0) {
@@ -134,6 +170,22 @@ public class ChatController {
     @Operation(
             summary = "채팅 메세지 전송",
             description = "roomId로 채팅 내용을 저장합니다."
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "잘못된 채팅방 ID 기입 시",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiResponseDto.class),
+                    examples = @ExampleObject(name = "잘못된 채팅방 ID 기입 예시",
+                            value = """
+                {
+                  "status": 404,
+                  "message": "채팅방을 찾을 수 없습니다.",
+                  "data": null
+                }
+                """)
+            )
     )
     public ResponseEntity<ApiResponseDto<ChatMessageResponse>> sendMessage(
             @Parameter(
