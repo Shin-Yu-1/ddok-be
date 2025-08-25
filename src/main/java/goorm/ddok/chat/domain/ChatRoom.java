@@ -1,7 +1,5 @@
 package goorm.ddok.chat.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -29,11 +27,9 @@ public class ChatRoom {
     @Column()
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = true)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_owner_user"))
-    @ToString.Exclude
-    @JsonIgnore
-    private User ownerUserId;
+
+    @Column(nullable = false)
+    private Long ownerUserId;
 
     @Column()
     private Instant lastMessageAt;

@@ -1,6 +1,5 @@
 package goorm.ddok.chat.domain;
 
-import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -24,14 +23,11 @@ public class ChatRoomMember {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // @MapsId와 @IdClass 제거하고 일반적인 @ManyToOne 관계로 변경
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_room"))
-    private ChatRoom roomId;
+    @Column(nullable = false)
+    private Long roomId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_user"))
-    private User userId;
+    @Column(nullable = false)
+    private Long userId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
