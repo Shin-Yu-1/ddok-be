@@ -309,6 +309,12 @@ public class ChatService {
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
+        boolean isMember = chatRoomMemberRepository.existsByRoomIdAndUserIdAndDeletedAtIsNull(roomID, userId);
+
+        if (!isMember) {
+            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
+        }
+
         // 채팅방 멤버 조회 (User 정보 포함)
         List<Object[]> roomMemberWithUserList = chatRoomMemberRepository.findAllByRoomIdWithUserInfo(roomID);
 
