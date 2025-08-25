@@ -69,39 +69,44 @@ public class TechStackSearchService {
                 .replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
+    private static int codePointLen(String s) {
+        return (s == null) ? 0 : s.codePointCount(0, s.length());
+    }
+
     private NativeQuery buildOptimizedQuery(String original, String normalized) {
+        // 길이가 1~2면 편집거리 1을 강제, 그 외는 AUTO
+        String fuzziness = codePointLen(original) <= 2 ? "1" : "AUTO";
+
         var bool = QueryBuilders.bool()
-                // 정확매치(공백 제거 단일 토큰)
+                // 정확/접두 (공백 제거 단일 토큰)
                 .should(QueryBuilders.term()
                         .field("name.norm")
                         .value(normalized)
                         .boost(10.0f)
                         .build()._toQuery())
-                // 접두사
                 .should(QueryBuilders.prefix()
                         .field("name.norm")
                         .value(normalized)
                         .boost(5.0f)
                         .build()._toQuery())
-                // 한국어 형태소 매치 (자연어)
-                .should(QueryBuilders.match()
-                        .field("name.ko")
-                        .query(original)
-                        .boost(4.0f)
-                        .build()._toQuery())
-                // 일반 매치
+
+                // 자연어 매치(동의어 적용됨: tech_search_analyzer)
                 .should(QueryBuilders.match()
                         .field("name")
                         .query(original)
                         .boost(3.0f)
                         .build()._toQuery())
-                // 오타 허용
+
+                // 오타 허용 매치 (길이에 따라 fuzziness 동적 적용)
                 .should(QueryBuilders.match()
                         .field("name")
                         .query(original)
-                        .fuzziness("AUTO")
-                        .boost(1.0f)
+                        .fuzziness(fuzziness)
+                        .fuzzyTranspositions(true)
+                        .prefixLength(0)
+                        .boost(2.0f)
                         .build()._toQuery())
+
                 .minimumShouldMatch("1")
                 .build();
 
