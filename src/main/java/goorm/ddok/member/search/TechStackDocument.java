@@ -23,9 +23,6 @@ public class TechStackDocument {
     @Field(type = FieldType.Text, analyzer = "tech_index_analyzer", searchAnalyzer = "tech_search_analyzer")
     private String name;
 
-    /** 정렬/중복제거용 keyword 서브필드가 매핑에 존재( name.kw )한다는 가정 */
-    // 굳이 필드로 빼지 않아도 되지만, 필요시 getter 용도로 둬도 무방
-
     /** 공백 제거 + lowercase + asciifolding 단일 토큰 검색용 */
     @Field(name = "name.norm", type = FieldType.Text, analyzer = "tech_keyword_like_analyzer", searchAnalyzer = "tech_keyword_like_analyzer")
     private String nameNorm; // 실제 인덱싱 시 동기화 용도(선택). 없더라도 검색은 필드 경로로 접근 가능.
