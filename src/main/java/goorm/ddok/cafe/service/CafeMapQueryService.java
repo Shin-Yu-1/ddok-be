@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -20,11 +21,10 @@ public class CafeMapQueryService {
 
     @Transactional(readOnly = true)
     public List<CafeMapItemResponse> getCafesInBounds(
-            double swLat, double swLng, double neLat, double neLng,
-            Double centerLat, Double centerLng
+            BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng
     ) {
-
-        if (swLat > neLat || swLng > neLng) {
+        if (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0) {
             throw new GlobalException(ErrorCode.INVALID_BOUNDING_BOX);
         }
 
@@ -45,7 +45,6 @@ public class CafeMapQueryService {
     }
 
     private String buildAddress(Cafe c) {
-        // 도로명 주소가 있으면 그걸 우선 사용, 없으면 행정동 조합
         if (c.getRoadName() != null && !c.getRoadName().isBlank()) {
             if (c.getZoneNo() != null && !c.getZoneNo().isBlank()) {
                 return c.getRoadName() + " (" + c.getZoneNo() + ")";
@@ -55,7 +54,9 @@ public class CafeMapQueryService {
         String r1 = nullToEmpty(c.getRegion1depthName());
         String r2 = nullToEmpty(c.getRegion2depthName());
         String r3 = nullToEmpty(c.getRegion3depthName());
-        String joined = String.join(" ", new String[]{r1, r2, r3}).trim().replaceAll(" +", " ");
+        String joined = String.join(" ", new String[]{r1, r2, r3})
+                .trim()
+                .replaceAll(" +", " ");
         return joined.isEmpty() ? "-" : joined;
     }
 

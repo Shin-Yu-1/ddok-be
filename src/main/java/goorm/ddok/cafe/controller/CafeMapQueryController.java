@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Tag(name = "Cafe Map", description = "지도 카페 조회 API")
@@ -82,12 +83,12 @@ public class CafeMapQueryController {
     )
     @GetMapping
     public ResponseEntity<ApiResponseDto<List<CafeMapItemResponse>>> getCafes(
-            @Parameter(description = "남서쪽 위도", example = "37.55") @RequestParam double swLat,
-            @Parameter(description = "남서쪽 경도", example = "126.97") @RequestParam double swLng,
-            @Parameter(description = "북동쪽 위도", example = "37.58") @RequestParam double neLat,
-            @Parameter(description = "북동쪽 경도", example = "127.02") @RequestParam double neLng,
-            @Parameter(description = "중심 위도(선택)", example = "37.5665") @RequestParam(required = false) Double lat,
-            @Parameter(description = "중심 경도(선택)", example = "126.978") @RequestParam(required = false) Double lng
+            @Parameter(description = "남서쪽 위도", example = "37.55") @RequestParam BigDecimal swLat,
+            @Parameter(description = "남서쪽 경도", example = "126.97") @RequestParam BigDecimal swLng,
+            @Parameter(description = "북동쪽 위도", example = "37.58") @RequestParam BigDecimal neLat,
+            @Parameter(description = "북동쪽 경도", example = "127.02") @RequestParam BigDecimal neLng,
+            @Parameter(description = "중심 위도(선택)", example = "37.5665") @RequestParam(required = false) BigDecimal lat,
+            @Parameter(description = "중심 경도(선택)", example = "126.978") @RequestParam(required = false) BigDecimal lng
     ) {
         List<CafeMapItemResponse> data = service.getCafesInBounds(swLat, swLng, neLat, neLng, lat, lng);
         return ResponseEntity.ok(ApiResponseDto.of(200,"지도 카페 조회에 성공하였습니다.", data));
