@@ -49,4 +49,17 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
         LIMIT 1
         """)
     Optional<ChatMessage> findLastMessageByRoomId(@Param("roomId") Long roomId);
+
+    // 기존 1:1 채팅방 존재 여부 확인
+    @Query("""
+        SELECT cr FROM ChatRoom cr
+        JOIN ChatRoomMember crm1 ON cr.id = crm1.roomId
+        JOIN ChatRoomMember crm2 ON cr.id = crm2.roomId
+        WHERE cr.roomType = 'PRIVATE'
+          AND crm1.userId = :userId1
+          AND crm2.userId = :userId2
+          AND crm1.deletedAt IS NULL
+          AND crm2.deletedAt IS NULL
+    """)
+    Optional<ChatRoom> findPrivateRoomByUserIds(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 }
