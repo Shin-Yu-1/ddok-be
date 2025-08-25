@@ -119,9 +119,6 @@ public class ChatService {
                         (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
                 ));
 
-        // 페이징 처리
-        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(chatRooms, pageable);
-
         // 정렬
         chatRooms.sort(Comparator
                 .comparing((ChatRoom room) -> {
@@ -130,6 +127,9 @@ public class ChatService {
                 }, Comparator.reverseOrder()) // 최신순
                 .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
         );
+
+        // 페이징 처리
+        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(chatRooms, pageable);
 
         // DTO 변환
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
@@ -180,9 +180,6 @@ public class ChatService {
                         (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
                 ));
 
-        // 페이징 처리
-        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(filteredRooms, pageable);
-
         // 정렬
         filteredRooms.sort(Comparator
                 .comparing((ChatRoom room) -> {
@@ -191,6 +188,9 @@ public class ChatService {
                 }, Comparator.reverseOrder()) // 최신순
                 .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
         );
+
+        // 페이징 처리
+        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(filteredRooms, pageable);
 
         // DTO 변환
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
@@ -284,9 +284,6 @@ public class ChatService {
                         (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
                 ));
 
-        // 페이징 처리
-        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(uniqueRooms, pageable);
-
         // 정렬
         uniqueRooms.sort(Comparator
                 .comparing((ChatRoom room) -> {
@@ -295,6 +292,9 @@ public class ChatService {
                 }, Comparator.reverseOrder()) // 최신순
                 .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
         );
+
+        // 페이징 처리
+        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(uniqueRooms, pageable);
 
         // DTO 변환
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
@@ -384,8 +384,31 @@ public class ChatService {
         ChatRoom chatRoom = chatRepository.findById(roomId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
-        List<ChatMessage> messages = chatMessageRepository.findAllByRoomIdInAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
+        List<ChatMessage> messages = chatMessageRepository.findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
 
+        Page<ChatMessage> chatMessagePage = PaginationUtil.paginate(messages, pageable);
+        PaginationResponse pagination = PaginationUtil.from(chatMessagePage);
 
+        List<ChatMessageResponse> messageResponses = chatMessagePage.getContent().stream()
+                .map(message -> ChatMessageResponse.builder()
+                        .messageId(message.getId())
+                        .roomId(message.getRoomId())
+                        .senderId(message.getSenderId())
+                        .senderNickname(
+                                userRepository.findById(message.getSenderId())
+                                        .map(User::getNickname)
+                                        .orElse("알 수 없음")
+                        )
+                        .contentType(message.getContentType())
+                        .contentText(message.getContentText())
+                        .fileUrl(message.getFileUrl())
+                        .createdAt(message.getCreatedAt())
+                        .build())
+                .toList();
+
+        return ChatMessageListResponse.builder()
+                .messages(messageResponses)
+                .pagination(pagination)
+                .build();
     }
 }
