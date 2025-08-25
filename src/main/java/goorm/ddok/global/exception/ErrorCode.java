@@ -16,7 +16,7 @@ public enum ErrorCode {
     PHONE_NUMBER_ALREADY_USED(HttpStatus.BAD_REQUEST, "기존 전화번호와 동일합니다."),
     INVALID_LEADER_POSITION(HttpStatus.BAD_REQUEST, "리더 포지션이 모집 포지션 목록에 존재하지 않습니다."),
     INVALID_CAPACITY(HttpStatus.BAD_REQUEST, "모집 인원은 1명 이상이어야 합니다."),
-    INVALID_AGE_RANGE(HttpStatus.BAD_REQUEST, "선호 연령 범위가 올바르지 않습니다."),
+    INVALID_AGE_RANGE(HttpStatus.BAD_REQUEST, "연령대 범위가 올바르지 않습니다."),
     INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
 
