@@ -6,7 +6,7 @@ set -e
 # Kibana도 같이 올릴지 여부 (template에 kibana 서비스가 없으면 자동 스킵)
 START_KIBANA="${START_KIBANA:-true}"
 # 기존 tech_stacks 인덱스를 강제 재생성할지 여부 (true면 삭제 후 재생성)
-FORCE_RECREATE_TECHSTACKS="${FORCE_RECREATE_TECHSTACKS:-false}"
+FORCE_RECREATE_TECHSTACKS="${FORCE_RECREATE_TECHSTACKS:-true}"
 
 # 0. application-env.properties 경로 변수
 ENV_FILE="src/main/resources/application-env.properties"
@@ -111,7 +111,30 @@ create_or_recreate_techstacks_index() {
       },
       "filter": {
         "tech_lc": { "type": "lowercase" },
-        "tech_ascii": { "type": "asciifolding" }
+        "tech_ascii": { "type": "asciifolding" },
+        "ko_en_syn": {
+          "type": "synonym_graph",
+          "synonyms": [
+            "자바, java",
+            "자바스크립트, javascript, js",
+            "스프링, spring",
+            "스프링부트, spring boot, springboot",
+            "스프링시큐리티, spring security",
+            "도커, docker",
+            "쿠버네티스, kubernetes, k8s",
+            "레디스, redis",
+            "몽고디비, mongodb, mongo",
+            "포스트그레스, postgresql, postgres, psql",
+            "타입스크립트, typescript, ts",
+            "노드, node, node js, nodejs",
+            "익스프레스, express",
+            "리액트, react",
+            "뷰, vue, vue js, vuejs",
+            "앵귤러, angular",
+            "깃허브액션, github actions, gh actions",
+            "스프링데이터jpa, spring data jpa, springdatajpa"
+          ]
+        }
       },
       "normalizer": {
         "tech_normalizer": {
@@ -124,25 +147,25 @@ create_or_recreate_techstacks_index() {
           "type": "edge_ngram",
           "min_gram": 1,
           "max_gram": 20,
-          "token_chars": ["letter", "digit"]
+          "token_chars": ["letter","digit"]
         }
       },
       "analyzer": {
         "tech_index_analyzer": {
           "type": "custom",
           "tokenizer": "tech_edge_ngram",
-          "filter": ["lowercase", "asciifolding"]
+          "filter": ["lowercase","asciifolding"]
         },
         "tech_search_analyzer": {
           "type": "custom",
           "tokenizer": "standard",
-          "filter": ["lowercase", "asciifolding"]
+          "filter": ["lowercase","asciifolding","ko_en_syn"]
         },
         "tech_keyword_like_analyzer": {
           "type": "custom",
           "tokenizer": "keyword",
           "char_filter": ["remove_spaces_cf"],
-          "filter": ["lowercase", "asciifolding"]
+          "filter": ["lowercase","asciifolding"]
         }
       }
     }
@@ -154,20 +177,18 @@ create_or_recreate_techstacks_index() {
         "analyzer": "tech_index_analyzer",
         "search_analyzer": "tech_search_analyzer",
         "fields": {
-          "kw": { "type": "keyword", "normalizer": "tech_normalizer" },
-          "norm": {
-            "type": "text",
-            "analyzer": "tech_keyword_like_analyzer",
-            "search_analyzer": "tech_keyword_like_analyzer"
-          },
+          "kw":   { "type": "keyword", "normalizer": "tech_normalizer" },
+          "norm": { "type": "text", "analyzer": "tech_keyword_like_analyzer", "search_analyzer": "tech_keyword_like_analyzer" },
           "suggest": { "type": "completion" }
         }
       },
-      "category": { "type": "keyword" },
+      "category":   { "type": "keyword" },
       "popularity": { "type": "integer" }
     }
   }
 }
+
+
 JSON
 
   curl -s -XPUT "http://localhost:9200/tech_stacks" \
