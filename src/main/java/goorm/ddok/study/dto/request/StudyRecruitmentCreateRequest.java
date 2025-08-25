@@ -1,12 +1,13 @@
 package goorm.ddok.study.dto.request;
 
+import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.study.domain.StudyMode;
 import goorm.ddok.study.domain.StudyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -89,26 +90,4 @@ public class StudyRecruitmentCreateRequest {
     @Schema(description = "상세 설명 (Markdown)", example = "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?", requiredMode = Schema.RequiredMode.REQUIRED)
     private String detail;
 
-    @Getter
-    @Schema(name = "LocationDto", description = "오프라인 위치 정보")
-    public static class LocationDto {
-        @Schema(description = "위도", example = "37.5665")
-        private BigDecimal latitude;
-
-        @Schema(description = "경도", example = "126.9780")
-        private BigDecimal longitude;
-
-        @Schema(description = "주소", example = "서울특별시 강남구 테헤란로…")
-        private String address;
-    }
-
-    @Getter
-    @Schema(name = "PreferredAgesDto", description = "선호 연령대")
-    public static class PreferredAgesDto {
-        @Schema(description = "최소 연령", example = "20")
-        private Integer ageMin;
-
-        @Schema(description = "최대 연령", example = "30")
-        private Integer ageMax;
-    }
 }
