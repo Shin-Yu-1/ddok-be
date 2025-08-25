@@ -1,9 +1,12 @@
 package goorm.ddok.study.service;
 
+import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.request.StudyRecruitmentCreateRequest;
@@ -25,7 +28,7 @@ public class StudyRecruitmentService {
 
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final StudyParticipantRepository participantRepository;
-    private final StudyBannerImageService studyBannerImageService;
+    private final BannerImageService bannerImageService;
     private final FileService fileService;
 
     public StudyRecruitmentCreateResponse createStudy(
@@ -54,25 +57,15 @@ public class StudyRecruitmentService {
         }
 
         // 연령대 범위 검증
-        if (request.getPreferredAges() != null &&
-                request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
+        if (request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
 
         // 1. 배너 이미지 업로드 or 기본값
-        String bannerImageUrl;
-        if (bannerImage != null && !bannerImage.isEmpty()) {
-            try {
-                bannerImageUrl = fileService.upload(bannerImage);
-            } catch (IOException e) {
-                throw new RuntimeException("배너 이미지 업로드 실패", e);
-            }
-        } else {
-            bannerImageUrl = studyBannerImageService.generateBannerImageUrl(
-                    request.getTitle(), 1200, 600
-            );
-        }
+        String bannerImageUrl = (bannerImage != null && !bannerImage.isEmpty())
+                ? uploadBannerImage(bannerImage)
+                :bannerImageService.generateBannerImageUrl(request.getTitle(), "STUDY", 1200, 600);
 
         // 2. StudyRecruitment 생성
         StudyRecruitment study = StudyRecruitment.builder()
@@ -133,12 +126,14 @@ public class StudyRecruitmentService {
                 .expectedStart(study.getStartDate())
                 .expectedMonth(study.getExpectedMonths())
                 .mode(study.getMode())
-                .location(StudyRecruitmentCreateResponse.LocationDto.builder()
+                .location(study.getLatitude() != null && study.getLongitude() != null
+                        ? LocationDto.builder()
                         .latitude(study.getLatitude())
                         .longitude(study.getLongitude())
                         .address(study.getRoadName())
-                        .build())
-                .preferredAges(StudyRecruitmentCreateResponse.PreferredAgesDto.builder()
+                        .build()
+                        : null)
+                .preferredAges(PreferredAgesDto.builder()
                         .ageMin(study.getAgeMin())
                         .ageMax(study.getAgeMax())
                         .build())
@@ -148,6 +143,14 @@ public class StudyRecruitmentService {
                 .studyType(study.getStudyType())
                 .detail(study.getContentMd())
                 .build();
+    }
+
+    private String uploadBannerImage(MultipartFile bannerImage) {
+        try {
+            return fileService.upload(bannerImage);
+        } catch (IOException e) {
+            throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
+        }
     }
 
     // TODO: 실제 location 파싱 로직
