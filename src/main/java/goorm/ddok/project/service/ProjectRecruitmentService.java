@@ -1,9 +1,12 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
@@ -19,7 +22,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +30,7 @@ public class ProjectRecruitmentService {
 
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final ProjectParticipantRepository participantRepository;
-    private final ProjectBannerImageService projectBannerImageService;
+    private final BannerImageService bannerImageService;
     private final FileService fileService;
 
     public ProjectRecruitmentResponse createProject(
@@ -40,21 +42,20 @@ public class ProjectRecruitmentService {
         if (userDetails == null || userDetails.getUser() == null) {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
-
-        User user = userDetails.getUser(); // 로그인 유저 엔티티
+        User user = userDetails.getUser();
 
         // 오프라인 모드인데 위치가 없거나 위/경도가 없는 경우
-        if (request.getMode() == ProjectMode.OFFLINE){
-            if(request.getLocation() == null
+        if (request.getMode() == ProjectMode.OFFLINE) {
+            if (request.getLocation() == null
                     || request.getLocation().getLatitude() == null
-                    || request.getLocation().getLongitude() ==null) {
+                    || request.getLocation().getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
 
         // 연령대 범위 검증
-        if(request.getPreferredAges() != null &&
-            request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
+        if (request.getPreferredAges() != null &&
+                request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
@@ -68,21 +69,10 @@ public class ProjectRecruitmentService {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-
-
-        // 1. 배너 이미지 업로드 기본값 처리
-        String bannerImageUrl;
-        if (bannerImage != null && !bannerImage.isEmpty()) {
-            try {
-                bannerImageUrl = fileService.upload(bannerImage);
-            } catch (IOException e) {   // 배너 이미지 업로드 실패
-                throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
-            }
-        } else {
-            bannerImageUrl = projectBannerImageService.generateBannerImageUrl(
-                    request.getTitle(), 1200, 600
-            );
-        }
+        // 1. 배너 이미지 업로드 or 기본값
+        String bannerImageUrl = (bannerImage != null && !bannerImage.isEmpty())
+                ? uploadBannerImage(bannerImage)
+                : bannerImageService.generateBannerImageUrl(request.getTitle(), "PROJECT", 1200, 600);
 
         // 2. ProjectRecruitment 생성
         ProjectRecruitment recruitment = ProjectRecruitment.builder()
@@ -92,7 +82,7 @@ public class ProjectRecruitmentService {
                 .startDate(request.getExpectedStart())
                 .expectedMonths(request.getExpectedMonth())
                 .projectMode(request.getMode())
-                .region1depthName(resolveRegion1(request)) // TODO:location 파싱해서 넣기
+                .region1depthName(resolveRegion1(request))
                 .region2depthName(resolveRegion2(request))
                 .region3depthName(resolveRegion3(request))
                 .roadName(resolveRoadName(request))
@@ -135,7 +125,6 @@ public class ProjectRecruitmentService {
         }
 
         // 5. 리더 Participant 등록
-        //    leaderPosition 이름 찾아서 매핑
         ProjectRecruitmentPosition leaderPos = positions.stream()
                 .filter(p -> p.getPositionName().equals(request.getLeaderPosition()))
                 .findFirst()
@@ -149,14 +138,47 @@ public class ProjectRecruitmentService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now())
                 .build();
-
         participantRepository.save(leader);
 
         // 6. 응답 DTO 변환
-        return ProjectRecruitmentResponse.fromEntity(recruitment, user, request.getLeaderPosition());
+        return ProjectRecruitmentResponse.builder()
+                .projectId(recruitment.getId())
+                .userId(user.getId())
+                .nickname(user.getNickname())
+                .leaderPosition(request.getLeaderPosition())
+                .title(recruitment.getTitle())
+                .teamStatus(recruitment.getTeamStatus())
+                .expectedStart(recruitment.getStartDate())
+                .expectedMonth(recruitment.getExpectedMonths())
+                .mode(recruitment.getProjectMode())
+                .location(recruitment.getLatitude() != null && recruitment.getLongitude() != null
+                        ? LocationDto.builder()
+                        .latitude(recruitment.getLatitude())
+                        .longitude(recruitment.getLongitude())
+                        .address(recruitment.getRoadName())
+                        .build()
+                        : null)
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(recruitment.getAgeMin())
+                        .ageMax(recruitment.getAgeMax())
+                        .build())
+                .capacity(recruitment.getCapacity())
+                .bannerImageUrl(recruitment.getBannerImageUrl())
+                .traits(recruitment.getTraits().stream().map(ProjectRecruitmentTrait::getTraitName).toList())
+                .positions(recruitment.getPositions().stream().map(ProjectRecruitmentPosition::getPositionName).toList())
+                .detail(recruitment.getContentMd())
+                .build();
     }
 
-    // TODO: 실제 파싱 로직
+    private String uploadBannerImage(MultipartFile bannerImage) {
+        try {
+            return fileService.upload(bannerImage);
+        } catch (IOException e) {
+            throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
+        }
+    }
+
+    // TODO: 실제 location 파싱 로직
     private String resolveRegion1(ProjectRecruitmentCreateRequest request) {
         return request.getLocation() != null ? "서울특별시" : null;
     }
