@@ -1,9 +1,6 @@
 package goorm.ddok.chat.service;
 
-import goorm.ddok.chat.domain.ChatMessage;
-import goorm.ddok.chat.domain.ChatRoom;
-import goorm.ddok.chat.domain.ChatRoomMember;
-import goorm.ddok.chat.domain.ChatRoomType;
+import goorm.ddok.chat.domain.*;
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
 import goorm.ddok.chat.dto.response.*;
@@ -426,6 +423,38 @@ public class ChatService {
 
         chatRoomMember.setLastReadMessageId(request.getMessageId());
         chatRoomMemberRepository.save(chatRoomMember);
+    }
 
+    @Transactional
+    public void createPrivateChatRoom(User sender, User receiver) {
+        // 기존 1:1 채팅방 존재 확인
+        Optional<ChatRoom> originChatRoom = chatRepository.findPrivateRoomByUserIds(sender.getId(), receiver.getId());
+
+        if (originChatRoom.isPresent()) {
+            throw new GlobalException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
+        }
+
+        // ChatRoom 저장
+        ChatRoom chatRoom = ChatRoom.builder()
+                .roomType(ChatRoomType.PRIVATE)
+                .ownerUserId(sender.getId())
+                .build();
+
+        chatRepository.save(chatRoom);
+
+        // ChatRoomMember 저장
+        ChatRoomMember member1 = ChatRoomMember.builder()
+                .roomId(chatRoom.getId())
+                .userId(sender.getId())
+                .role(ChatMemberRole.ADMIN) // 요청자가 owner라 생각함.
+                .build();
+
+        ChatRoomMember member2 = ChatRoomMember.builder()
+                .roomId(chatRoom.getId())
+                .userId(receiver.getId())
+                .role(ChatMemberRole.MEMBER)
+                .build();
+
+        chatRoomMemberRepository.saveAll(List.of(member1, member2));
     }
 }
