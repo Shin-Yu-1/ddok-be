@@ -1,20 +1,21 @@
-package goorm.ddok.study.service;
+package goorm.ddok.global.util;
 
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+
 @Service
-public class StudyBannerImageService {
+public class BannerImageService {
 
     private static final String[] SAFE_BG_COLORS = {
             "#FFE599", "#B7E1CD", "#AED6F1", "#FFDAB9", "#F5CBA7", "#D7BDE2", "#D5F5E3"
     };
 
-    public String generateBannerImageUrl(String studyName, int width, int height) {
-        String text = (studyName == null || studyName.isBlank()) ? "STUDY" : studyName;
-        String bgColor = getBackgroundColor(studyName);
-        String svg = buildSvg(text, bgColor, width, height);
+    public String generateBannerImageUrl(String text, String defaultText, int width, int height) {
+        String safeText = (text == null || text.isBlank()) ? defaultText : text;
+        String bgColor = getBackgroundColor(safeText);
+        String svg = buildSvg(safeText, bgColor, width, height);
         return encodeSvgToBase64(svg);
     }
 
