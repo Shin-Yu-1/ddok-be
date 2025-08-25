@@ -5,6 +5,7 @@ import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
 import goorm.ddok.chat.domain.ChatRoomType;
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
+import goorm.ddok.chat.dto.request.LastReadMessageRequest;
 import goorm.ddok.chat.dto.response.*;
 import goorm.ddok.chat.repository.ChatMessageRepository;
 import goorm.ddok.chat.repository.ChatRepository;
@@ -377,6 +378,8 @@ public class ChatService {
                 .build();
     }
 
+    // 채팅 메세지 키워드 검색 조회
+    @Transactional
     public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
         User sender = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND));
@@ -410,5 +413,19 @@ public class ChatService {
                 .messages(messageResponses)
                 .pagination(pagination)
                 .build();
+    }
+
+    // 마지막 읽은 메세지 처리
+    public void lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
+
+        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+
+        ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByRoomIdAndUserId(roomId, userId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
+
+        chatRoomMember.setLastReadMessageId(request.getMessageId());
+        chatRoomMemberRepository.save(chatRoomMember);
+
     }
 }
