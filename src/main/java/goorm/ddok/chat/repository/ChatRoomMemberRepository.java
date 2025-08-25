@@ -32,11 +32,10 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     long countByRoomIdAndDeletedAtIsNull(Long roomId);
 
     // User 엔티티 정보가 필요한 경우를 위한 별도 쿼리
-    // 주의: User 엔티티가 goorm.ddok.member.domain 패키지에 있다고 가정
     @Query("""
-        SELECT crm, u FROM ChatRoomMember crm 
-        JOIN User u ON crm.userId = u.id 
-        WHERE crm.roomId = :roomId 
+        SELECT crm, u FROM ChatRoomMember crm
+        JOIN User u ON crm.userId = u.id
+        WHERE crm.roomId = :roomId
         AND crm.deletedAt IS NULL
         """)
     List<Object[]> findAllByRoomIdWithUserInfo(@Param("roomId") Long roomId);
