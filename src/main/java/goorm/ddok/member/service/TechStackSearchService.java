@@ -59,9 +59,14 @@ public class TechStackSearchService {
     }
 
     private String normalizeKeyword(String keyword) {
-        return keyword.toLowerCase()
+
+        String trimmed = keyword == null ? "" : keyword.strip();
+        if (trimmed.isEmpty()) return "";
+
+        return trimmed
+                .toLowerCase(java.util.Locale.ROOT)
                 .replaceAll("\\s+", "")
-                .replaceAll("[^a-z0-9]", "");
+                .replaceAll("[^\\p{L}\\p{N}]", "");
     }
 
     private NativeQuery buildOptimizedQuery(String original, String normalized) {
@@ -77,6 +82,12 @@ public class TechStackSearchService {
                         .field("name.norm")
                         .value(normalized)
                         .boost(5.0f)
+                        .build()._toQuery())
+                // 한국어 형태소 매치 (자연어)
+                .should(QueryBuilders.match()
+                        .field("name.ko")
+                        .query(original)
+                        .boost(4.0f)
                         .build()._toQuery())
                 // 일반 매치
                 .should(QueryBuilders.match()
@@ -96,9 +107,7 @@ public class TechStackSearchService {
 
         return NativeQuery.builder()
                 .withQuery(bool._toQuery())
-                .withSort(s -> s.score(sc -> sc.order(SortOrder.Desc)))
-                .withSort(s -> s.field(f -> f.field("name.kw").order(SortOrder.Asc))) // 없으면 자동 무시 아님 → 인덱스 재생성 필요
-                .withPageable(PageRequest.of(0, 20)) // 여유분 확보 후 distinct/limit(10)
+                .withPageable(org.springframework.data.domain.PageRequest.of(0, 20))
                 .build();
     }
 }

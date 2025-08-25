@@ -65,13 +65,15 @@ public class TechStackSearchController {
             @Parameter(description = "검색할 기술 스택 키워드(1~50자)", example = "spring")
             @RequestParam(required = false)
             @Size(min = 1, max = 50, message = "keyword는 1~50자여야 합니다.")
-            String keyword,
-
-            @Parameter(description = "최대 반환 개수(1~50, 기본 10)", example = "10")
-            @RequestParam(defaultValue = "10")
-            @Min(1) @Max(50)
-            Integer size
+            String keyword
     ) {
+        String q = keyword == null ? "" : keyword.strip();
+        int len = q.codePointCount(0, q.length());  // 유니코드 안전 길이
+        if (len < 1 || len > 50) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponseDto.of(400, "keyword는 1~50자여야 합니다.", null));
+        }
+
         TechStackResponse response = techStackSearchService.searchTechStacks(keyword);
         return ResponseEntity.ok(ApiResponseDto.of(200, "기술 스택 검색에 성공하였습니다.", response));
     }
