@@ -41,6 +41,7 @@ public class ChatService {
 
     // 1:1 채팅 목록 조회
     public ChatListResponseResponse getPrivateChats(String email, Pageable pageable) {
+
         Long userId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
                 .getId();
@@ -93,21 +94,48 @@ public class ChatService {
     // 팀 채팅 목록 조회
     public ChatListResponseResponse getTeamChats(String email, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+        Long userId = userRepository.findByEmail(email)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
+                .getId();
 
-        Page<ChatRoom> chatRoomPage = chatRepository.findTeamChatsByUserId(userId, pageable);
+        // 사용자가 속한 채팅방 조회 조회
+        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUserIdAndDeletedAtIsNull(userId);
 
-        List<ChatRoomResponse> chatRoomDtos = chatRoomPage.getContent().stream()
-                .map(chatRoom -> chatMapper.toChatRoomDto(chatRoom, userId))
-                .collect(Collectors.toList());
+        // roomId만 추출
+        List<Long> roomIds = userRooms.stream()
+                .map(ChatRoomMember::getRoomId)
+                .distinct() // 중복 제거 (필요시)
+                .toList();
 
-        PaginationResponse pagination = PaginationResponse.builder()
-                .currentPage(chatRoomPage.getNumber())
-                .pageSize(chatRoomPage.getSize())
-                .totalPages(chatRoomPage.getTotalPages())
-                .totalItems(chatRoomPage.getTotalElements())
-                .build();
+        // 팀 채팅방 추출
+        List<ChatRoom> chatRooms = chatRepository.findByIdInAndRoomType(roomIds, ChatRoomType.GROUP);
+
+        // 최근 대화 순서
+        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
+
+        // 각 채팅방마다 가장 최근 메시지를 Map에 저장
+        Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
+                .collect(Collectors.toMap(
+                        ChatMessage::getRoomId,
+                        Function.identity(),
+                        (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
+                ));
+
+        // 페이징 처리
+        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(chatRooms, pageable);
+
+        // 정렬
+        chatRooms.sort(Comparator
+                .comparing((ChatRoom room) -> {
+                    ChatMessage lastMessage = lastMessageMap.get(room.getId());
+                    return lastMessage != null ? lastMessage.getCreatedAt() : room.getCreatedAt();
+                }, Comparator.reverseOrder()) // 최신순
+                .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
+        );
+
+        // DTO 변환
+        List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
+        PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
 
         return ChatListResponseResponse.builder()
                 .chats(chatRoomDtos)
