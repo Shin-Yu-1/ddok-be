@@ -17,21 +17,14 @@ import java.util.Optional;
 @Repository
 public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
-    // Room type & Room ID list
+    // Room type + Room ID list 조회
     List<ChatRoom> findByIdInAndRoomType(List<Long> roomIds, ChatRoomType type);
+
+    // Room type + Room Id + Room name 키워드 조회
+    List<ChatRoom> findByIdInAndRoomTypeAndNameContaining(List<Long> roomIds, ChatRoomType type, String name);
 
     // 사용자의 개인 채팅(1:1) 목록 조회
     Page<ChatRoom> findByRoomTypeAndAndDeletedAtIsNullOrderByCreatedAtDesc(Long userId, ChatRoomType roomType, Pageable pageable);
-//    @Query("""
-//        SELECT DISTINCT cr FROM ChatRoom cr
-//        INNER JOIN ChatRoomMember crm ON cr.id = crm.roomId
-//        WHERE cr.roomType = 'PRIVATE'
-//        AND crm.senderId = :userId
-//        AND crm.deletedAt IS NULL
-//        AND cr.deletedAt IS NULL
-//        ORDER BY COALESCE(cr.lastMessageAt, cr.createdAt) DESC
-//        """)
-//    Page<ChatRoom> findPrivateChatsByUserId(@Param("userId") Long userId, Pageable pageable);
 
     // 사용자의 그룹 채팅 목록 조회
     @Query("""
