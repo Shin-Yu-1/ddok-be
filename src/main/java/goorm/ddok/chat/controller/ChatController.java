@@ -1,7 +1,7 @@
 package goorm.ddok.chat.controller;
 
 
-import goorm.ddok.chat.dto.request.ChatMaessageRequest;
+import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.response.ChatListResponseResponse;
 import goorm.ddok.chat.dto.response.ChatMembersResponse;
 import goorm.ddok.chat.dto.response.ChatMessageResponse;
@@ -9,7 +9,6 @@ import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.response.ApiResponseDto;
-import goorm.ddok.member.dto.request.SignUpRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -142,7 +141,7 @@ public class ChatController {
                     in = ParameterIn.PATH  // 이 부분이 중요!
             )
             @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
-            @Valid @RequestBody ChatMaessageRequest request,
+            @Valid @RequestBody ChatMessageRequest request,
             Authentication authentication) {
 
         String email = authentication.getName();
