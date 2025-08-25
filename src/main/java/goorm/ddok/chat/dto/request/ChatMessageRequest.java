@@ -1,6 +1,5 @@
 package goorm.ddok.chat.dto.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import goorm.ddok.chat.domain.ChatContentType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -11,8 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(name = "ChatMaessageRequest", description = "채팅 메시지 전송 요청")
-public class ChatMaessageRequest {
+@Schema(name = "ChatMessageRequest", description = "채팅 메시지 전송 요청")
+public class ChatMessageRequest {
 
     @NotNull
     @Schema(
@@ -24,14 +23,16 @@ public class ChatMaessageRequest {
 
     @Schema(
             description = "텍스트 내용(TEXT일 때 필수)",
-            example = "안녕하세요! 반갑습니다."
+            example = "안녕하세요! 반갑습니다.",
+            nullable = true
     )
     private String contentText;
 
 
     @Schema(
             description = "첨부파일",
-            example = "http://..."
+            example = "http://...",
+            nullable = true
     )
     private String fileUrl;
 
@@ -40,5 +41,5 @@ public class ChatMaessageRequest {
             example = "42",
             nullable = true
     )
-    private long replyToId;
+    private Long replyToId;
 }
