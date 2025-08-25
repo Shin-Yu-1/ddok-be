@@ -32,12 +32,14 @@ public enum ErrorCode {
 
     // 403 FORBIDDEN
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
+    NOT_CHAT_MEMBER(HttpStatus.FORBIDDEN, "채팅방에 참여하지 않은 사용자입니다."),
 
 
     // 404 NOT FOUND
     NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
     VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "인증 요청 기록이 없습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅방을 찾을 수 없습니다."),
 
 
 
