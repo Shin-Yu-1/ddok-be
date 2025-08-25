@@ -34,10 +34,8 @@ public class ChatRoomMember {
     @Builder.Default
     private ChatMemberRole role = ChatMemberRole.MEMBER;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(foreignKey = @ForeignKey(name = "fk_chat_room_member_last_read"))
-    private ChatMessage lastReadMessageId;
-
+    @Column()
+    private Long lastReadMessageId;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
