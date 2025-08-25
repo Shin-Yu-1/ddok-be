@@ -112,64 +112,90 @@ create_or_recreate_techstacks_index() {
       "filter": {
         "tech_lc": { "type": "lowercase" },
         "tech_ascii": { "type": "asciifolding" },
+
+        "edge_ngram_filter": { "type": "edge_ngram", "min_gram": 1, "max_gram": 20 },
+
+        "ko_en_syn_index": {
+          "type": "synonym",
+          "expand": true,
+          "synonyms": [
+            "spring boot, springboot, 스프링부트, 스프링 부트",
+            "spring data jpa, springdatajpa, 스프링데이터 jpa, 스프링 데이터 jpa, 스프링데이터 제이피에이, 스프링 데이터 제이피에이, jpa, 제이피에이",
+            "spring security, 스프링시큐리티, 스프링 시큐리티",
+            "java, 자바",
+            "kotlin, 코틀린",
+            "python, 파이썬",
+            "node, node js, nodejs, node.js, 노드, 노드제이에스",
+            "express, 익스프레스, 엑스프레스",
+            "typescript, ts, 타입스크립트",
+            "react, 리액트",
+            "next, next js, nextjs, next.js, 넥스트, 넥스트 js",
+            "vue, vue js, vuejs, vue.js, 뷰, 뷰 js",
+            "angular, 앵귤러",
+            "mysql, my sql, 마이에스큐엘",
+            "postgresql, postgres, psql, 포스트그레스, 포스트그레스큐엘",
+            "redis, 레디스",
+            "mongodb, mongo, 몽고디비, 몽고 db",
+            "docker, 도커",
+            "kubernetes, k8s, 쿠버네티스",
+            "aws, 아마존웹서비스, 아마존 웹 서비스",
+            "github actions, gh actions, 깃허브액션, 깃허브 액션, 깃헙액션, 깃헙 액션"
+          ]
+        },
+
         "ko_en_syn": {
           "type": "synonym_graph",
           "synonyms": [
-            "자바, java",
-            "자바스크립트, javascript, js",
-            "스프링, spring",
-            "스프링부트, spring boot, springboot",
-            "스프링시큐리티, spring security",
-            "도커, docker",
-            "쿠버네티스, kubernetes, k8s",
-            "레디스, redis",
-            "몽고디비, mongodb, mongo",
-            "포스트그레스, postgresql, postgres, psql",
-            "타입스크립트, typescript, ts",
-            "노드, node, node js, nodejs",
-            "익스프레스, express",
-            "리액트, react",
-            "뷰, vue, vue js, vuejs",
-            "앵귤러, angular",
-            "깃허브액션, github actions, gh actions",
-            "스프링데이터jpa, spring data jpa, springdatajpa"
+            "spring boot, springboot, 스프링부트, 스프링 부트",
+            "spring data jpa, springdatajpa, 스프링데이터 jpa, 스프링 데이터 jpa, 스프링데이터 제이피에이, 스프링 데이터 제이피에이, jpa, 제이피에이",
+            "spring security, 스프링시큐리티, 스프링 시큐리티",
+            "java, 자바",
+            "kotlin, 코틀린",
+            "python, 파이썬",
+            "node, node js, nodejs, node.js, 노드, 노드제이에스",
+            "express, 익스프레스, 엑스프레스",
+            "typescript, ts, 타입스크립트",
+            "react, 리액트",
+            "next, next js, nextjs, next.js, 넥스트, 넥스트 js",
+            "vue, vue js, vuejs, vue.js, 뷰, 뷰 js",
+            "angular, 앵귤러",
+            "mysql, my sql, 마이에스큐엘",
+            "postgresql, postgres, psql, 포스트그레스, 포스트그레스큐엘",
+            "redis, 레디스",
+            "mongodb, mongo, 몽고디비, 몽고 db",
+            "docker, 도커",
+            "kubernetes, k8s, 쿠버네티스",
+            "aws, 아마존웹서비스, 아마존 웹 서비스",
+            "github actions, gh actions, 깃허브액션, 깃허브 액션, 깃헙액션, 깃헙 액션"
           ]
         }
       },
+
       "normalizer": {
-        "tech_normalizer": {
-          "type": "custom",
-          "filter": ["tech_lc", "tech_ascii"]
-        }
+        "tech_normalizer": { "type": "custom", "filter": ["tech_lc", "tech_ascii"] }
       },
-      "tokenizer": {
-        "tech_edge_ngram": {
-          "type": "edge_ngram",
-          "min_gram": 1,
-          "max_gram": 20,
-          "token_chars": ["letter","digit"]
-        }
-      },
+
       "analyzer": {
         "tech_index_analyzer": {
           "type": "custom",
-          "tokenizer": "tech_edge_ngram",
-          "filter": ["lowercase","asciifolding"]
+          "tokenizer": "standard",
+          "filter": [ "tech_lc", "tech_ascii", "ko_en_syn_index", "edge_ngram_filter" ]
         },
         "tech_search_analyzer": {
           "type": "custom",
           "tokenizer": "standard",
-          "filter": ["lowercase","asciifolding","ko_en_syn"]
+          "filter": [ "tech_lc", "tech_ascii", "ko_en_syn" ]
         },
         "tech_keyword_like_analyzer": {
           "type": "custom",
           "tokenizer": "keyword",
           "char_filter": ["remove_spaces_cf"],
-          "filter": ["lowercase","asciifolding"]
+          "filter": [ "tech_lc", "tech_ascii" ]
         }
       }
     }
   },
+
   "mappings": {
     "properties": {
       "name": {
@@ -187,8 +213,6 @@ create_or_recreate_techstacks_index() {
     }
   }
 }
-
-
 JSON
 
   curl -s -XPUT "http://localhost:9200/tech_stacks" \
