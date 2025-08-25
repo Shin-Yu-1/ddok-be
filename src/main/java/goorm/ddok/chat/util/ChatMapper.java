@@ -11,13 +11,16 @@ import goorm.ddok.chat.dto.response.UserSimpleResponse;
 import goorm.ddok.chat.repository.ChatRepository;
 import goorm.ddok.chat.repository.ChatRoomMemberRepository;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -25,7 +28,14 @@ import java.util.Optional;
 public class ChatMapper {
     private final ChatRepository chatRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
+    private final UserRepository userRepository;
     private final RestClient.Builder builder;
+
+    public List<ChatRoomResponse> toChatRoomDtoList(List<ChatRoom> chatRooms, Long currentUserId) {
+        return chatRooms.stream()
+                .map(chatRoom -> toChatRoomDto(chatRoom, currentUserId))
+                .collect(Collectors.toList());
+    }
 
     // ChatRoom을 ChatRoomResponse로 변환
     public ChatRoomResponse toChatRoomDto(ChatRoom chatRoom, Long currentUserId) {
@@ -52,32 +62,43 @@ public class ChatMapper {
     // 개인 채팅 정보 설정
     private void setPrivateChatInfo(ChatRoomResponse.ChatRoomResponseBuilder builder,
                                     ChatRoom chatRoom, Long currentUserId) {
-        // ChatRoomMember를 통해 상대방 찾기 (User 정보 포함)
-        List<ChatRoomMember> members = chatRoomMemberRepository.findAllByRoomIdWithUser(chatRoom.getId());
+        try {
+            // ChatRoomMember와 User 정보를 함께 조회
+            List<Object[]> membersWithUser = chatRoomMemberRepository.findAllByRoomIdWithUserInfo(chatRoom.getId());
 
-        // 현재 사용자가 아닌 상대방 찾기
-        User otherUser = members.stream()
-                .filter(member -> !member.getUserId().getId().equals(currentUserId))
-                .map(ChatRoomMember::getUserId)
-                .findFirst()
-                .orElse(null);
+            // 현재 사용자가 아닌 상대방 찾기
+            User otherUser = null;
+            for (Object[] result : membersWithUser) {
+                ChatRoomMember member = (ChatRoomMember) result[0];
+                User user = (User) result[1];
 
-        if (otherUser == null) {
-            log.warn("개인 채팅방에서 상대방을 찾을 수 없습니다 - roomId: {}, currentUserId: {}",
-                    chatRoom.getId(), currentUserId);
-            builder.name("알 수 없는 사용자");
-            return;
+                if (!member.getUserId().equals(currentUserId)) {
+                    otherUser = user;
+                    break;
+                }
+            }
+
+            if (otherUser == null) {
+                log.warn("개인 채팅방에서 상대방을 찾을 수 없습니다 - roomId: {}, currentUserId: {}",
+                        chatRoom.getId(), currentUserId);
+                builder.name("알 수 없는 사용자");
+                return;
+            }
+
+            // 상대방 정보로 채팅방 이름 설정 (이름이 없는 경우)
+            String roomName = chatRoom.getName() != null ? chatRoom.getName() : getNickname(otherUser);
+
+            builder.name(roomName)
+                    .otherUser(OtherUserResponse.builder()
+                            .id(otherUser.getId())
+                            .nickname(getNickname(otherUser))
+                            .profileImage(getProfileImageUrl(otherUser))
+                            .build());
+
+        } catch (Exception e) {
+            log.error("개인 채팅 정보 설정 중 오류 발생 - roomId: {}", chatRoom.getId(), e);
+            builder.name("채팅방");
         }
-
-        // 상대방 정보로 채팅방 이름 설정 (이름이 없는 경우)
-        String roomName = chatRoom.getName() != null ? chatRoom.getName() : getNickname(otherUser);
-
-        builder.name(roomName)
-                .otherUser(OtherUserResponse.builder()
-                        .id(otherUser.getId())
-                        .nickname(getNickname(otherUser))
-                        .profileImage(getProfileImageUrl(otherUser))
-                        .build());
     }
 
 
@@ -88,7 +109,6 @@ public class ChatMapper {
         try {
             return user.getProfileImageUrl();
         } catch (Exception e) {
-            log.warn("프로필 이미지 URL 추출 실패 - userId: {}", user.getId());
             return null;
         }
     }
@@ -116,11 +136,16 @@ public class ChatMapper {
 
         // 방장 정보 설정
         if (chatRoom.getOwnerUserId() != null) {
-            builder.owner(UserSimpleResponse.builder()
-                    .id(chatRoom.getOwnerUserId().getId())
-                    .nickname(getNickname(chatRoom.getOwnerUserId()))
-                    .profileImage(getProfileImageUrl(chatRoom.getOwnerUserId()))
-                    .build());
+            User owner = userRepository.findById(chatRoom.getOwnerUserId())
+                    .orElse(null);
+
+            if (owner != null) {
+                builder.owner(UserSimpleResponse.builder()
+                        .id(owner.getId())
+                        .nickname(getNickname(owner))
+                        .profileImage(getProfileImageUrl(owner))
+                        .build());
+            }
         }
 
         // 현재 사용자의 역할 조회
@@ -141,8 +166,7 @@ public class ChatMapper {
                     .type(message.getContentType())
                     .content(content)
                     .createdAt(message.getCreatedAt())
-                    .senderId(message.getSenderId() != null ?
-                            message.getSenderId().getId() : null)
+                    .senderId(message.getSenderId()) // 수정: User 엔티티가 아닌 senderId 직접 사용
                     .build());
         });
     }
@@ -155,5 +179,11 @@ public class ChatMapper {
             case FILE -> "파일";
             case SYSTEM -> message.getContentText();
         };
+    }
+
+    private Map<Long, User> getUserMap(List<Long> userIds) {
+        List<User> users = userRepository.findAllById(userIds);
+        return users.stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
     }
 }
