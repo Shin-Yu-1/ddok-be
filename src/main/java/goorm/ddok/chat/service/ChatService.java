@@ -141,7 +141,7 @@ public class ChatService {
                 .build();
     }
 
-    // 채팅 검색 - 채팅방 이름으로 검색 (닉네임 검색은 별도 구현 필요)
+    // 1:1 채팅 목록 검색
     public ChatListResponseResponse searchPrivateChats(String email, String search, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
@@ -202,6 +202,7 @@ public class ChatService {
                 .build();
     }
 
+    // 팀 채팅 목록 검색
     public ChatListResponseResponse searchTeamChats(String email, String search, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
@@ -305,6 +306,7 @@ public class ChatService {
                 .build();
     }
 
+    // 채팅 멤버 조회
     public ChatMembersResponse getRoomMembers(Long roomID, String email) {
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
@@ -333,41 +335,6 @@ public class ChatService {
                 .build();
     }
 
-    // 대안: 더 효율적인 방법 (별도 메서드로 분리)
-    public ChatMembersResponse getRoomMembersOptimized(Long roomID, String email) {
-        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
-
-        // 1. 채팅방 멤버의 gId 목록 조회
-        List<Long> memberIds = chatRoomMemberRepository.findUserIdsByRoomId(roomID);
-
-        // 2. 해당 사용자들의 정보 조회
-        List<User> users = userRepository.findAllById(memberIds);
-        Map<Long, User> userMap = users.stream()
-                .collect(Collectors.toMap(User::getId, user -> user));
-
-        // 3. 멤버 정보 조회
-        List<ChatRoomMember> roomMembers = chatRoomMemberRepository.findAllByRoomIdAndDeletedAtIsNull(roomID);
-
-        List<ChatMembersResponse.Member> members = roomMembers.stream()
-                .map(roomMember -> {
-                    User user = userMap.get(roomMember.getUserId());
-                    return ChatMembersResponse.Member.builder()
-                            .userId(roomMember.getUserId())
-                            .nickname(user != null ? user.getNickname() : "Unknown User")
-                            .profileImage(user != null ? user.getProfileImageUrl() : null)
-                            .role(String.valueOf(roomMember.getRole()))
-                            .joinedAt(roomMember.getCreatedAt())
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        return ChatMembersResponse.builder()
-                .members(members)
-                .totalCount(members.size())
-                .build();
-    }
-
     // 메세지 전송
     @Transactional
     public ChatMessageResponse sendMessage(String email, Long roomId, ChatMessageRequest request) {
@@ -375,12 +342,12 @@ public class ChatService {
                 new GlobalException(ErrorCode.USER_NOT_FOUND));
 
         ChatRoom chatRoom = chatRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다."));
+                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         // 사용자가 해당 채팅방의 멤버인지 확인
         boolean isMember = chatRoomMemberRepository.existsByRoomIdAndUserId(roomId, sender.getId());
         if (!isMember) {
-            throw new IllegalArgumentException("채팅방에 참여하지 않은 사용자입니다.");
+            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
         }
 
         ChatMessage chatMessage = ChatMessage.builder()
