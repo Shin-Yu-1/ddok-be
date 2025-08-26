@@ -1,6 +1,5 @@
 package goorm.ddok.chat.controller;
 
-
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
 import goorm.ddok.chat.dto.response.ChatListResponseResponse;
@@ -46,28 +45,17 @@ public class ChatController {
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
-
-        if (size > 100) {
-            size = 100;
-        }
+        if (size > 100) size = 100;
 
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-        ChatListResponseResponse response;
-        if (search == null) {
-            // 검색 파라미터 아예 없음 → 기존 목록 조회
-            response = chatService.getPrivateChats(email, pageable);
-        } else {
-            // 검색 파라미터 존재 → 검색 로직 실행
-            response = chatService.searchPrivateChats(email, search.trim(), pageable);
-        }
+        ChatListResponseResponse response =
+                (search == null)
+                        ? chatService.getPrivateChats(email, pageable)
+                        : chatService.searchPrivateChats(email, search.trim(), pageable);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "개인 채팅 목록 조회 성공",
-                response
-        ));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "개인 채팅 목록 조회 성공", response));
     }
 
     @GetMapping("/team")
@@ -75,17 +63,16 @@ public class ChatController {
     @ApiResponse(
             responseCode = "404",
             description = "잘못된 채팅방 ID 기입 시",
-            content = @Content(
-                    mediaType = "application/json",
+            content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ApiResponseDto.class),
                     examples = @ExampleObject(name = "잘못된 채팅방 ID 기입 예시",
                             value = """
-                {
-                  "status": 404,
-                  "message": "채팅방을 찾을 수 없습니다.",
-                  "data": null
-                }
-                """)
+                                    {
+                                      "status": 404,
+                                      "message": "채팅방을 찾을 수 없습니다.",
+                                      "data": null
+                                    }
+                                    """)
             )
     )
     public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getTeamChats(
@@ -97,26 +84,17 @@ public class ChatController {
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
-
-        if (size > 100) {
-            size = 100;
-        }
+        if (size > 100) size = 100;
 
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-        ChatListResponseResponse response;
-        if (search == null) {
-            response = chatService.getTeamChats(email, pageable);
-        } else {
-            response = chatService.searchTeamChats(email, search.trim(), pageable);
-        }
+        ChatListResponseResponse response =
+                (search == null)
+                        ? chatService.getTeamChats(email, pageable)
+                        : chatService.searchTeamChats(email, search.trim(), pageable);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "팀 채팅 목록 조회 성공",
-                response
-        ));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "팀 채팅 목록 조회 성공", response));
     }
 
     @GetMapping("/{roomId}/members")
@@ -127,148 +105,96 @@ public class ChatController {
     @ApiResponse(
             responseCode = "403",
             description = "참여하지 않은 채팅방 인원 조회 시",
-            content = @Content(
-                    mediaType = "application/json",
+            content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ApiResponseDto.class),
                     examples = @ExampleObject(name = "참여하지 않은 채팅방 인원 조회 예시",
                             value = """
-                {
-                  "status": 403,
-                  "message": "채팅방에 참여하지 않은 사용자입니다.",
-                  "data": null
-                }
-                """)
+                                    {
+                                      "status": 403,
+                                      "message": "채팅방에 참여하지 않은 사용자입니다.",
+                                      "data": null
+                                    }
+                                    """)
             )
     )
     public ResponseEntity<ApiResponseDto<ChatMembersResponse>> getMembers(
-            @Parameter(
-                    description = "채팅방 ID",
-                    example = "123",
-                    required = true,
-                    in = ParameterIn.PATH
-            )
+            @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
+
         if (roomId == null || roomId <= 0) {
             throw new GlobalException(ErrorCode.INVALID_ROOM_ID);
         }
-
         String email = authentication.getName();
-
         ChatMembersResponse response = chatService.getRoomMembers(roomId, email);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "채팅방 인원 조회 성공",
-                response
-        ));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 인원 조회 성공", response));
     }
 
-
     @PostMapping("/{roomId}/messages")
-    @Operation(
-            summary = "채팅 메세지 전송",
-            description = "roomId로 채팅 내용을 저장합니다."
-    )
+    @Operation(summary = "채팅 메세지 전송", description = "roomId로 채팅 내용을 저장합니다.")
     @ApiResponse(
             responseCode = "404",
             description = "잘못된 채팅방 ID 기입 시",
-            content = @Content(
-                    mediaType = "application/json",
+            content = @Content(mediaType = "application/json",
                     schema = @Schema(implementation = ApiResponseDto.class),
                     examples = @ExampleObject(name = "잘못된 채팅방 ID 기입 예시",
                             value = """
-                {
-                  "status": 404,
-                  "message": "채팅방을 찾을 수 없습니다.",
-                  "data": null
-                }
-                """)
+                                    {
+                                      "status": 404,
+                                      "message": "채팅방을 찾을 수 없습니다.",
+                                      "data": null
+                                    }
+                                    """)
             )
     )
     public ResponseEntity<ApiResponseDto<ChatMessageResponse>> sendMessage(
-            @Parameter(
-                    description = "채팅방 ID",
-                    example = "1",
-                    required = true,
-                    in = ParameterIn.PATH  // 이 부분이 중요!
-            )
-            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            @Parameter(description = "채팅방 ID", example = "1", required = true, in = ParameterIn.PATH)
+            @PathVariable Long roomId,
             @Valid @RequestBody ChatMessageRequest request,
             Authentication authentication) {
 
         String email = authentication.getName();
-
         ChatMessageResponse response = chatService.sendMessage(email, roomId, request);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "메시지 전송 성공",
-                response
-        ));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "메시지 전송 성공", response));
     }
 
     @GetMapping("/{roomId}/messages")
-    @Operation(
-            summary = "채팅방 메세지 조회",
-            description = "키워드로 채팅 내용을 조회합니다."
-    )
+    @Operation(summary = "채팅방 메세지 조회", description = "키워드로 채팅 내용을 조회합니다.")
     public ResponseEntity<ApiResponseDto<ChatMessageListResponse>> getMessages(
-            @Parameter(
-                    description = "채팅방 ID",
-                    example = "123",
-                    required = true,
-                    in = ParameterIn.PATH  // 이 부분이 중요!
-            )
-            @PathVariable Long roomId,  // "roomId" 생략 가능 (이름이 같을 때)
+            @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
+            @PathVariable Long roomId,
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
+
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
+        if (size > 100) size = 100;
 
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-        ChatMessageListResponse response = chatService.getChatMessages(email, roomId, pageable, search);
+        ChatMessageListResponse response =
+                chatService.getChatMessages(email, roomId, pageable, search);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "메시지 전송 성공",
-                response
-        ));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 메세지 조회 성공", response));
     }
 
     @PostMapping("/{roomId}/messages/read")
-    @Operation(
-            summary = "채팅방 마지막 읽은 메세지 저장",
-            description = "채팅방별 마지막 읽은 메세지를 저장합니다."
-    )
+    @Operation(summary = "채팅방 마지막 읽은 메세지 저장", description = "채팅방별 마지막 읽은 메세지를 저장합니다.")
     public ResponseEntity<ApiResponseDto<String>> sendReadMessage(
-            @Parameter(
-                    description = "채팅방 ID",
-                    example = "123",
-                    required = true,
-                    in = ParameterIn.PATH
-            )
+            @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
             @Valid @RequestBody LastReadMessageRequest request,
-            Authentication authentication
-    ) {
+            Authentication authentication) {
 
         String email = authentication.getName();
-
         chatService.lastReadMessage(email, roomId, request);
 
-        return ResponseEntity.ok(ApiResponseDto.of(
-                200,
-                "메세지 읽음 처리 완료",
-                null
-        ));
-
+        return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", null));
     }
 }
