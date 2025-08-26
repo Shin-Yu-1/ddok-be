@@ -10,7 +10,15 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 
 @Entity
-@Table(name = "project_application")
+@Table(
+        name = "project_application",
+        uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_application_applicant_position",
+                columnNames = {"applicant_id", "position_id"}
+        )
+    }
+)
 @EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -21,15 +29,14 @@ public class ProjectApplication {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 지원 대상 공고 (N:1) */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "project_id", nullable = false)
-    private ProjectRecruitment projectRecruitment;
-
+//    /** 지원 대상 공고 (N:1) */
+//    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+//    @JoinColumn(name = "project_id", nullable = false)
+//    private ProjectRecruitment projectRecruitment;
 
     /** 지원자 (N:1) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "applicant_id", nullable = false)
     private User user;
 
     /** 지원 포지션 (N:1) */
@@ -51,8 +58,4 @@ public class ProjectApplication {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
-
-    /** 삭제 시각 (Soft Delete) */
-    @Column
-    private Instant deletedAt;
 }
