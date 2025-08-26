@@ -198,4 +198,45 @@ public class GlobalExceptionHandler {
         String profile = System.getProperty("spring.profiles.active", "");
         return profile.contains("dev") || profile.contains("local");
     }
+
+    // 공통 에러 응답 헬퍼
+    private <T> ResponseEntity<ApiResponseDto<T>> toError(ErrorCode code, String messageOverride) {
+        String msg = (messageOverride == null || messageOverride.isBlank())
+                ? code.getMessage() : messageOverride;
+        return ResponseEntity.status(code.getStatus())
+                .body(ApiResponseDto.error(code.getStatus().value(), msg));
+    }
+
+    // 필수 파라미터 누락 → 400 (MISSING_KEYWORD)
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponseDto<Void>> handleMissingParam(
+            org.springframework.web.bind.MissingServletRequestParameterException ex,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        // 파라미터명이 keyword면 전용 코드 사용, 아니면 INVALID_INPUT로 일반화
+        if ("keyword".equals(ex.getParameterName())) {
+            return toError(ErrorCode.MISSING_KEYWORD, null);
+        }
+        return toError(ErrorCode.INVALID_INPUT,
+                String.format("요청 파라미터 '%s'가 필요합니다.", ex.getParameterName()));
+    }
+
+    // @Validated 파라미터 위반(예: @Size, @NotBlank) → 400
+    @ExceptionHandler(jakarta.validation.ConstraintViolationException.class)
+    public ResponseEntity<ApiResponseDto<Void>> handleConstraintViolation(
+            jakarta.validation.ConstraintViolationException ex,
+            jakarta.servlet.http.HttpServletRequest request
+    ) {
+        // violation 메시지를 그대로 노출(예: "keyword는 1~50자여야 합니다.")
+        String msg = ex.getConstraintViolations().stream()
+                .map(jakarta.validation.ConstraintViolation::getMessage)
+                .findFirst()
+                .orElse(ErrorCode.INVALID_INPUT.getMessage());
+
+        // keyword 길이 위반이면 전용 코드, 그 외엔 INVALID_INPUT
+        ErrorCode code = msg.contains("1~50") || msg.contains("1-50") ?
+                ErrorCode.INVALID_KEYWORD_LENGTH : ErrorCode.INVALID_INPUT;
+
+        return toError(code, msg);
+    }
 }

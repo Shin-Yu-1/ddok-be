@@ -1,4 +1,4 @@
-package goorm.ddok.project.service;
+package goorm.ddok.global.util;
 
 import org.springframework.stereotype.Service;
 
@@ -6,16 +6,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
 @Service
-public class ProjectBannerImageService {
+public class BannerImageService {
 
     private static final String[] SAFE_BG_COLORS = {
             "#FFE599", "#B7E1CD", "#AED6F1", "#FFDAB9", "#F5CBA7", "#D7BDE2", "#D5F5E3"
     };
 
-    public String generateBannerImageUrl(String projectName, int width, int height) {
-        String text = (projectName == null || projectName.isBlank()) ? "PROJECT" : projectName;
-        String bgColor = getBackgroundColor(projectName);
-        String svg = buildSvg(text, bgColor, width, height);
+    public String generateBannerImageUrl(String text, String defaultText, int width, int height) {
+        String safeText = (text == null || text.isBlank()) ? defaultText : text;
+        String bgColor = getBackgroundColor(safeText);
+        String svg = buildSvg(safeText, bgColor, width, height);
         return encodeSvgToBase64(svg);
     }
 
@@ -25,8 +25,8 @@ public class ProjectBannerImageService {
     }
 
     private String buildSvg(String text, String bgColor, int width, int height) {
-        int fontSize = width / 15; // 가로 사이즈 비례 폰트 크기
-        String safeText = text.length() > 20 ? text.substring(0, 20) + "…" : text; // 너무 길면 잘라냄
+        int fontSize = width / 15;
+        String safeText = text.length() > 20 ? text.substring(0, 20) + "…" : text;
         return String.format("""
             <svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d">
               <rect width="100%%" height="100%%" fill="%s"/>

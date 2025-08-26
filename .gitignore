@@ -10,7 +10,6 @@
 build/
 !**/src/main/**/build/
 !**/src/test/**/build/
-!gradle/wrapper/gradle-wrapper.jar
 
 # ===================
 # 💡 IDE 설정 파일
@@ -142,3 +141,5 @@ application-*.properties
 data/
 
 docker-compose.yml
+
+!gradle/wrapper/gradle-wrapper.jar
