@@ -7,8 +7,6 @@ import java.util.Optional;
 
 public interface ProjectApplicationRepository extends JpaRepository<ProjectApplication, Long> {
 
-    boolean existsByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long projectId);
-
-    Optional<ProjectApplication> findByUser_IdAndPosition_Id(Long userId, Long positionId);
+    Optional<ProjectApplication> findByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long positionId);
 
 }
