@@ -14,13 +14,14 @@ public enum ErrorCode {
     PASSWORD_TOO_SHORT(HttpStatus.BAD_REQUEST,"비밀번호는 8자 이상이어야 합니다."),
     INVALID_PASSWORD_FORMAT(HttpStatus.BAD_REQUEST, "비밀번호는 영어 대문자, 소문자, 숫자, 특수문자를 모두 포함해야 합니다."),
     PHONE_NUMBER_ALREADY_USED(HttpStatus.BAD_REQUEST, "기존 전화번호와 동일합니다."),
+    MISSING_KEYWORD(HttpStatus.BAD_REQUEST, "keyword는 필수입니다."),
+    INVALID_KEYWORD_LENGTH(HttpStatus.BAD_REQUEST, "keyword는 1~50자여야 합니다."),
     INVALID_LEADER_POSITION(HttpStatus.BAD_REQUEST, "리더 포지션이 모집 포지션 목록에 존재하지 않습니다."),
     INVALID_CAPACITY(HttpStatus.BAD_REQUEST, "모집 인원은 1명 이상이어야 합니다."),
     INVALID_AGE_RANGE(HttpStatus.BAD_REQUEST, "연령대 범위가 올바르지 않습니다."),
     INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
     INVALID_BOUNDING_BOX(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
-
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

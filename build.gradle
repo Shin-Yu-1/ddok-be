@@ -57,7 +57,7 @@ dependencies {
     // DB
     runtimeOnly 'com.h2database:h2'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
+    implementation 'org.postgresql:postgresql:42.7.3'
 
     // AWS S3 (파일 업로드 및 다운로드를 위한 라이브러리)
     // AWS SDK v2 - S3 + presigned URL
@@ -88,6 +88,11 @@ dependencies {
 
     //카카오 로그인 관련
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // Elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'co.elastic.clients:elasticsearch-java:8.11.0'
+
 }
 
 tasks.named('test') {
