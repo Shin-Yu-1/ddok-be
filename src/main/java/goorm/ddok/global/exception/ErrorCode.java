@@ -55,6 +55,7 @@ public enum ErrorCode {
     EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증이 완료된 계정입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증이 완료된 요청입니다."),
+    ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 해당 프로젝트에 다른 포지션으로 지원하였습니다."),
 
 
     // 500 INTERNAL SERVER ERROR
