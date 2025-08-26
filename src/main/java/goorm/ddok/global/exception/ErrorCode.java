@@ -32,7 +32,7 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     WRONG_PASSWORD(HttpStatus.UNAUTHORIZED, "아이디 혹은 비밀번호가 일치하지 않습니다."),
     KAKAO_INVALID_CODE(HttpStatus.UNAUTHORIZED, "카카오 로그인에 실패했습니다. (유효하지 않은 코드)"),
-
+    POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "지원 포지션을 선택해야 합니다."),
 
 
     // 403 FORBIDDEN
