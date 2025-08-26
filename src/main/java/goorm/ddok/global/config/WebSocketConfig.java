@@ -1,7 +1,9 @@
 package goorm.ddok.global.config;
 
+import goorm.ddok.global.websocket.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -12,10 +14,12 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+    private final goorm.ddok.global.websocket.StompAuthChannelInterceptor stompAuthChannelInterceptor;
+
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws/chats")
-                .setAllowedOriginPatterns("http://localhost:5173/*")
+                .setAllowedOriginPatterns("http://localhost:5173", "http://127.0.0.1:5173")
                 .withSockJS();
     }
 
@@ -23,28 +27,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.enableSimpleBroker("/sub");
         registry.setApplicationDestinationPrefixes("/pub");
-        registry.setUserDestinationPrefix("/user");  // 개인 메시지용
+        registry.setUserDestinationPrefix("/user");
     }
 
-//    @Override
-//    public void registerStompEndpoints(StompEndpointRegistry registry) {
-//        registry.addEndpoint("/ws/chats")
-//                .setAllowedOriginPatterns(
-//                        "http://localhost:5173",     // 개발환경 (모든 포트)
-//                        "https://localhost:5173"    // HTTPS 로컬)
-//                )
-//                .withSockJS();
-//    }
-//
-//    @Override
-//    public void configureMessageBroker(MessageBrokerRegistry registry) {
-//        // 구독할 채널의 prefix
-//        registry.enableSimpleBroker("/sub");
-//
-//        // 서버로 메시지를 보낼 때 사용할 prefix
-//        registry.setApplicationDestinationPrefixes("/pub");
-//
-//        // 개인 메시지를 위한 prefix (선택적)
-//        registry.setUserDestinationPrefix("/user");
-//    }
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(stompAuthChannelInterceptor);
+    }
 }
