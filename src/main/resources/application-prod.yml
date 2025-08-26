@@ -1,0 +1,100 @@
+spring:
+  application:
+    name: ddok
+
+  datasource:
+    url:
+    driver-class-name:
+    username:
+    password:
+
+  h2:
+    console:
+      enabled: true
+      path:
+
+  jpa:
+    database-platform:
+    hibernate:
+      ddl-auto:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql:
+        jdbc:
+          time_zone:
+
+  data:
+    redis:
+      host:
+      port:
+      password:
+
+  mail:
+    host:
+    port:
+    username:
+    password:
+    properties:
+      mail:
+        smtp:
+          auth:
+          starttls:
+            enable:
+            required:
+          connectiontimeout:
+          timeout:
+          writetimeout:
+
+  servlet:
+    multipart:
+      max-file-size:
+      max-request-size:
+
+  config:
+    import:
+
+cloud:
+  aws:
+    credentials:
+      access-key:
+      secret-key:
+    region:
+      static:
+    s3:
+      bucket:
+
+app:
+  techstack:
+    seed-on-startup:
+    defaults:
+
+sentry:
+  dsn:
+  traces-sample-rate: 0.1
+  debug: false
+  environment:
+  release:
+
+logging:
+  level:
+    io.sentry:
+    com.deepdirect:
+
+oauth:
+  kakao:
+    client-id:
+    client-secret:
+    scope:
+    redirect-uri:
+
+jwt:
+  secret:
+  access-token-expiration:
+  refresh-token-expiration:
+
+coolsms:
+  api:
+    key:
+    secret:
+    number:
