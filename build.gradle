@@ -57,7 +57,7 @@ dependencies {
     // DB
     runtimeOnly 'com.h2database:h2'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
+    implementation 'org.postgresql:postgresql:42.7.3'
 
     // AWS S3 (파일 업로드 및 다운로드를 위한 라이브러리)
     // AWS SDK v2 - S3 + presigned URL
