@@ -4,6 +4,11 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
+tasks.jar {
+    enabled = false
+}
+
+
 group = 'goorm'
 version = '0.0.1-SNAPSHOT'
 description = 'ddok_be'
@@ -45,6 +50,10 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Swagger
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.34'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
@@ -53,7 +62,7 @@ dependencies {
     // DB
     runtimeOnly 'com.h2database:h2'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-
+    implementation 'org.postgresql:postgresql:42.7.3'
 
     // AWS S3 (파일 업로드 및 다운로드를 위한 라이브러리)
     // AWS SDK v2 - S3 + presigned URL
@@ -81,6 +90,14 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    //카카오 로그인 관련
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
+
+    // Elasticsearch
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'co.elastic.clients:elasticsearch-java:8.11.0'
+
 }
 
 tasks.named('test') {
