@@ -18,11 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -115,5 +114,22 @@ public class ProjectRecruitmentController {
         ProjectRecruitmentResponse response = projectRecruitmentService.createProject(request, bannerImage, user);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.of(201, "프로젝트 생성이 성공했습니다.", response));
+    }
+
+
+    @PostMapping("/{projectId}/join")
+    public ResponseEntity<ApiResponseDto<Map<String, Boolean>>> toggleJoin(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long projectId,
+            @RequestBody(required = false) Map<String, String> body
+    ) {
+        String appliedPosition = body != null ? body.get("appliedPosition") : null;
+        boolean isApplied = projectRecruitmentService.toggleJoin(userDetails, projectId, appliedPosition);
+
+        String message = isApplied ?
+                "프로젝트 참여 희망 의사가 신청되었습니다." :
+                "프로젝트 참여 희망 의사가 취소되었습니다.";
+
+        return ResponseEntity.ok(ApiResponseDto.of(200, message, Map.of("isApplied", isApplied)));
     }
 }
