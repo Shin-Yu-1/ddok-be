@@ -6,5 +6,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface ProjectApplicationRepository extends JpaRepository<ProjectApplication, Long> {
-    Optional<ProjectApplication> findByApplicantIdAndPosition_ProjectRecruitment_Id(Long applicantId, Long projectId);
+
+    boolean existsByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long projectId);
+
+    Optional<ProjectApplication> findByUser_IdAndPosition_Id(Long userId, Long positionId);
+
 }
