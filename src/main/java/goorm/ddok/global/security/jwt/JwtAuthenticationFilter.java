@@ -14,9 +14,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -24,9 +26,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserDetailsService userDetailsService;
 
+    // SockJS / WebSocket 트랜스포트 경로 및 핸드셰이크 경로는 필터 제외
+    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
+    private static final List<String> WS_SKIP_PATTERNS = List.of(
+            "/ws/**",
+            "/ws/chats/**",
+            "/sockjs/**",
+            "/**/info",
+            "/**/websocket",
+            "/**/xhr",
+            "/**/xhr_send",
+            "/**/xhr_streaming",
+            "/**/iframe.html"
+    );
+
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        boolean skip = WS_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri));
+        if (skip) {
+            log.debug("🧵 Skip JWT filter for WS/SockJS path: {}", uri);
+        }
+        return skip;
     }
 
     @Override
