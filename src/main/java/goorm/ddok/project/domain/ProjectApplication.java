@@ -41,11 +41,7 @@ public class ProjectApplication {
 
     /** 지원 포지션 (N:1) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(name = "position_id", referencedColumnName = "id", nullable = false),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id",
-                    nullable = false, insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "position_id", nullable = false)
     private ProjectRecruitmentPosition position;
 
     /** 지원 상태 (대기/승인/거절) */

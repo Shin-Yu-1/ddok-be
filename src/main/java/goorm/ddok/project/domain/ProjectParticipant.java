@@ -33,11 +33,7 @@ public class ProjectParticipant {
 
     /** 참여 포지션 (N:1) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumns({
-            @JoinColumn(name = "position_id", referencedColumnName = "id", nullable = false),
-            @JoinColumn(name = "project_id", referencedColumnName = "project_id",
-                    nullable = false, insertable = false, updatable = false)
-    })
+    @JoinColumn(name = "position_id", nullable = false)
     private ProjectRecruitmentPosition position;
 
     /** 참여자 역할 (LEADER / MEMBER) */

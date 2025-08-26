@@ -131,7 +131,6 @@ public class ProjectRecruitmentService {
                 .orElseThrow(() -> new GlobalException(ErrorCode.INVALID_LEADER_POSITION));
 
         ProjectParticipant leader = ProjectParticipant.builder()
-                .projectRecruitment(recruitment)
                 .user(user)
                 .position(leaderPos)
                 .role(ParticipantRole.LEADER)
