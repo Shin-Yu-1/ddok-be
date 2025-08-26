@@ -485,3 +485,6 @@ public class ChatService {
         chatRoomMemberRepository.saveAll(List.of(member1, member2));
     }
 }
+
+
+
