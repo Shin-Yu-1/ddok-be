@@ -38,7 +38,7 @@ public class ProjectRecruitment {
     @Column(nullable = false, length = 100)
     private String title;
 
-    /** 팀 상태 : RECRUTING / ONGOING / CLOSED */
+    /** 팀 상태 : RECRUITING / ONGOING / CLOSED */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TeamStatus teamStatus;
@@ -119,7 +119,8 @@ public class ProjectRecruitment {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ProjectRecruitmentPosition> positions = new ArrayList<>();
+    @Builder.Default
+    private List<ProjectRecruitmentPosition> positions= new ArrayList<>();
 
     /** 모집 성향 리스트 (1:N) */
     @OneToMany(
@@ -127,7 +128,8 @@ public class ProjectRecruitment {
             cascade = CascadeType.ALL,
             orphanRemoval = true
     )
-    private List<ProjectRecruitmentTrait> traits = new ArrayList<>();
+    @Builder.Default
+    private List<ProjectRecruitmentTrait> traits= new ArrayList<>();
 
     @PrePersist
     @PreUpdate

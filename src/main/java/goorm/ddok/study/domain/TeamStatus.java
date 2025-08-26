@@ -1,4 +1,4 @@
-package goorm.ddok.project.domain;
+package goorm.ddok.study.domain;
 
 public enum TeamStatus {
     RECRUITING,
