@@ -5,11 +5,14 @@ import goorm.ddok.member.dto.response.TechStackResponse;
 import goorm.ddok.member.service.TechStackSearchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -56,22 +59,50 @@ public class TechStackSearchController {
                             )
                     )
             ),
-            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자")
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "잘못된 요청(필수 파라미터 누락/길이 위반 등)",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = {
+                                    @ExampleObject(
+                                            name = "keyword 누락",
+                                            value = """
+                                            {
+                                              "status": 400,
+                                              "message": "keyword는 필수입니다.",
+                                              "data": null
+                                            }
+                                            """
+                                    ),
+                                    @ExampleObject(
+                                            name = "길이 위반",
+                                            value = """
+                                            {
+                                              "status": 400,
+                                              "message": "keyword는 1~50자여야 합니다.",
+                                              "data": null
+                                            }
+                                            """
+                                    )
+                            }
+                    )
+            ),
     })
     @GetMapping("/stacks")
     public ResponseEntity<ApiResponseDto<TechStackResponse>> searchTechStacks(
-            @Parameter(description = "검색할 기술 스택 키워드(1~50자)", example = "spring")
-            @RequestParam(required = false)
+            @Parameter(
+                    in = ParameterIn.QUERY,
+                    required = true,
+                    description = "검색할 기술 스택 키워드(1~50자)",
+                    schema = @Schema(type = "string", minLength = 1, maxLength = 50, example = "spring")
+            )
+            @RequestParam
+            @NotBlank(message = "keyword는 필수입니다.")
             @Size(min = 1, max = 50, message = "keyword는 1~50자여야 합니다.")
             String keyword
     ) {
-        String q = keyword == null ? "" : keyword.strip();
-        int len = q.codePointCount(0, q.length());  // 유니코드 안전 길이
-        if (len < 1 || len > 50) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponseDto.of(400, "keyword는 1~50자여야 합니다.", null));
-        }
-
+        // 수동 길이 체크는 제거 (@Size로 충분)
         TechStackResponse response = techStackSearchService.searchTechStacks(keyword);
         return ResponseEntity.ok(ApiResponseDto.of(200, "기술 스택 검색에 성공하였습니다.", response));
     }
