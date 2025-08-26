@@ -21,10 +21,10 @@ public class ProjectParticipant {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** 참여 공고 (N:1) */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "project_id", nullable = false)
-    private ProjectRecruitment projectRecruitment;
+//    /** 참여 공고 (N:1) */
+//    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+//    @JoinColumn(name = "project_id", nullable = false)
+//    private ProjectRecruitment projectRecruitment;
 
     /** 참여자 (N:1) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -33,7 +33,11 @@ public class ProjectParticipant {
 
     /** 참여 포지션 (N:1) */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "position_id", nullable = false)
+    @JoinColumns({
+            @JoinColumn(name = "position_id", referencedColumnName = "id", nullable = false),
+            @JoinColumn(name = "project_id", referencedColumnName = "project_id",
+                    nullable = false, insertable = false, updatable = false)
+    })
     private ProjectRecruitmentPosition position;
 
     /** 참여자 역할 (LEADER / MEMBER) */
