@@ -340,7 +340,6 @@ public class ChatService {
     }
 
     // 메세지 전송
-    @Transactional
     public ChatMessageResponse sendMessage(String email, Long roomId, ChatMessageRequest request) {
         User sender = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND));
@@ -354,20 +353,16 @@ public class ChatService {
             throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
         }
 
-        ChatMessage chatMessage = ChatMessage.builder()
-                .roomId(roomId)
-                .senderId(sender.getId())
-                .contentType(request.getContentType())
-                .contentText(request.getContentText())
-                .fileUrl(request.getFileUrl())
-                .replyToId(request.getReplyToId())
-                .build();
+        // 메시지 저장 및 채팅방 시간 갱신
+        ChatMessage savedMessage = saveMessageAndUpdateRoom(
+                chatRoom,
+                sender.getId(),
+                request.getContentType(),
+                request.getContentText(),
+                request.getFileUrl(),
+                request.getReplyToId()
+        );
 
-        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
-
-        // 채팅방의 마지막 메시지 시간 업데이트
-        chatRoom.setLastMessageAt(savedMessage.getCreatedAt());
-        chatRepository.save(chatRoom);
 
         return ChatMessageResponse.builder()
                 .messageId(savedMessage.getId())
@@ -379,6 +374,32 @@ public class ChatService {
                 .fileUrl(savedMessage.getFileUrl())
                 .createdAt(savedMessage.getCreatedAt())
                 .build();
+    }
+
+    @Transactional
+    public ChatMessage saveMessageAndUpdateRoom(
+            ChatRoom chatRoom,
+            Long senderId,
+            ChatContentType contentType,
+            String contentText,
+            String fileUrl,
+            Long replyToId
+    ) {
+        ChatMessage chatMessage = ChatMessage.builder()
+                .roomId(chatRoom.getId())
+                .senderId(senderId)
+                .contentType(contentType)
+                .contentText(contentText)
+                .fileUrl(fileUrl)
+                .replyToId(replyToId)
+                .build();
+
+        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+
+        chatRoom.setLastMessageAt(savedMessage.getCreatedAt());
+        chatRepository.save(chatRoom);
+
+        return savedMessage;
     }
 
     // 채팅 메세지 키워드 검색 조회
