@@ -116,7 +116,63 @@ public class ProjectRecruitmentController {
                 .body(ApiResponseDto.of(201, "프로젝트 생성이 성공했습니다.", response));
     }
 
-
+    @Operation(
+            summary = "프로젝트 참여 희망 의사 토글",
+            description = """
+                사용자가 특정 프로젝트에 참여 희망 의사를 표시하거나 취소합니다.
+                
+                - 처음 신청하는 경우: `appliedPosition` 필드 필수
+                - 이미 지원한 경우:
+                  - 같은 포지션 → 신청 취소
+                  - 다른 포지션 → 에러 발생
+                - 리더 본인은 신청 불가
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "신청/취소 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = {
+                                    @ExampleObject(name = "신청 성공", value = """
+                                {
+                                  "status": 200,
+                                  "message": "프로젝트 참여 희망 의사가 신청되었습니다.",
+                                  "data": { "isApplied": true }
+                                }
+                                """),
+                                    @ExampleObject(name = "취소 성공", value = """
+                                {
+                                  "status": 200,
+                                  "message": "프로젝트 참여 희망 의사가 취소되었습니다.",
+                                  "data": { "isApplied": false }
+                                }
+                                """)
+                            })),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 (포지션 누락 등)",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 400, "message": "지원 포지션을 선택해야 합니다.", "data": null }
+                """))),
+            @ApiResponse(responseCode = "401", description = "인증 실패 (비로그인 사용자)",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 401, "message": "인증이 필요합니다.", "data": null }
+                """))),
+            @ApiResponse(responseCode = "403", description = "리더는 참여 불가",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 403, "message": "리더는 참여 신청을 할 수 없습니다.", "data": null }
+                """))),
+            @ApiResponse(responseCode = "404", description = "프로젝트/포지션 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 404, "message": "존재하지 않는 프로젝트입니다.", "data": null }
+                """))),
+            @ApiResponse(responseCode = "409", description = "이미 다른 포지션에 지원한 경우",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 409, "message": "이미 해당 프로젝트의 다른 포지션에 지원하였습니다.", "data": null }
+                """)))
+    })
     @PostMapping("/{projectId}/join")
     public ResponseEntity<ApiResponseDto<Map<String, Boolean>>> toggleJoin(
             @AuthenticationPrincipal CustomUserDetails userDetails,
