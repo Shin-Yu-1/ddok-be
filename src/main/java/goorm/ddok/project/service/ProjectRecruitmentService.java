@@ -11,7 +11,9 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
 import goorm.ddok.project.dto.response.ProjectRecruitmentResponse;
+import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
+import goorm.ddok.project.repository.ProjectRecruitmentPositionRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,8 @@ public class ProjectRecruitmentService {
 
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final ProjectParticipantRepository participantRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final ProjectRecruitmentPositionRepository projectRecruitmentPositionRepository;
     private final BannerImageService bannerImageService;
     private final FileService fileService;
 
@@ -189,5 +194,59 @@ public class ProjectRecruitmentService {
     }
     private String resolveRoadName(ProjectRecruitmentCreateRequest request) {
         return request.getLocation() != null ? request.getLocation().getAddress() : null;
+    }
+
+    @Transactional
+    public boolean toggleJoin(CustomUserDetails userDetails, Long projectId, String appliedPosition) {
+        // 1. 사용자 확인
+        if (userDetails == null || userDetails.getUser() == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+        Long userId = userDetails.getUser().getId();
+
+        // 2. 프로젝트 확인
+        ProjectRecruitment project = projectRecruitmentRepository.findById(projectId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
+
+        // 3. 리더 여부 검사
+        if (project.getUser().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        // 4. 기존 지원 여부 확인
+        Optional<ProjectApplication> existingApplication =
+                projectApplicationRepository.findByUser_IdAndPosition_ProjectRecruitment_Id(userId, projectId);
+
+        if (existingApplication.isPresent()) {
+            // 이미 해당 프로젝트에 지원했음 → 같은 포지션이면 토글 취소
+            ProjectApplication existing = existingApplication.get();
+            if (appliedPosition == null
+                    || existing.getPosition().getPositionName().equals(appliedPosition)) {
+                projectApplicationRepository.delete(existing);
+                return false;
+            } else {
+                // 이미 다른 포지션으로 지원했는데 또 다른 포지션으로 신청 시도
+                throw new GlobalException(ErrorCode.ALREADY_APPLIED);
+            }
+        }
+
+        // 5. 아직 지원 안 한 경우 → appliedPosition 필수
+        if (appliedPosition == null || appliedPosition.isBlank()) {
+            throw new GlobalException(ErrorCode.POSITION_REQUIRED);
+        }
+
+        ProjectRecruitmentPosition position = projectRecruitmentPositionRepository
+                .findByProjectRecruitmentIdAndPositionName(projectId, appliedPosition)
+                .orElseThrow(() -> new GlobalException(ErrorCode.POSITION_NOT_FOUND));
+
+        // 6. 새로운 지원 생성
+        ProjectApplication newApp = ProjectApplication.builder()
+                .user(userDetails.getUser())
+                .position(position)
+                .status(ApplicationStatus.PENDING)
+                .build();
+        projectApplicationRepository.save(newApp);
+
+        return true;
     }
 }
