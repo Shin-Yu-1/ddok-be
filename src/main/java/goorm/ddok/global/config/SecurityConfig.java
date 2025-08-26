@@ -92,14 +92,13 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/map/**"),
 
                                 new AntPathRequestMatcher("/ws/**"),
-                                new AntPathRequestMatcher("/sockjs/**"),
-                                new AntPathRequestMatcher("/sockjs-node/**"),
-                                new AntPathRequestMatcher("/info"),
-                                new AntPathRequestMatcher("/websocket"),
-                                new AntPathRequestMatcher("/xhr_streaming"),
-                                new AntPathRequestMatcher("/xhr_send"),
-                                new AntPathRequestMatcher("/xhr"),
-                                new AntPathRequestMatcher("/iframe.html")
+                                new AntPathRequestMatcher("/ws/chats/**"), // 명시적으로 추가
+                                new AntPathRequestMatcher("/**/info"),
+                                new AntPathRequestMatcher("/**/websocket"),
+                                new AntPathRequestMatcher("/**/xhr_streaming"),
+                                new AntPathRequestMatcher("/**/xhr_send"),
+                                new AntPathRequestMatcher("/**/xhr"),
+                                new AntPathRequestMatcher("/**/iframe.html")
                         ).permitAll()
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
