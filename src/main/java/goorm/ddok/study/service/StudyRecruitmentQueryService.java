@@ -10,6 +10,7 @@ import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.UserSummaryDto;
 import goorm.ddok.study.dto.response.StudyRecruitmentDetailResponse;
+import goorm.ddok.study.repository.StudyApplicationRepository;
 import goorm.ddok.study.repository.StudyParticipantRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class StudyRecruitmentQueryService {
 
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final StudyParticipantRepository studyParticipantRepository;
+    private final StudyApplicationRepository studyApplicationRepository;
 
     /**
      * 스터디 모집글 상세 조회
@@ -48,6 +50,12 @@ public class StudyRecruitmentQueryService {
         // 참여자 목록 조회
         List<StudyParticipant> participants = studyParticipantRepository.findByStudyRecruitment(study);
 
+        // 지원자 (리더 제외)
+        long applicantCount = studyApplicationRepository.countByStudyRecruitment(study);
+
+        // 확정자 수 (리더 제외, MEMBER 만)
+        long approvedCount = participants.stream().filter(p -> p.getRole() == ParticipantRole.MEMBER).count();
+
         // 응답 DTO 변환
         return StudyRecruitmentDetailResponse.builder()
                 .studyId(study.getId())
@@ -60,7 +68,7 @@ public class StudyRecruitmentQueryService {
                 .bannerImageUrl(study.getBannerImageUrl())
                 .traits(study.getTraits().stream().map(StudyRecruitmentTrait::getTraitName).toList())
                 .capacity(study.getCapacity())
-                .applicantCount(participants.size())
+                .applicantCount((int)applicantCount)    //  지원자 수
                 .mode(study.getMode())
                 .address(resolveAddress(study)) // ONLINE이면 "ONLINE", OFFLINE이면 "시 구"
                 .preferredAges(PreferredAgesDto.builder()
@@ -74,7 +82,7 @@ public class StudyRecruitmentQueryService {
                 .participants(participants.stream()
                         .map(p -> toUserSummaryDto(p, currentUser))
                         .toList())
-                .participantsCount(participants.size())
+                .participantsCount((int) approvedCount) //  확정자 수
                 .build();
     }
 
