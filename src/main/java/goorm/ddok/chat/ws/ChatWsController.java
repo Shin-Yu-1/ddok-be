@@ -48,4 +48,27 @@ public class ChatWsController {
 
         messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
     }
+
+    @MessageMapping("/chats/{roomId}/enter")
+    public void enter(@DestinationVariable Long roomId,
+                      @Payload ChatMessageRequest payload,
+                      @Header("simpSessionAttributes") Map<String, Object> sessionAttrs) {
+
+        Long userId = (Long) sessionAttrs.get("userId");
+        if (userId == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);
+
+        if (payload.getContentType() == null) {
+            payload.setContentType(ChatContentType.TEXT);
+        }
+        if (payload.getContentText() == null) {
+            payload.setContentText("입장했습니다.");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+        String email = user.getEmail();
+
+        ChatMessageResponse saved = chatService.sendMessage(email, roomId, payload);
+        messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
+    }
 }
