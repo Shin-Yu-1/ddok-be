@@ -22,4 +22,6 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from ProjectParticipant p where p.position.projectRecruitment.id = :projectId")
     void deleteByPosition_ProjectRecruitment_Id(@Param("projectId") Long projectId);
+
+    List<ProjectParticipant> findByPosition_ProjectRecruitment_Id(Long projectId);
 }
