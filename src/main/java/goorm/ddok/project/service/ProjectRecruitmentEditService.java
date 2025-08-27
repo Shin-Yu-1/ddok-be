@@ -322,7 +322,7 @@ public class ProjectRecruitmentEditService {
                             .mainPosition(null)      // 필요 시 사용자 포지션 연계
                             .temperature(null)       // 필요 시 연계
                             .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .isMine(mine)
+                            .IsMine(mine)
                             .chatRoomId(null)
                             .dmRequestPending(false)
                             .build();
@@ -344,7 +344,7 @@ public class ProjectRecruitmentEditService {
                             .mainPosition(null)
                             .temperature(null)
                             .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .isMine(meId != null && Objects.equals(meId, u.getId()))
+                            .IsMine(meId != null && Objects.equals(meId, u.getId()))
                             .chatRoomId(null)
                             .dmRequestPending(false)
                             .build();
@@ -379,9 +379,9 @@ public class ProjectRecruitmentEditService {
                         .position(p.getPositionName())
                         .applied(applied.getOrDefault(p.getPositionName(), 0L))
                         .confirmed(confirmed.getOrDefault(p.getPositionName(), 0L))
-                        .isApplied(myApplied)
-                        .isApproved(myApproved)
-                        .isAvailable(pr.getTeamStatus() == TeamStatus.RECRUITING)
+                        .IsApplied(myApplied)
+                        .IsApproved(myApproved)
+                        .IsAvailable(pr.getTeamStatus() == TeamStatus.RECRUITING)
                         .build())
                 .toList();
 

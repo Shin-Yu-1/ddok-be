@@ -42,9 +42,9 @@ public class ProjectUpdateResultResponse {
         private String position;
         private Long applied;
         private Long confirmed;
-        private boolean isApplied;   // 내 지원 여부
-        private boolean isApproved;  // 내 승인 여부
-        private boolean isAvailable; // 단순 모집중 여부
+        private boolean IsApplied;   // 내 지원 여부
+        private boolean IsApproved;  // 내 승인 여부
+        private boolean IsAvailable; // 단순 모집중 여부
     }
 
     @Getter
@@ -56,7 +56,7 @@ public class ProjectUpdateResultResponse {
         private String mainPosition;
         private Double temperature;
         private String decidedPosition;
-        private boolean isMine;
+        private boolean IsMine;
         private Long chatRoomId;
         private boolean dmRequestPending;
     }
@@ -70,7 +70,7 @@ public class ProjectUpdateResultResponse {
         private String mainPosition;
         private Double temperature;
         private String decidedPosition;
-        private boolean isMine;
+        private boolean IsMine;
         private Long chatRoomId;
         private boolean dmRequestPending;
     }
