@@ -1,5 +1,7 @@
 package goorm.ddok.global.websocket;
 
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.Message;
@@ -12,37 +14,57 @@ import org.springframework.util.StringUtils;
 
 @RequiredArgsConstructor
 @Component
-public class StompAuthChannelInterceptor implements ChannelInterceptor { // ✅ implements 추가
+public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public Message<?> preSend(Message<?> message, MessageChannel channel) { // ✅ 시그니처 일치
+    public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor acc = StompHeaderAccessor.wrap(message);
 
         StompCommand cmd = acc.getCommand();
-        if (cmd == null) return message;
+
+        if (cmd == null) {
+            return message;
+        }
 
         switch (cmd) {
-            case CONNECT, SUBSCRIBE, SEND -> {
+            case CONNECT -> {
+                // CONNECT 에서만 Authorization 요구
                 String authHeader = acc.getFirstNativeHeader("Authorization");
+
                 if (!StringUtils.hasText(authHeader) || !authHeader.startsWith("Bearer ")) {
-                    throw new IllegalArgumentException("Missing Authorization header");
+                    throw new GlobalException(ErrorCode.UNAUTHORIZED);
                 }
+
                 String token = authHeader.substring(7);
-
                 Long userId = jwtTokenProvider.getUserIdFromToken(token);
-                if (userId == null) throw new IllegalArgumentException("Invalid token");
 
-                // (옵션) SUBSCRIBE 시 roomId 권한 체크 지점
-                if (cmd == StompCommand.SUBSCRIBE) {
-                    String dest = acc.getDestination();
-                    // dest 예: "/sub/chats.123" → roomId 파싱 후 membership 검증 로직 가능
+                if (userId == null) {
+                    throw new GlobalException(ErrorCode.UNAUTHORIZED);
                 }
 
-                // 세션에 userId 저장 → 컨트롤러에서 활용 가능
                 acc.getSessionAttributes().put("userId", userId);
             }
+
+            case SUBSCRIBE -> {
+                Long userId = (Long) acc.getSessionAttributes().get("userId");
+
+                if (userId == null) {
+                    throw new GlobalException(ErrorCode.UNAUTHORIZED);
+                }
+            }
+
+            case SEND -> {
+                Long userId = (Long) acc.getSessionAttributes().get("userId");
+
+                if (userId == null) {
+                    throw new GlobalException(ErrorCode.UNAUTHORIZED);
+                }
+
+                String dest = acc.getDestination();
+            }
+
             default -> { /* no-op */ }
         }
 
