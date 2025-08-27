@@ -12,7 +12,7 @@ import java.util.List;
 public class ProjectUpdateResultResponse {
 
     private Long projectId;
-    private boolean isMine;
+    private boolean IsMine;
 
     private String title;
     private String teamStatus;

@@ -47,7 +47,7 @@ public class ProjectRecruitmentEditService {
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // 소유자만 조회 허용(정책에 맞게 수정 가능)
+        // 리더만 조회 가능
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
@@ -74,10 +74,6 @@ public class ProjectRecruitmentEditService {
                 ))
                 .toList();
 
-        String address = pr.getProjectMode() == ProjectMode.ONLINE
-                ? "ONLINE"
-                : Optional.ofNullable(pr.getRoadName()).orElse("-");
-
         return ProjectEditPageResponse.builder()
                 .title(pr.getTitle())
                 .teamStatus(pr.getTeamStatus().name())
@@ -86,7 +82,7 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(pr.getProjectMode().name().toLowerCase())
-                .address(address)
+                .address(formatAddress(pr))       // 합쳐서 반환
                 .preferredAges(new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax()))
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())
@@ -108,53 +104,60 @@ public class ProjectRecruitmentEditService {
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // 리더 권한
+        // 권한(리더만)
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
 
-        // 시작일 미래 검증 (오늘 이후만 허용)
-        if (req.getExpectedStart() != null) {
-            java.time.LocalDate today = java.time.LocalDate.now();
-            if (!req.getExpectedStart().isAfter(today)) {
-                throw new GlobalException(ErrorCode.INVALID_START_DATE);
-            }
+        // ========= 비즈니스 검증 =========
+
+        // 과거 시작일 금지 (오늘 포함 OK)
+        LocalDate today = LocalDate.now();
+        if (req.getExpectedStart() == null || req.getExpectedStart().isBefore(today)) {
+            throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        // 연령/모드/위치 등 기존 검증 ...
+        // 연령대 범위
         if (req.getPreferredAges() != null &&
                 req.getPreferredAges().getAgeMin() > req.getPreferredAges().getAgeMax()) {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
+
+        // 포지션 최소 1개
         if (req.getPositions() == null || req.getPositions().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_POSITIONS);
         }
+
+        // 리더 포지션 포함 규칙
+        if (req.getLeaderPosition() == null ||
+                req.getPositions().stream().noneMatch(p -> p.equals(req.getLeaderPosition()))) {
+            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
+        }
+
+        // 오프라인이면 위치 필수
         if (req.getMode() == ProjectMode.OFFLINE) {
             LocationDto loc = req.getLocation();
-            if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+            if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null
+                    || isBlank(loc.getRegion1depthName())
+                    || isBlank(loc.getRegion2depthName())
+                    || isBlank(loc.getRegion3depthName())
+                    || isBlank(loc.getRoadName())) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
 
-        // ✅ [추가] 리더 포지션 검증: 요청 포지션 목록에 반드시 포함되어야 함
-        String leaderPosName = (req.getLeaderPosition() == null) ? "" : req.getLeaderPosition().trim();
-        java.util.List<String> desiredPositions =
-                req.getPositions().stream().filter(Objects::nonNull)
-                        .map(String::trim).filter(s -> !s.isBlank())
-                        .distinct().collect(Collectors.toList());
-
-        if (leaderPosName.isBlank() || !desiredPositions.contains(leaderPosName)) {
-            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
-        }
-
-        // 배너 URL 선택
+        // ========= 배너 선택(파일 > 요청URL > 기존 > 기본생성) =========
         String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
 
-        // 위치 업데이트
-        boolean offline = req.getMode() == ProjectMode.OFFLINE;
-        pr = offline ? updateOfflineLocation(pr, req.getLocation()) : clearLocation(pr);
+        // ========= 위치 반영 =========
+        boolean offline = (req.getMode() == ProjectMode.OFFLINE);
+        if (offline) {
+            pr = applyOfflineLocation(pr, req.getLocation());
+        } else {
+            pr = clearLocation(pr);
+        }
 
-        // 기본 필드 업데이트
+        // ========= 기본 필드 업데이트 =========
         int ageMin = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMin() : pr.getAgeMin();
         int ageMax = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMax() : pr.getAgeMax();
 
@@ -171,28 +174,13 @@ public class ProjectRecruitmentEditService {
                 .ageMax(ageMax)
                 .build();
 
-        // 포지션/성향 머지
+        // ========= 포지션/성향 머지 =========
         mergeTraits(pr, req.getTraits());
-        mergePositions(pr, desiredPositions);
-
-        // ✅ [추가] 리더 Participant의 포지션을 요청의 leaderPosition으로 동기화
-        // (mergePositions 이후 pr.getPositions() 안에 반드시 존재)
-        ProjectRecruitmentPosition leaderPosEntity = pr.getPositions().stream()
-                .filter(p -> p.getPositionName().equals(leaderPosName))
-                .findFirst()
-                .orElseThrow(() -> new GlobalException(ErrorCode.INVALID_LEADER_POSITION));
-
-        participantRepository
-                .findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(projectId, ParticipantRole.LEADER)
-                .ifPresent(pp -> {
-                    // 이미 같지 않으면 변경
-                    if (pp.getPosition() == null || !Objects.equals(pp.getPosition().getId(), leaderPosEntity.getId())) {
-                        pp.changePosition(leaderPosEntity);
-                        participantRepository.save(pp);
-                    }
-                });
+        mergePositions(pr, req.getPositions());
 
         ProjectRecruitment saved = recruitmentRepository.save(pr);
+
+        // ========= 응답 =========
         return buildUpdateResult(saved, me);
     }
 
@@ -202,20 +190,19 @@ public class ProjectRecruitmentEditService {
         List<String> desired = (incoming == null) ? List.of() : incoming.stream()
                 .filter(Objects::nonNull).map(String::trim).filter(s -> !s.isBlank()).distinct().toList();
 
-        // 현재 맵
-        Map<String, ProjectRecruitmentTrait> current = pr.getTraits().stream()
+        Map<String, ProjectRecruitmentTrait> curr = pr.getTraits().stream()
                 .collect(Collectors.toMap(ProjectRecruitmentTrait::getTraitName, t -> t, (a,b)->a));
 
         // 추가
         for (String name : desired) {
-            if (!current.containsKey(name)) {
+            if (!curr.containsKey(name)) {
                 pr.getTraits().add(ProjectRecruitmentTrait.builder()
                         .projectRecruitment(pr)
                         .traitName(name)
                         .build());
             }
         }
-        // 제거 (원본에만 있고 신규에는 없는 것)
+        // 제거
         pr.getTraits().removeIf(t -> !desired.contains(t.getTraitName()));
     }
 
@@ -251,23 +238,22 @@ public class ProjectRecruitmentEditService {
                 if (refByParticipants == 0 && refByApplications == 0) {
                     it.remove();
                 }
-                // 참조가 있으면 그대로 둠
             }
         }
     }
 
     /* ---------- location helpers ---------- */
 
-    private ProjectRecruitment updateOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
+    /** 카카오 road_address 매핑 필드 그대로 반영 */
+    private ProjectRecruitment applyOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
         BigDecimal lat = loc.getLatitude();
         BigDecimal lng = loc.getLongitude();
-        String addr = loc.getAddress();
 
         return pr.toBuilder()
-                .region1depthName("서울특별시")   // TODO: 실제 파서로 교체
-                .region2depthName("강남구")
-                .region3depthName("테헤란로")
-                .roadName(addr)
+                .region1depthName(safeTrim(loc.getRegion1depthName()))
+                .region2depthName(safeTrim(loc.getRegion2depthName()))
+                .region3depthName(safeTrim(loc.getRegion3depthName()))
+                .roadName(safeTrim(loc.getRoadName()))
                 .latitude(lat)
                 .longitude(lng)
                 .build();
@@ -293,8 +279,8 @@ public class ProjectRecruitmentEditService {
                 throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
             }
         }
-        if (requestUrl != null && !requestUrl.isBlank()) return requestUrl.trim();
-        if (currentUrl != null && !currentUrl.isBlank()) return currentUrl;
+        if (!isBlank(requestUrl)) return requestUrl.trim();
+        if (!isBlank(currentUrl)) return currentUrl;
         return bannerImageService.generateBannerImageUrl(
                 (titleForDefault == null ? "PROJECT" : titleForDefault), "PROJECT", 1200, 600
         );
@@ -319,8 +305,8 @@ public class ProjectRecruitmentEditService {
                             .userId(u.getId())
                             .nickname(u.getNickname())
                             .profileImageUrl(u.getProfileImageUrl())
-                            .mainPosition(null)      // 필요 시 사용자 포지션 연계
-                            .temperature(null)       // 필요 시 연계
+                            .mainPosition(null)
+                            .temperature(null)
                             .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
                             .IsMine(mine)
                             .chatRoomId(null)
@@ -385,15 +371,11 @@ public class ProjectRecruitmentEditService {
                         .build())
                 .toList();
 
-        String address = pr.getProjectMode() == ProjectMode.ONLINE
-                ? "ONLINE"
-                : Optional.ofNullable(pr.getRoadName()).orElse("-");
-
         boolean isMine = meId != null && Objects.equals(pr.getUser().getId(), meId);
 
         return ProjectUpdateResultResponse.builder()
                 .projectId(projectId)
-                .isMine(isMine)
+                .IsMine(isMine)
                 .title(pr.getTitle())
                 .teamStatus(pr.getTeamStatus().name())
                 .bannerImageUrl(pr.getBannerImageUrl())
@@ -401,7 +383,7 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(pr.getProjectMode().name().toLowerCase())
-                .address(address)
+                .address(formatAddress(pr)) // 합친 주소
                 .preferredAges(new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax()))
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())
@@ -410,5 +392,37 @@ public class ProjectRecruitmentEditService {
                 .leader(resolveLeader(projectId, me))
                 .participants(resolveParticipants(projectId, me))
                 .build();
+    }
+
+    /* ---------- 주소 포맷터 ---------- */
+
+    private String formatAddress(ProjectRecruitment pr) {
+        if (pr.getProjectMode() == ProjectMode.ONLINE) return "ONLINE";
+        String merged = joinSpace(
+                pr.getRegion1depthName(),
+                pr.getRegion2depthName(),
+                pr.getRegion3depthName(),
+                pr.getRoadName()
+        );
+        return isBlank(merged) ? "-" : merged;
+    }
+
+    private static String joinSpace(String... parts) {
+        StringBuilder sb = new StringBuilder();
+        for (String p : parts) {
+            if (!isBlank(p)) {
+                if (sb.length() > 0) sb.append(' ');
+                sb.append(p.trim());
+            }
+        }
+        return sb.toString();
+    }
+
+    private static boolean isBlank(String s) {
+        return s == null || s.trim().isEmpty();
+    }
+
+    private static String safeTrim(String s) {
+        return s == null ? null : s.trim();
     }
 }
