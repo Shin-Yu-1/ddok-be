@@ -47,7 +47,7 @@ public class ProjectRecruitmentEditService {
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // 리더만 조회 가능
+        // 리더만 조회
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
@@ -74,6 +74,15 @@ public class ProjectRecruitmentEditService {
                 ))
                 .toList();
 
+        String address = pr.getProjectMode() == ProjectMode.ONLINE
+                ? "ONLINE"
+                : Optional.ofNullable(pr.getRoadName()).orElse("-");
+
+        // 무관(0/0)일 때는 null, 아니면 DTO
+        PreferredAgesDto ages = (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
+                ? null
+                : new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax());
+
         return ProjectEditPageResponse.builder()
                 .title(pr.getTitle())
                 .teamStatus(pr.getTeamStatus().name())
@@ -82,8 +91,8 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(pr.getProjectMode().name().toLowerCase())
-                .address(formatAddress(pr))       // 합쳐서 반환
-                .preferredAges(new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax()))
+                .address(address)
+                .preferredAges(ages)
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())
                 .detail(pr.getContentMd())
@@ -104,63 +113,70 @@ public class ProjectRecruitmentEditService {
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // 권한(리더만)
+        // 리더만 수정
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
 
-        // ========= 비즈니스 검증 =========
-
-        // 과거 시작일 금지 (오늘 포함 OK)
-        LocalDate today = LocalDate.now();
-        if (req.getExpectedStart() == null || req.getExpectedStart().isBefore(today)) {
+        // 과거 시작일 금지
+        if (req.getExpectedStart() != null && req.getExpectedStart().isBefore(LocalDate.now())) {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        // 연령대 범위
-        if (req.getPreferredAges() != null &&
-                req.getPreferredAges().getAgeMin() > req.getPreferredAges().getAgeMax()) {
-            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
-        }
-
-        // 포지션 최소 1개
-        if (req.getPositions() == null || req.getPositions().isEmpty()) {
-            throw new GlobalException(ErrorCode.INVALID_POSITIONS);
-        }
-
-        // 리더 포지션 포함 규칙
-        if (req.getLeaderPosition() == null ||
-                req.getPositions().stream().noneMatch(p -> p.equals(req.getLeaderPosition()))) {
-            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
-        }
-
-        // 오프라인이면 위치 필수
+        // 위치/포지션/리더포지션/연령 검증
         if (req.getMode() == ProjectMode.OFFLINE) {
             LocationDto loc = req.getLocation();
-            if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null
-                    || isBlank(loc.getRegion1depthName())
-                    || isBlank(loc.getRegion2depthName())
-                    || isBlank(loc.getRegion3depthName())
-                    || isBlank(loc.getRoadName())) {
+            if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
+        if (req.getPositions() == null || req.getPositions().isEmpty()) {
+            throw new GlobalException(ErrorCode.INVALID_POSITIONS);
+        }
+        // 요청 포지션 정규화(중복/공백 제거)
+        List<String> desiredPositions = req.getPositions().stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .distinct()
+                .toList();
 
-        // ========= 배너 선택(파일 > 요청URL > 기존 > 기본생성) =========
+        if (!desiredPositions.contains(req.getLeaderPosition())) {
+            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
+        }
+
+        // capacity <= unique positions
+        if (req.getCapacity() != null && req.getCapacity() > desiredPositions.size()) {
+            throw new GlobalException(ErrorCode.INVALID_CAPACITY_POSITIONS);
+        }
+
+        // 연령 무관(null) 또는 10단위 강제
+        int ageMin;
+        int ageMax;
+        if (req.getPreferredAges() == null) {
+            ageMin = 0;
+            ageMax = 0;
+        } else {
+            ageMin = req.getPreferredAges().getAgeMin();
+            ageMax = req.getPreferredAges().getAgeMax();
+            if (ageMin > ageMax) throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+            if (ageMin % 10 != 0 || ageMax % 10 != 0) {
+                throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
+            }
+        }
+
+        // 배너: 파일 > 요청 URL > 기존 > 기본
         String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
 
-        // ========= 위치 반영 =========
-        boolean offline = (req.getMode() == ProjectMode.OFFLINE);
+        // 위치 업데이트
+        boolean offline = req.getMode() == ProjectMode.OFFLINE;
         if (offline) {
-            pr = applyOfflineLocation(pr, req.getLocation());
+            pr = updateOfflineLocation(pr, req.getLocation());
         } else {
             pr = clearLocation(pr);
         }
 
-        // ========= 기본 필드 업데이트 =========
-        int ageMin = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMin() : pr.getAgeMin();
-        int ageMax = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMax() : pr.getAgeMax();
-
+        // 기본 필드 업데이트 (toBuilder)
         pr = pr.toBuilder()
                 .title(req.getTitle())
                 .teamStatus(req.getTeamStatus())
@@ -174,13 +190,17 @@ public class ProjectRecruitmentEditService {
                 .ageMax(ageMax)
                 .build();
 
-        // ========= 포지션/성향 머지 =========
+        // Traits 머지(단순 추가/제거)
         mergeTraits(pr, req.getTraits());
-        mergePositions(pr, req.getPositions());
+
+        // Positions 머지(요청에 없는 것은 참조 없을 때만 삭제, 있으면 에러)
+        mergePositionsStrict(pr, desiredPositions);
+
+        // 리더 포지션 동기화
+        syncLeaderPositionTo(pr, req.getLeaderPosition());
 
         ProjectRecruitment saved = recruitmentRepository.save(pr);
 
-        // ========= 응답 =========
         return buildUpdateResult(saved, me);
     }
 
@@ -190,12 +210,12 @@ public class ProjectRecruitmentEditService {
         List<String> desired = (incoming == null) ? List.of() : incoming.stream()
                 .filter(Objects::nonNull).map(String::trim).filter(s -> !s.isBlank()).distinct().toList();
 
-        Map<String, ProjectRecruitmentTrait> curr = pr.getTraits().stream()
-                .collect(Collectors.toMap(ProjectRecruitmentTrait::getTraitName, t -> t, (a,b)->a));
+        Map<String, ProjectRecruitmentTrait> current = pr.getTraits().stream()
+                .collect(Collectors.toMap(ProjectRecruitmentTrait::getTraitName, t -> t, (a, b) -> a));
 
         // 추가
         for (String name : desired) {
-            if (!curr.containsKey(name)) {
+            if (!current.containsKey(name)) {
                 pr.getTraits().add(ProjectRecruitmentTrait.builder()
                         .projectRecruitment(pr)
                         .traitName(name)
@@ -207,16 +227,13 @@ public class ProjectRecruitmentEditService {
     }
 
     /**
-     * 포지션은 ‘이름 기준’으로 머지한다.
-     * - 신규는 추가
-     * - 원본에만 있는 이름은 삭제 시도하되, 지원/참가자 참조가 있으면 **유지**
+     * 엄격 삭제 버전:
+     * - 요청에 있는 이름은 유지/추가
+     * - 요청에 없는 기존 포지션은 '참여자/지원서 참조가 있으면' 에러, 아니면 삭제
      */
-    private void mergePositions(ProjectRecruitment pr, List<String> incoming) {
-        List<String> desired = incoming.stream()
-                .filter(Objects::nonNull).map(String::trim).filter(s -> !s.isBlank()).distinct().toList();
-
+    private void mergePositionsStrict(ProjectRecruitment pr, List<String> desired) {
         Map<String, ProjectRecruitmentPosition> byName = pr.getPositions().stream()
-                .collect(Collectors.toMap(ProjectRecruitmentPosition::getPositionName, p -> p, (a,b)->a));
+                .collect(Collectors.toMap(ProjectRecruitmentPosition::getPositionName, p -> p, (a, b) -> a));
 
         // 추가
         for (String name : desired) {
@@ -228,37 +245,59 @@ public class ProjectRecruitmentEditService {
             }
         }
 
-        // 삭제(참조 없는 경우에만)
-        Iterator<ProjectRecruitmentPosition> it = pr.getPositions().iterator();
-        while (it.hasNext()) {
-            ProjectRecruitmentPosition pos = it.next();
-            if (!desired.contains(pos.getPositionName())) {
-                long refByParticipants = participantRepository.countByPosition_IdAndDeletedAtIsNull(pos.getId());
-                long refByApplications = applicationRepository.countByPosition_Id(pos.getId());
-                if (refByParticipants == 0 && refByApplications == 0) {
-                    it.remove();
-                }
+        // 삭제 후보
+        List<ProjectRecruitmentPosition> toRemove = pr.getPositions().stream()
+                .filter(pos -> !desired.contains(pos.getPositionName()))
+                .toList();
+
+        // 참조 검사 -> 있으면 에러
+        for (ProjectRecruitmentPosition pos : toRemove) {
+            long refByParticipants = participantRepository.countByPosition_IdAndDeletedAtIsNull(pos.getId());
+            long refByApplications = applicationRepository.countByPosition_Id(pos.getId());
+            if (refByParticipants > 0 || refByApplications > 0) {
+                throw new GlobalException(ErrorCode.POSITION_IN_USE);
             }
         }
+
+        // 실제 삭제
+        pr.getPositions().removeIf(pos -> !desired.contains(pos.getPositionName()));
+    }
+
+    /** 리더 참가자의 포지션을 새 이름으로 동기화 */
+    private void syncLeaderPositionTo(ProjectRecruitment pr, String leaderPositionName) {
+        if (leaderPositionName == null) return;
+
+        ProjectRecruitmentPosition target = pr.getPositions().stream()
+                .filter(p -> p.getPositionName().equals(leaderPositionName))
+                .findFirst()
+                .orElse(null);
+        if (target == null) return;
+
+        participantRepository
+                .findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(pr.getId(), ParticipantRole.LEADER)
+                .ifPresent(leader -> leader.changePosition(target));
     }
 
     /* ---------- location helpers ---------- */
 
-    /** 카카오 road_address 매핑 필드 그대로 반영 */
-    private ProjectRecruitment applyOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
+    private ProjectRecruitment updateOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
         BigDecimal lat = loc.getLatitude();
         BigDecimal lng = loc.getLongitude();
 
+        // 카카오 응답을 프론트가 그대로 매핑해줬다는 전제
+        String addressLine = buildAddressLine(loc);
+
         return pr.toBuilder()
-                .region1depthName(safeTrim(loc.getRegion1depthName()))
-                .region2depthName(safeTrim(loc.getRegion2depthName()))
-                .region3depthName(safeTrim(loc.getRegion3depthName()))
-                .roadName(safeTrim(loc.getRoadName()))
+                .region1depthName(loc.getRegion1depthName())
+                .region2depthName(loc.getRegion2depthName())
+                .region3depthName(loc.getRegion3depthName())
+                .roadName(addressLine) // 합쳐진 전체 주소로 roadName 저장
                 .latitude(lat)
                 .longitude(lng)
                 .build();
     }
 
+    /** ONLINE 등 위치 초기화 */
     private ProjectRecruitment clearLocation(ProjectRecruitment pr) {
         return pr.toBuilder()
                 .region1depthName(null)
@@ -270,6 +309,22 @@ public class ProjectRecruitmentEditService {
                 .build();
     }
 
+    /** "전북 익산시 망산길 11-17" 형태로 합치기 */
+    private String buildAddressLine(LocationDto loc) {
+        String r1 = Optional.ofNullable(loc.getRegion1depthName()).orElse("");
+        String r2 = Optional.ofNullable(loc.getRegion2depthName()).orElse("");
+        String road = Optional.ofNullable(loc.getRoadName()).orElse("");
+        String main = Optional.ofNullable(loc.getMainBuildingNo()).orElse("");
+        String sub = Optional.ofNullable(loc.getSubBuildingNo()).orElse("");
+        String mainSub = sub.isBlank() ? main : (main + "-" + sub);
+
+        String base = (r1 + " " + r2 + " " + road).trim().replaceAll("\\s+", " ");
+        if (!mainSub.isBlank()) {
+            return (base + " " + mainSub).trim();
+        }
+        return base;
+    }
+
     /* ---------- banner helper ---------- */
     private String resolveBannerUrl(MultipartFile file, String requestUrl, String currentUrl, String titleForDefault) {
         if (file != null && !file.isEmpty()) {
@@ -279,8 +334,8 @@ public class ProjectRecruitmentEditService {
                 throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
             }
         }
-        if (!isBlank(requestUrl)) return requestUrl.trim();
-        if (!isBlank(currentUrl)) return currentUrl;
+        if (requestUrl != null && !requestUrl.isBlank()) return requestUrl.trim();
+        if (currentUrl != null && !currentUrl.isBlank()) return currentUrl;
         return bannerImageService.generateBannerImageUrl(
                 (titleForDefault == null ? "PROJECT" : titleForDefault), "PROJECT", 1200, 600
         );
@@ -308,7 +363,7 @@ public class ProjectRecruitmentEditService {
                             .mainPosition(null)
                             .temperature(null)
                             .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .IsMine(mine)
+                            .IsMine(mine) // DTO 필드 네이밍에 맞춤
                             .chatRoomId(null)
                             .dmRequestPending(false)
                             .build();
@@ -365,17 +420,27 @@ public class ProjectRecruitmentEditService {
                         .position(p.getPositionName())
                         .applied(applied.getOrDefault(p.getPositionName(), 0L))
                         .confirmed(confirmed.getOrDefault(p.getPositionName(), 0L))
-                        .IsApplied(myApplied)
+                        .IsApplied(myApplied)   // DTO 필드 네이밍에 맞춤
                         .IsApproved(myApproved)
                         .IsAvailable(pr.getTeamStatus() == TeamStatus.RECRUITING)
                         .build())
                 .toList();
 
+        String address = pr.getProjectMode() == ProjectMode.ONLINE
+                ? "ONLINE"
+                : Optional.ofNullable(pr.getRoadName()).orElse("-");
+
         boolean isMine = meId != null && Objects.equals(pr.getUser().getId(), meId);
+
+        // 무관(0/0)일 때 null
+        PreferredAgesDto prefAges =
+                (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
+                        ? null
+                        : new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax());
 
         return ProjectUpdateResultResponse.builder()
                 .projectId(projectId)
-                .IsMine(isMine)
+                .IsMine(isMine) // DTO 필드 네이밍에 맞춤
                 .title(pr.getTitle())
                 .teamStatus(pr.getTeamStatus().name())
                 .bannerImageUrl(pr.getBannerImageUrl())
@@ -383,8 +448,8 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(pr.getProjectMode().name().toLowerCase())
-                .address(formatAddress(pr)) // 합친 주소
-                .preferredAges(new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax()))
+                .address(address)
+                .preferredAges(prefAges)
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())
                 .detail(pr.getContentMd())
@@ -392,37 +457,5 @@ public class ProjectRecruitmentEditService {
                 .leader(resolveLeader(projectId, me))
                 .participants(resolveParticipants(projectId, me))
                 .build();
-    }
-
-    /* ---------- 주소 포맷터 ---------- */
-
-    private String formatAddress(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.ONLINE) return "ONLINE";
-        String merged = joinSpace(
-                pr.getRegion1depthName(),
-                pr.getRegion2depthName(),
-                pr.getRegion3depthName(),
-                pr.getRoadName()
-        );
-        return isBlank(merged) ? "-" : merged;
-    }
-
-    private static String joinSpace(String... parts) {
-        StringBuilder sb = new StringBuilder();
-        for (String p : parts) {
-            if (!isBlank(p)) {
-                if (sb.length() > 0) sb.append(' ');
-                sb.append(p.trim());
-            }
-        }
-        return sb.toString();
-    }
-
-    private static boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
-    }
-
-    private static String safeTrim(String s) {
-        return s == null ? null : s.trim();
     }
 }
