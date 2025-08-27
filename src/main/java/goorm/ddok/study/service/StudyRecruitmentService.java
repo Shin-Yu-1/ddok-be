@@ -11,6 +11,7 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.request.StudyRecruitmentCreateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentCreateResponse;
+import goorm.ddok.study.repository.StudyApplicationRepository;
 import goorm.ddok.study.repository.StudyParticipantRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class StudyRecruitmentService {
 
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final StudyParticipantRepository participantRepository;
+    private final StudyApplicationRepository studyApplicationRepository;
     private final BannerImageService bannerImageService;
     private final FileService fileService;
 
@@ -165,5 +168,41 @@ public class StudyRecruitmentService {
     }
     private String resolveRoadName(StudyRecruitmentCreateRequest request) {
         return request.getLocation() != null ? request.getLocation().getAddress() : null;
+    }
+
+    @Transactional
+    public boolean toggleJoin(CustomUserDetails userDetails, Long studyId) {
+        if (userDetails == null || userDetails.getUser() == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+        Long userId = userDetails.getUser().getId();
+
+        // 1. 스터디 모집글 확인
+        StudyRecruitment study = studyRecruitmentRepository.findById(studyId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.STUDY_NOT_FOUND));
+
+        // 2. 리더가 자기 스터디 신청하려는 경우 금지
+        if (study.getUser().getId().equals(userId)) {
+            throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        // 3. 기존 신청 여부 확인
+        Optional<StudyApplication> existing = studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId);
+
+        if (existing.isPresent()) {
+            // 이미 신청한 경우 → 취소
+            studyApplicationRepository.delete(existing.get());
+            return false;
+        }
+
+        // 4. 새로운 신청
+        StudyApplication newApp = StudyApplication.builder()
+                .user(userDetails.getUser())
+                .studyRecruitment(study)
+                .applicationStatus(ApplicationStatus.PENDING)
+                .build();
+        studyApplicationRepository.save(newApp);
+
+        return true;
     }
 }
