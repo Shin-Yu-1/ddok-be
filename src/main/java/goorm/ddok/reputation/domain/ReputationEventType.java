@@ -1,4 +1,4 @@
-package goorm.ddok.member.domain;
+package goorm.ddok.reputation.domain;
 
 public enum ReputationEventType {
     COMPLETE,  // 프로젝트/스터디 완료

@@ -1,5 +1,6 @@
-package goorm.ddok.member.domain;
+package goorm.ddok.reputation.domain;
 
+import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
