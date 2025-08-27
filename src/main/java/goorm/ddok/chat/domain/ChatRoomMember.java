@@ -34,7 +34,7 @@ public class ChatRoomMember {
     @Builder.Default
     private ChatMemberRole role = ChatMemberRole.MEMBER;
 
-    @Column()
+    @Column
     private Long lastReadMessageId;
 
     @CreatedDate
