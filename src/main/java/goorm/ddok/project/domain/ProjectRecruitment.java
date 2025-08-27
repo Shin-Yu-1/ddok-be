@@ -38,7 +38,7 @@ public class ProjectRecruitment {
     @Column(nullable = false, length = 100)
     private String title;
 
-    /** 팀 상태 : RECRUTING / ONGOING / CLOSED */
+    /** 팀 상태 : RECRUITING / ONGOING / CLOSED */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TeamStatus teamStatus;
