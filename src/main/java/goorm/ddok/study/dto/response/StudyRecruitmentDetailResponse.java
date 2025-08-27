@@ -81,15 +81,15 @@ public class StudyRecruitmentDetailResponse {
 
     @Schema(description = "내가 작성자인지 여부", example = "true")
     @JsonProperty("isMine")
-    private Boolean isMine;
+    private boolean isMine;
 
     @Schema(description = "지원 여부", example = "false")
     @JsonProperty("isApplied")
-    private Boolean isApplied;
+    private boolean isApplied;
 
     @Schema(description = "승인 여부", example = "false")
     @JsonProperty("isApproved")
-    private Boolean isApproved;
+    private boolean isApproved;
 
     @Schema(description = "팀 상태", example = "RECRUITING")
     private TeamStatus teamStatus;

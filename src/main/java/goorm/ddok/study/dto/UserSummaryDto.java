@@ -28,11 +28,11 @@ public class UserSummaryDto {
 
     @Schema(description = "내 프로필 여부", example = "false")
     @JsonProperty("isMine")
-    private Boolean isMine;
+    private boolean isMine;
 
     @Schema(description = "채팅방 ID (없으면 null)", example = "null")
     private Long chatRoomId;
 
     @Schema(description = "DM 요청 대기 여부", example = "true")
-    private Boolean dmRequestPending;
+    private boolean dmRequestPending;
 }
