@@ -27,7 +27,6 @@ public class StompEventsLogger {
     public void onSubscribe(SessionSubscribeEvent e) {
         var acc = StompHeaderAccessor.wrap(e.getMessage());
         log.info("STOMP SUBSCRIBE dest={}", acc.getDestination());
-        // 세션에 넣어둔 값(예: userId)도 보고 싶다면:
         Object userId = acc.getSessionAttributes() != null ? acc.getSessionAttributes().get("userId") : null;
         log.info("SUBSCRIBER userId={}", userId);
     }
