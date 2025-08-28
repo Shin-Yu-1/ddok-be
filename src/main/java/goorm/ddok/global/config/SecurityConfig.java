@@ -84,6 +84,8 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/preferences")).authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/projects/*").permitAll()
                         .requestMatchers(
                                 new AntPathRequestMatcher("/swagger-ui/**"),
@@ -104,8 +106,6 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/**/iframe.html")
                         ).permitAll()
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
-                        .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
-                        .requestMatchers(new AntPathRequestMatcher("/api/auth/preferences")).authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
