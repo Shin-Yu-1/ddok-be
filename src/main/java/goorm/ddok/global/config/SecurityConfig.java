@@ -105,6 +105,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
+                        .requestMatchers(new AntPathRequestMatcher("/api/auth/preferences")).authenticated()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults())
