@@ -69,6 +69,11 @@ public class ProjectRecruitmentQueryController {
                             examples = @ExampleObject(value = """
                 { "status": 404, "message": "해당 프로젝트 모집글을 찾을 수 없습니다.", "data": null }
                 """))),
+            @ApiResponse(responseCode = "404", description = "온도 정보 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 404, "message": "사용자 온도 정보를 찾을 수 없습니다.", "data": null }
+                """))),
             @ApiResponse(responseCode = "404", description = "리더 없음",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
