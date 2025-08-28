@@ -46,7 +46,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/webjars/**",
             "/h2-console/**",
             "/api/map/**",
-            "/api/auth/**"
+            "/api/auth/signup",
+            "/api/auth/signin/**",
+            "/api/auth/email/**",
+            "/api/auth/phone/**",
+            "/api/auth/password/**",
+            "/api/auth/token",
+            "/api/auth/stacks"
     );
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
