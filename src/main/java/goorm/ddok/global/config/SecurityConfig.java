@@ -1,11 +1,13 @@
 package goorm.ddok.global.config;
 
+import org.springframework.http.HttpMethod;
 import goorm.ddok.global.security.jwt.JwtAuthenticationFilter;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.util.sentry.SentryUserContextFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -80,7 +82,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .formLogin(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/projects/*").permitAll()
                         .requestMatchers(
                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                 new AntPathRequestMatcher("/v3/api-docs/**"),
@@ -88,7 +92,16 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/webjars/**"),
                                 new AntPathRequestMatcher("/h2-console/**"),
                                 new AntPathRequestMatcher("/api/auth/**"),
-                                new AntPathRequestMatcher("/api/map/**")
+                                new AntPathRequestMatcher("/api/map/**"),
+
+                                new AntPathRequestMatcher("/ws/**"),
+                                new AntPathRequestMatcher("/ws/chats/**"), // 명시적으로 추가
+                                new AntPathRequestMatcher("/**/info"),
+                                new AntPathRequestMatcher("/**/websocket"),
+                                new AntPathRequestMatcher("/**/xhr_streaming"),
+                                new AntPathRequestMatcher("/**/xhr_send"),
+                                new AntPathRequestMatcher("/**/xhr"),
+                                new AntPathRequestMatcher("/**/iframe.html")
                         ).permitAll()
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()

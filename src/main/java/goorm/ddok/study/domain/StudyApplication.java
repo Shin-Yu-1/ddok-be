@@ -46,8 +46,4 @@ public class StudyApplication {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
-
-    /** 삭제 시각 (Soft Delete) */
-    @Column
-    private Instant deletedAt;
 }
