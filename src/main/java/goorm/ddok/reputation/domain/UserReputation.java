@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -27,7 +28,7 @@ public class UserReputation {
     /** 온도 (0.0 ~ 100.0), 기본값 36.5 */
     @Column(name = "temperature", nullable = false, precision = 4, scale = 1)
     @Builder.Default
-    private Double temperature = 36.5;
+    private BigDecimal temperature = BigDecimal.valueOf(36.5);
 
     /** 최근 갱신 시각 */
     @LastModifiedDate

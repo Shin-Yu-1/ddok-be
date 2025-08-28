@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -33,7 +34,7 @@ public class UserReputationEvent {
 
     /** 증감값 (+/-) */
     @Column(name = "delta", nullable = false, precision = 3, scale = 1)
-    private Double delta;
+    private BigDecimal delta;
 
     /** 생성 시각 */
     @CreatedDate
