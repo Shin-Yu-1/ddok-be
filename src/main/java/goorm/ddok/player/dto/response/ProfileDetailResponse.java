@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -15,25 +16,25 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Schema(
-        name = "ProfileResponse",
-        description = "프로필 조회 응답 DTO"
+        name = "ProfileDetailResponse",
+        description = "프로필 상세 조회 응답 DTO"
 )
-public class ProfileResponse {
+public class ProfileDetailResponse {
 
     @Schema(description = "사용자 ID", example = "1")
     private Long userId;
 
     @Schema(description = "내 프로필 여부", example = "true")
-    private boolean isMine;
+    private boolean IsMine;
 
-    @Schema(description = "채팅방 ID (DM 존재 시)", example = "null")
+    @Schema(description = "프로필 공개 여부", example = "true")
+    private boolean IsPublic;
+
+    @Schema(description = "채팅방 ID (없으면 null)", example = "null")
     private Long chatRoomId;
 
     @Schema(description = "DM 요청 대기 여부", example = "false")
     private boolean dmRequestPending;
-
-    @Schema(description = "프로필 공개 여부", example = "true")
-    private boolean isPublic;
 
     @Schema(description = "프로필 이미지 URL", example = "https://cdn.example.com/profile.png")
     private String profileImageUrl;
@@ -42,7 +43,7 @@ public class ProfileResponse {
     private String nickname;
 
     @Schema(description = "온도", example = "36.6")
-    private Double temperature;
+    private BigDecimal temperature;
 
     @Schema(description = "나이대", example = "20대")
     private String ageGroup;
@@ -74,4 +75,5 @@ public class ProfileResponse {
 
     @Schema(description = "위치 정보")
     private LocationResponse location;
+
 }
