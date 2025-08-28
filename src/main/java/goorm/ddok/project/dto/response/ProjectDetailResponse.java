@@ -25,9 +25,8 @@ public class ProjectDetailResponse {
     @Schema(description = "프로젝트 ID", example = "2")
     private Long projectId;
 
-    @JsonProperty("isMine")
     @Schema(description = "내가 작성한 글인지 여부", example = "true")
-    private boolean isMine;
+    private boolean IsMine;
 
     @Schema(description = "프로젝트 제목", example = "구라라지 프로젝트")
     private String title;

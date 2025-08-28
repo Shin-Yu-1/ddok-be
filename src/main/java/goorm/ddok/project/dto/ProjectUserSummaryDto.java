@@ -4,16 +4,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(description = "프로젝트 사용자 요약 정보 DTO")
 public class ProjectUserSummaryDto {
     @Schema(description = "사용자 ID", example = "101")
     private Long userId;
@@ -33,15 +36,16 @@ public class ProjectUserSummaryDto {
     @Schema(description = "탈주 배지")
     private AbandonBadgeDto abandonBadge;
 
+    @DecimalMin("0.0")
+    @DecimalMax("100.0")
     @Schema(description = "온도", example = "36.5")
-    private Double temperature;
+    private BigDecimal temperature;
 
     @Schema(description = "담당 포지션", example = "백엔드")
     private String decidedPosition;
 
-    @JsonProperty("isMine")
     @Schema(description = "현재 사용자 본인 여부", example = "true")
-    private boolean isMine;
+    private boolean IsMine;
 
     @Schema(description = "채팅방 ID", example = "null")
     private Long chatRoomId;
