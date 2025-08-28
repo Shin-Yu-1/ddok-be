@@ -47,7 +47,7 @@ spring:
       max-request-size: 10MB
 
   elasticsearch:
-    uris: http://localhost:9200
+    uris: http://elasticsearch:9200
 
 cloud:
   aws:
