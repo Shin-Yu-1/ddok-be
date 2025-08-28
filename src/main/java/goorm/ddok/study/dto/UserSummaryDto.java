@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,11 +26,10 @@ public class UserSummaryDto {
     private String mainPosition;
 
     @Schema(description = "온도", example = "36.5")
-    private Double temperature;
+    private BigDecimal temperature;
 
     @Schema(description = "내 프로필 여부", example = "false")
-    @JsonProperty("isMine")
-    private boolean isMine;
+    private boolean IsMine;
 
     @Schema(description = "채팅방 ID (없으면 null)", example = "null")
     private Long chatRoomId;
