@@ -13,7 +13,7 @@ import lombok.*;
 public class StudyDeleteRequest {
 
     @NotBlank(message = "확인 문구는 필수입니다.")
-    @Pattern(regexp = "^삭제합니다\\.$", message = "확인 문구가 일치하지 않습니다. (삭제합니다.)")
+    @Pattern(regexp = "^삭제합니다\\.$", message = "확인 문구가 올바르지 않습니다.")
     @Schema(description = "삭제 확인 문구 (정확히 '삭제합니다.' 여야 함)", example = "삭제합니다.")
     private String confirmText;
 }
