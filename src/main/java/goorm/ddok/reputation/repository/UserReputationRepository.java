@@ -1,4 +1,4 @@
-package goorm.ddok.member.repository;
+package goorm.ddok.reputation.repository;
 
 import goorm.ddok.reputation.domain.UserReputation;
 import org.springframework.data.jpa.repository.JpaRepository;
