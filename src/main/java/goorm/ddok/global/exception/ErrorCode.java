@@ -22,6 +22,7 @@ public enum ErrorCode {
     INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
     INVALID_BOUNDING_BOX(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
+    INVALID_CONFIRM_TEXT(HttpStatus.BAD_REQUEST, "확인 문구가 올바르지 않습니다."),
     INVALID_POSITIONS(HttpStatus.BAD_REQUEST,"모집 포지션은 최소 1개 이상이어야 합니다."),
     INVALID_AGE_BUCKET(HttpStatus.BAD_REQUEST, "연령은 10단위(예: 20, 30, 40)만 허용합니다."),
     INVALID_CAPACITY_POSITIONS(HttpStatus.BAD_REQUEST,"포지션의 개수는 모집인원을 넘을 수 없습니다."),
@@ -69,8 +70,8 @@ public enum ErrorCode {
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패"),
     PROJECT_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "프로젝트 저장 중 오류가 발생했습니다."),
     STUDY_SAVE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "스터디 저장 중 오류가 발생했습니다."),
-    BANNER_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배너 이미지 업로드에 실패했습니다.");
-
+    BANNER_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "배너 이미지 업로드에 실패했습니다."),
+    PROJECT_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "프로젝트 삭제 중 오류가 발생했습니다.");
 
     private final HttpStatus status;
     private final String message;

@@ -2,9 +2,11 @@ package goorm.ddok.project.repository;
 
 import goorm.ddok.project.domain.ApplicationStatus;
 import goorm.ddok.project.domain.ProjectApplication;
+import io.lettuce.core.dynamic.annotation.Param;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import goorm.ddok.project.domain.ProjectRecruitment;
 import goorm.ddok.project.domain.ProjectRecruitmentPosition;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -50,6 +52,12 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
            """)
     List<PositionCountProjection> countApprovedByPosition(Long projectId);
 
+    // 이미 쓰고 있는 카운트 쿼리/프로젝션들은 그대로 두고,
+    // 삭제용만 추가
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("delete from ProjectApplication a where a.position.projectRecruitment.id = :projectId")
+    void deleteByPosition_ProjectRecruitment_Id(@Param("projectId") Long projectId);
+           
     // 내 지원 여부
     boolean existsByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long projectId);
 
@@ -78,3 +86,5 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
      */
     Optional<ProjectApplication> findByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long positionId);
 }
+
+
