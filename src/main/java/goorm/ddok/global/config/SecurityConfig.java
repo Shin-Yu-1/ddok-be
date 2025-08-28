@@ -1,5 +1,6 @@
 package goorm.ddok.global.config;
 
+import org.springframework.http.HttpMethod;
 import goorm.ddok.global.security.jwt.JwtAuthenticationFilter;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.util.sentry.SentryUserContextFilter;
@@ -81,7 +82,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .formLogin(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/projects/*").permitAll()
                         .requestMatchers(
                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                 new AntPathRequestMatcher("/v3/api-docs/**"),
