@@ -8,7 +8,7 @@ import goorm.ddok.global.util.AddressNormalizer;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
-import goorm.ddok.member.repository.UserReputationRepository;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.ProjectPositionDto;
 import goorm.ddok.project.dto.ProjectUserSummaryDto;
@@ -16,10 +16,12 @@ import goorm.ddok.project.dto.response.ProjectDetailResponse;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+import goorm.ddok.reputation.domain.UserReputation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -55,7 +57,7 @@ public class ProjectRecruitmentQueryService {
 
 
         // 4. 지원자 수 (application 기준)
-        int applicantCount = projectApplicationRepository.countByProjectRecruitment(project);
+        int applicantCount = projectApplicationRepository.countByPosition_ProjectRecruitment(project);
 
         // 5. 포지션별 현황
         List<ProjectPositionDto> positionDtos = project.getPositions().stream()
@@ -64,6 +66,8 @@ public class ProjectRecruitmentQueryService {
                             .filter(p -> p.getPosition().equals(position)
                                     && p.getRole() == ParticipantRole.MEMBER)
                             .count();
+
+                    int applicantCountForPosition = projectApplicationRepository.countByPosition(position);
 
                     boolean isApplied = currentUser != null &&
                             projectApplicationRepository.findByUser_IdAndPosition_ProjectRecruitment_Id(
@@ -81,7 +85,7 @@ public class ProjectRecruitmentQueryService {
 
                     return ProjectPositionDto.builder()
                             .position(position.getPositionName())
-                            .applied(applicantCount) // TODO: 필요하면 포지션별 지원자 수 카운트로 변경
+                            .applied(applicantCountForPosition)
                             .confirmed((int) confirmedCount)
                             .isApplied(isApplied)
                             .isApproved(isApproved)
@@ -91,18 +95,30 @@ public class ProjectRecruitmentQueryService {
                 .toList();
 
         // 6. 리더 DTO
-        ProjectUserSummaryDto leaderDto = toUserSummaryDto(leader, currentUser);
+        BigDecimal leaderTemp = userReputationRepository.findByUserId(leader.getUser().getId())
+                .map(UserReputation::getTemperature)
+                .orElse(BigDecimal.valueOf(36.5));
+        // TODO: 온도 로직 완성시 수정
+//                .orElseThrow(() -> new GlobalException(ErrorCode.REPUTATION_NOT_FOUND));
+        ProjectUserSummaryDto leaderDto = toUserSummaryDto(leader, currentUser, leaderTemp);
 
         // 7. 참여자 DTO (리더 제외)
         List<ProjectUserSummaryDto> participantDtos = participants.stream()
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
-                .map(p -> toUserSummaryDto(p, currentUser))
+                .map(p -> {
+                    BigDecimal temp = userReputationRepository.findByUserId(p.getUser().getId())
+                            .map(UserReputation::getTemperature)
+                            .orElse(BigDecimal.valueOf(36.5));
+                            // TODO: 온도 로직 완성시 수정
+//                            .orElseThrow(() -> new GlobalException(ErrorCode.REPUTATION_NOT_FOUND));
+                    return toUserSummaryDto(p, currentUser, temp);
+                })
                 .toList();
 
         // 8. 응답 조립
         return ProjectDetailResponse.builder()
                 .projectId(project.getId())
-                .isMine(currentUser != null && project.getUser().getId().equals(currentUser.getId()))
+                .IsMine(currentUser != null && project.getUser().getId().equals(currentUser.getId()))
                 .title(project.getTitle())
                 .teamStatus(project.getTeamStatus())
                 .bannerImageUrl(project.getBannerImageUrl())
@@ -142,17 +158,15 @@ public class ProjectRecruitmentQueryService {
 
 
     /** UserSummary 변환 */
-    private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser) {
+    private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser, BigDecimal temperature) {
         User user = participant.getUser();
 
-        // 메인 포지션
         String mainPosition = user.getPositions().stream()
                 .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
                 .map(UserPosition::getPositionName)
                 .findFirst()
                 .orElse(null);
 
-        // TODO: Badge / AbandonBadge 매핑 로직 추가 필요
         return ProjectUserSummaryDto.builder()
                 .userId(user.getId())
                 .nickname(user.getNickname())
@@ -160,11 +174,11 @@ public class ProjectRecruitmentQueryService {
                 .mainPosition(mainPosition)
                 .mainBadge(null)       // TODO: BadgeDto 매핑
                 .abandonBadge(null)    // TODO: AbandonBadgeDto 매핑
-                .temperature(36.5)     // TODO: 온도 로직 연결
+                .temperature(temperature)
                 .decidedPosition(participant.getPosition().getPositionName())
-                .isMine(currentUser != null && user.getId().equals(currentUser.getId()))
-                .chatRoomId(null)      // TODO: 채팅 연동 후 매핑
-                .dmRequestPending(false) // TODO: DM 연동 후 매핑
+                .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
+                .chatRoomId(null)
+                .dmRequestPending(false)
                 .build();
     }
 }
