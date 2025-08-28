@@ -49,9 +49,11 @@ public enum ErrorCode {
     VERIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "인증 요청 기록이 없습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     CAFE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 카페입니다."),
+    RECRUITMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 모집글을 찾을 수 없습니다."),
     PROJECT_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 프로젝트입니다."),
     POSITION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 포지션을 찾을 수 없습니다."),
-
+    STUDY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 스터디입니다."),
+    REPUTATION_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 온도 정보를 찾을 수 없습니다."),
 
 
     // 409 CONFLICT
@@ -59,6 +61,7 @@ public enum ErrorCode {
     EMAIL_ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증이 완료된 계정입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다."),
     ALREADY_VERIFIED(HttpStatus.CONFLICT, "이미 인증이 완료된 요청입니다."),
+    LEADER_NOT_FOUND(HttpStatus.CONFLICT, "리더 정보를 찾을 수 없습니다."),
     ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 해당 프로젝트에 다른 포지션으로 지원하였습니다."),
 
 

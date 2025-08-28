@@ -2,6 +2,7 @@ package goorm.ddok.project.repository;
 
 import goorm.ddok.project.domain.ParticipantRole;
 import goorm.ddok.project.domain.ProjectParticipant;
+import goorm.ddok.project.domain.ProjectRecruitment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,4 +19,6 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
 
     // 특정 포지션을 참조하는 참가자 수
     long countByPosition_IdAndDeletedAtIsNull(Long positionId);
+
+    List<ProjectParticipant> findByPosition_ProjectRecruitment(ProjectRecruitment recruitment);
 }
