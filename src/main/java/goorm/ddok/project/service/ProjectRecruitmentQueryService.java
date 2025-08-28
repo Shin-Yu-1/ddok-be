@@ -87,9 +87,9 @@ public class ProjectRecruitmentQueryService {
                             .position(position.getPositionName())
                             .applied(applicantCountForPosition)
                             .confirmed((int) confirmedCount)
-                            .isApplied(isApplied)
-                            .isApproved(isApproved)
-                            .isAvailable(isAvailable)
+                            .IsApplied(isApplied)
+                            .IsApproved(isApproved)
+                            .IsAvailable(isAvailable)
                             .build();
                 })
                 .toList();
