@@ -14,9 +14,8 @@ import lombok.NoArgsConstructor;
 @Schema(description = "탈주 배지 정보 DTO")
 public class AbandonBadgeDto {
 
-    @JsonProperty("isGranted")
     @Schema(description = "배지 보유 여부", example = "true")
-    private boolean isGranted;
+    private boolean IsGranted;
 
     @Schema(description = "포기 횟수", example = "5")
     private Integer count;

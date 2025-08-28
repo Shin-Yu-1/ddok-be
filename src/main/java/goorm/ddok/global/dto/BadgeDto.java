@@ -1,6 +1,5 @@
 package goorm.ddok.global.dto;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,4 +19,5 @@ public class BadgeDto {
 
     @Schema(description = "배지 티어", example = "bronze")
     private String tier;
+
 }
