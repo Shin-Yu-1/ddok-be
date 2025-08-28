@@ -8,3 +8,4 @@ import java.util.Optional;
 public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecruitment, Long> {
     Optional<ProjectRecruitment> findByIdAndDeletedAtIsNull(Long id);
 }
+

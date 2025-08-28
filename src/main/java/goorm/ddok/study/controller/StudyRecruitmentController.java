@@ -17,11 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/studies")
@@ -108,5 +107,57 @@ public class StudyRecruitmentController {
         StudyRecruitmentCreateResponse response = studyRecruitmentService.createStudy(request, bannerImage, user);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.of(201, "스터디 생성이 성공했습니다.", response));
+    }
+
+    @Operation(
+            summary = "스터디 참여 신청/취소",
+            description = "스터디 참여 희망 의사를 신청하거나 취소합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "신청/취소 성공",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = {
+                                    @ExampleObject(name = "신청 성공", value = """
+                                    {
+                                      "status": 200,
+                                      "message": "스터디 참여 희망 의사가 신청되었습니다.",
+                                      "data": { "isApplied": true }
+                                    }
+                                    """),
+                                    @ExampleObject(name = "취소 성공", value = """
+                                    {
+                                      "status": 200,
+                                      "message": "스터디 참여 희망 의사가 취소되었습니다.",
+                                      "data": { "isApplied": false }
+                                    }
+                                    """)
+                            })),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                            { "status": 401, "message": "인증이 필요합니다.", "data": null }
+                            """))),
+            @ApiResponse(responseCode = "403", description = "리더는 참여 불가",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                            { "status": 403, "message": "리더는 참여 신청을 할 수 없습니다.", "data": null }
+                            """))),
+            @ApiResponse(responseCode = "404", description = "스터디 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                            { "status": 404, "message": "존재하지 않는 스터디입니다.", "data": null }
+                            """)))
+    })
+    @PostMapping("/{studyId}/join")
+    public ResponseEntity<ApiResponseDto<Map<String, Boolean>>> toggleJoin(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @PathVariable Long studyId
+    ) {
+        boolean isApplied = studyRecruitmentService.toggleJoin(userDetails, studyId);
+        String message = isApplied ?
+                "스터디 참여 희망 의사가 신청되었습니다." :
+                "스터디 참여 희망 의사가 취소되었습니다.";
+
+        return ResponseEntity.ok(ApiResponseDto.of(200, message, Map.of("isApplied", isApplied)));
     }
 }
