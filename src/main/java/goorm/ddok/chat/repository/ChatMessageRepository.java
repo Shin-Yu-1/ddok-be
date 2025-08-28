@@ -18,4 +18,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     // ContentText 조회
     List<ChatMessage> findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId, String contentText);
+
+    List<ChatMessage> findAllByRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId);
 }
