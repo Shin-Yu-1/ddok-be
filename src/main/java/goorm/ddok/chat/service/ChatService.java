@@ -48,7 +48,7 @@ public class ChatService {
         // roomId만 추출
         List<Long> roomIds = userRooms.stream()
                 .map(ChatRoomMember::getRoomId)
-                .distinct() // 중복 제거 (필요시)
+                .distinct()
                 .toList();
 
         // 1:1 채팅방만 추출
@@ -411,7 +411,10 @@ public class ChatService {
         ChatRoom chatRoom = chatRepository.findById(roomId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
-        List<ChatMessage> messages = chatMessageRepository.findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
+        Integer size = pageable.getPageSize();
+        List<ChatMessage> messages = (search == null || search.trim().isEmpty())
+                ? chatMessageRepository.findAllByRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(roomId)
+                : chatMessageRepository.findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
 
         Page<ChatMessage> chatMessagePage = PaginationUtil.paginate(messages, pageable);
         PaginationResponse pagination = PaginationUtil.from(chatMessagePage);
