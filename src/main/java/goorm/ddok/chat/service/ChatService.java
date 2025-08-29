@@ -36,14 +36,14 @@ public class ChatService {
     private final ChatMapper chatMapper;
 
     // 1:1 채팅 목록 조회
-    public ChatListResponseResponse getPrivateChats(String email, Pageable pageable) {
+    public ChatListResponse getPrivateChats(String email, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
                 .getId();
 
         // 사용자가 속한 채팅방 조회 조회
-        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUserIdAndDeletedAtIsNull(userId);
+        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId);
 
         // roomId만 추출
         List<Long> roomIds = userRooms.stream()
@@ -55,7 +55,7 @@ public class ChatService {
         List<ChatRoom> chatRooms = chatRepository.findByIdInAndRoomType(roomIds, ChatRoomType.PRIVATE);
 
         // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
+        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
 
         // 각 채팅방마다 가장 최근 메시지를 Map에 저장
         Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
@@ -81,21 +81,21 @@ public class ChatService {
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
         PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
 
-        return ChatListResponseResponse.builder()
+        return ChatListResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
     // 팀 채팅 목록 조회
-    public ChatListResponseResponse getTeamChats(String email, Pageable pageable) {
+    public ChatListResponse getTeamChats(String email, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
                 .getId();
 
         // 사용자가 속한 채팅방 조회 조회
-        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUserIdAndDeletedAtIsNull(userId);
+        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId);
 
         // roomId만 추출
         List<Long> roomIds = userRooms.stream()
@@ -107,7 +107,7 @@ public class ChatService {
         List<ChatRoom> chatRooms = chatRepository.findByIdInAndRoomType(roomIds, ChatRoomType.GROUP);
 
         // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
+        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
 
         // 각 채팅방마다 가장 최근 메시지를 Map에 저장
         Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
@@ -133,20 +133,20 @@ public class ChatService {
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
         PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
 
-        return ChatListResponseResponse.builder()
+        return ChatListResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
     // 1:1 채팅 목록 검색
-    public ChatListResponseResponse searchPrivateChats(String email, String search, Pageable pageable) {
+    public ChatListResponse searchPrivateChats(String email, String search, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
         // 사용자가 속한 채팅방 Id 조회
-        List<Long> myRoomIds = chatRoomMemberRepository.findAllByUserIdAndDeletedAtIsNull(userId).stream()
+        List<Long> myRoomIds = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId).stream()
                 .map(ChatRoomMember::getRoomId)
                 .distinct()
                 .toList();
@@ -158,7 +158,7 @@ public class ChatService {
                 .toList();
 
         // 겹치는 채팅방만 추출
-        List<Long> matchedRoomIds = chatRoomMemberRepository.findAllByUserIdInAndDeletedAtIsNull(matchedUserIds).stream()
+        List<Long> matchedRoomIds = chatRoomMemberRepository.findAllByUser_IdInAndDeletedAtIsNull(matchedUserIds).stream()
                 .map(ChatRoomMember::getRoomId)
                 .filter(myRoomIds::contains) // 내가 속한 채팅방과 교집합
                 .distinct()
@@ -168,7 +168,7 @@ public class ChatService {
         List<ChatRoom> filteredRooms = chatRepository.findByIdInAndRoomType(matchedRoomIds, ChatRoomType.PRIVATE);
 
         // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(matchedRoomIds);
+        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(matchedRoomIds);
 
         // 각 채팅방마다 가장 최근 메시지를 Map에 저장
         Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
@@ -194,27 +194,27 @@ public class ChatService {
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
         PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
 
-        return ChatListResponseResponse.builder()
+        return ChatListResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
     }
 
     // 팀 채팅 목록 검색
-    public ChatListResponseResponse searchTeamChats(String email, String search, Pageable pageable) {
+    public ChatListResponse searchTeamChats(String email, String search, Pageable pageable) {
 
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
         // 사용자가 속한 채팅방 Id 및 검색어
-        List<Long> myRoomIds = chatRoomMemberRepository.findAllByUserIdAndDeletedAtIsNull(userId).stream()
+        List<Long> myRoomIds = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId).stream()
                 .map(ChatRoomMember::getRoomId)
                 .distinct()
                 .toList();
 
         // 사용자가 속한 채팅방 없을 경우
         if (myRoomIds.isEmpty()) {
-            return ChatListResponseResponse.builder()
+            return ChatListResponse.builder()
                     .chats(Collections.emptyList())
                     .pagination(PaginationResponse.builder()
                             .currentPage(pageable.getPageNumber())
@@ -232,7 +232,7 @@ public class ChatService {
                 .toList();
 
         // 겹치는 채팅방만 추출
-        List<Long> matchedRoomIds = chatRoomMemberRepository.findAllByUserIdInAndDeletedAtIsNull(matchedUserIds).stream()
+        List<Long> matchedRoomIds = chatRoomMemberRepository.findAllByUser_IdInAndDeletedAtIsNull(matchedUserIds).stream()
                 .map(ChatRoomMember::getRoomId)
                 .filter(myRoomIds::contains)
                 .distinct()
@@ -255,7 +255,7 @@ public class ChatService {
 
         // uniqueRooms이 없을 때
         if (uniqueRooms.isEmpty()) {
-            return ChatListResponseResponse.builder()
+            return ChatListResponse.builder()
                     .chats(Collections.emptyList())
                     .pagination(PaginationResponse.builder()
                             .currentPage(pageable.getPageNumber())
@@ -272,7 +272,7 @@ public class ChatService {
                 .toList();
 
         // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(finalRoomIds);
+        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(finalRoomIds);
 
         // 각 채팅방마다 가장 최근 메시지를 Map에 저장
         Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
@@ -298,7 +298,7 @@ public class ChatService {
         List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
         PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
 
-        return ChatListResponseResponse.builder()
+        return ChatListResponse.builder()
                 .chats(chatRoomDtos)
                 .pagination(pagination)
                 .build();
@@ -309,7 +309,7 @@ public class ChatService {
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
-        boolean isMember = chatRoomMemberRepository.existsByRoomIdAndUserIdAndDeletedAtIsNull(roomID, userId);
+        boolean isMember = chatRoomMemberRepository.existsByRoom_IdAndUser_IdAndDeletedAtIsNull(roomID, userId);
 
         if (!isMember) {
             throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
@@ -348,7 +348,7 @@ public class ChatService {
                 .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
         // 사용자가 해당 채팅방의 멤버인지 확인
-        boolean isMember = chatRoomMemberRepository.existsByRoomIdAndUserId(roomId, sender.getId());
+        boolean isMember = chatRoomMemberRepository.existsByRoom_IdAndUser_Id(roomId, sender.getId());
         if (!isMember) {
             throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
         }
@@ -385,13 +385,22 @@ public class ChatService {
             String fileUrl,
             Long replyToId
     ) {
+        User sender = userRepository.findById(senderId).orElseThrow(() ->
+                new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        ChatMessage replyTo = null;
+        if (replyToId != null) {
+            replyTo = chatMessageRepository.findById(replyToId)
+                    .orElse(null);
+        }
+
         ChatMessage chatMessage = ChatMessage.builder()
-                .roomId(chatRoom.getId())
-                .senderId(senderId)
+                .room(chatRoom)
+                .sender(sender)
                 .contentType(contentType)
                 .contentText(contentText)
                 .fileUrl(fileUrl)
-                .replyToId(replyToId)
+                .replyTo(replyTo)
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
@@ -413,8 +422,8 @@ public class ChatService {
 
         Integer size = pageable.getPageSize();
         List<ChatMessage> messages = (search == null || search.trim().isEmpty())
-                ? chatMessageRepository.findAllByRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(roomId)
-                : chatMessageRepository.findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
+                ? chatMessageRepository.findAllByRoom_IdAndDeletedAtIsNullOrderByCreatedAtDesc(roomId)
+                : chatMessageRepository.findAllByRoom_IdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
 
         Page<ChatMessage> chatMessagePage = PaginationUtil.paginate(messages, pageable);
         PaginationResponse pagination = PaginationUtil.from(chatMessagePage);
@@ -448,7 +457,7 @@ public class ChatService {
         Long userId = userRepository.findByEmail(email).orElseThrow(() ->
                 new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
 
-        ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByRoomIdAndUserId(roomId, userId)
+        ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
 
         chatRoomMember.setLastReadMessageId(request.getMessageId());
@@ -467,27 +476,24 @@ public class ChatService {
         // ChatRoom 저장
         ChatRoom chatRoom = ChatRoom.builder()
                 .roomType(ChatRoomType.PRIVATE)
-                .ownerUserId(sender.getId())
+                .owner(sender)
                 .build();
 
         chatRepository.save(chatRoom);
 
         // ChatRoomMember 저장
         ChatRoomMember member1 = ChatRoomMember.builder()
-                .roomId(chatRoom.getId())
-                .userId(sender.getId())
+                .room(chatRoom)
+                .user(sender)
                 .role(ChatMemberRole.ADMIN) // 요청자가 owner라 생각함.
                 .build();
 
         ChatRoomMember member2 = ChatRoomMember.builder()
-                .roomId(chatRoom.getId())
-                .userId(receiver.getId())
+                .room(chatRoom)
+                .user(receiver)
                 .role(ChatMemberRole.MEMBER)
                 .build();
 
         chatRoomMemberRepository.saveAll(List.of(member1, member2));
     }
 }
-
-
-
