@@ -134,39 +134,38 @@ public class ChatService {
     }
 
     // 메세지 전송
+    @Transactional
     public ChatMessageResponse sendMessage(String email, Long roomId, ChatMessageRequest request) {
-        User sender = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND));
+        User sender = getUserByEmail(email);
+        ChatRoom room = getRoomById(roomId);
 
-        ChatRoom chatRoom = chatRepository.findById(roomId)
-                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-
-        // 사용자가 해당 채팅방의 멤버인지 확인
-        boolean isMember = chatRoomMemberRepository.existsByRoom_IdAndUser_Id(roomId, sender.getId());
-        if (!isMember) {
+        if (!chatRoomMemberRepository.existsByRoomAndUser(room, sender)) {
             throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
         }
 
-        // 메시지 저장 및 채팅방 시간 갱신
-        ChatMessage savedMessage = saveMessageAndUpdateRoom(
-                chatRoom,
-                sender.getId(),
-                request.getContentType(),
-                request.getContentText(),
-                request.getFileUrl(),
-                request.getReplyToId()
-        );
+        ChatMessage replyTo = (request.getReplyToId() == null) ? null :
+                chatMessageRepository.findById(request.getReplyToId()).orElse(null);
 
+        ChatMessage saved = chatMessageRepository.save(ChatMessage.builder()
+                .room(room)
+                .sender(sender)
+                .contentType(request.getContentType())
+                .contentText(request.getContentText())
+                .fileUrl(request.getFileUrl())
+                .replyTo(replyTo)
+                .build());
+
+        room.setLastMessageAt(saved.getCreatedAt());
 
         return ChatMessageResponse.builder()
-                .messageId(savedMessage.getId())
-                .roomId(savedMessage.getRoomId())
-                .senderId(savedMessage.getSenderId())
+                .messageId(saved.getId())
+                .roomId(room.getId())
+                .senderId(sender.getId())
                 .senderNickname(sender.getNickname())
-                .contentType(savedMessage.getContentType())
-                .contentText(savedMessage.getContentText())
-                .fileUrl(savedMessage.getFileUrl())
-                .createdAt(savedMessage.getCreatedAt())
+                .contentType(saved.getContentType())
+                .contentText(saved.getContentText())
+                .fileUrl(saved.getFileUrl())
+                .createdAt(saved.getCreatedAt())
                 .build();
     }
 
