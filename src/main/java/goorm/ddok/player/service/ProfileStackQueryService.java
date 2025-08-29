@@ -7,6 +7,7 @@ import goorm.ddok.member.repository.UserTechStackRepository;
 import goorm.ddok.player.dto.response.TechStackResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,13 +23,14 @@ public class ProfileStackQueryService {
     /**
      * 사용자 기술 스택 조회
      */
-    public Page<TechStackResponse> getUserTechStacks(Long userId, Pageable pageable) {
+    public Page<TechStackResponse> getUserTechStacks(Long userId, int page, int size) {
         // 1. 유저 존재 여부 체크
         if (!userRepository.existsById(userId)) {
             throw new GlobalException(ErrorCode.USER_NOT_FOUND);
         }
 
         // 2. 기술 스택 조회
+        Pageable pageable = PageRequest.of(page, size);
         return userTechStackRepository.findByUserId(userId, pageable)
                 .map(uts -> TechStackResponse.builder()
                         .techStack(uts.getTechStack().getName())
