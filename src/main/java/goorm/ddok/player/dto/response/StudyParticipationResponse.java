@@ -1,14 +1,14 @@
 package goorm.ddok.player.dto.response;
 
-import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.study.domain.ParticipantRole;
 import goorm.ddok.study.domain.StudyParticipant;
+import goorm.ddok.study.domain.StudyRecruitment;
+import goorm.ddok.study.domain.TeamStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor
@@ -44,27 +44,32 @@ public class StudyParticipationResponse {
     private String title;
 
     @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "CLOSED")
-    private String teamStatus;
+    private TeamStatus teamStatus;
 
     @Schema(description = "참여자 역할 (LEADER / MEMBER)", example = "MEMBER")
-    private String role;
+    private ParticipantRole role;
 
     @Schema(description = "스터디 장소 정보 (OFFLINE일 경우만 존재)")
-    private LocationDto location;
+    private StudyLocationResponse location;
 
     @Schema(description = "모집 기간 (시작일 ~ 종료일)")
     private RecruitmentPeriodResponse recruitmentPeriod;
 
     public static StudyParticipationResponse from(StudyParticipant participant) {
+        System.out.println("DEBUG role = " + participant.getRole());
+        StudyRecruitment study = participant.getStudyRecruitment();
+
         return StudyParticipationResponse.builder()
-                .studyId(participant.getStudyRecruitment().getId())
-                .title(participant.getStudyRecruitment().getTitle())
-                .teamStatus(participant.getStudyRecruitment().getTeamStatus().name())
-                .role(participant.getRole().name())
-                .location(LocationDto.from(participant.getStudyRecruitment().getLocation()))
-                .recruitmentPeriod(
-                        RecruitmentPeriodResponse.from(participant.getStudyRecruitment().getRecruitmentPeriod())
-                )
+                .studyId(study.getId())
+                .title(study.getTitle())
+                .teamStatus(study.getTeamStatus())
+                .role(participant.getRole())
+                .location(StudyLocationResponse.from(study))
+                .recruitmentPeriod(RecruitmentPeriodResponse.from(
+                        study.getStartDate(),
+                        study.getExpectedMonths(),
+                        study.getTeamStatus()
+                ))
                 .build();
     }
 }
