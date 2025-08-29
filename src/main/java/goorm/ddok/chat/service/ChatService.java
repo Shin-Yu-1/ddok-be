@@ -64,52 +64,16 @@ public class ChatService {
     // 팀 채팅 목록 조회
     public ChatListResponse getTeamChats(String email, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email)
-                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND))
-                .getId();
+        User me = getUserByEmail(email);
 
-        // 사용자가 속한 채팅방 조회 조회
-        List<ChatRoomMember> userRooms = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId);
+        Page<ChatRoom> page = chatRepository.pageRoomsByMemberAndTypeOrderByRecent(
+                me, ChatRoomType.GROUP, pageable);
 
-        // roomId만 추출
-        List<Long> roomIds = userRooms.stream()
-                .map(ChatRoomMember::getRoomId)
-                .distinct() // 중복 제거 (필요시)
-                .toList();
-
-        // 팀 채팅방 추출
-        List<ChatRoom> chatRooms = chatRepository.findByIdInAndRoomType(roomIds, ChatRoomType.GROUP);
-
-        // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(roomIds);
-
-        // 각 채팅방마다 가장 최근 메시지를 Map에 저장
-        Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
-                .collect(Collectors.toMap(
-                        ChatMessage::getRoomId,
-                        Function.identity(),
-                        (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
-                ));
-
-        // 정렬
-        chatRooms.sort(Comparator
-                .comparing((ChatRoom room) -> {
-                    ChatMessage lastMessage = lastMessageMap.get(room.getId());
-                    return lastMessage != null ? lastMessage.getCreatedAt() : room.getCreatedAt();
-                }, Comparator.reverseOrder()) // 최신순
-                .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
-        );
-
-        // 페이징 처리
-        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(chatRooms, pageable);
-
-        // DTO 변환
-        List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
-        PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
+        List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
 
         return ChatListResponse.builder()
-                .chats(chatRoomDtos)
-                .pagination(pagination)
+                .chats(chats)
+                .pagination(PaginationResponse.of(page))
                 .build();
     }
 
