@@ -80,61 +80,15 @@ public class ChatService {
     // 1:1 채팅 목록 검색
     public ChatListResponse searchPrivateChats(String email, String search, Pageable pageable) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+        User me = getUserByEmail(email);
 
-        // 사용자가 속한 채팅방 Id 조회
-        List<Long> myRoomIds = chatRoomMemberRepository.findAllByUser_IdAndDeletedAtIsNull(userId).stream()
-                .map(ChatRoomMember::getRoomId)
-                .distinct()
-                .toList();
+        Page<ChatRoom> page = chatRepository.pagePrivateRoomsByMemberAndPeerNickname(
+                me, search, pageable);
 
-        // 닉네임에 검색어가 포함된 사용자 목록 조회
-        List<Long> matchedUserIds = userRepository.findAllByNicknameContaining(search).stream()
-                .map(User::getId)
-                .filter(id -> !id.equals(userId)) // 자기 자신 제외
-                .toList();
-
-        // 겹치는 채팅방만 추출
-        List<Long> matchedRoomIds = chatRoomMemberRepository.findAllByUser_IdInAndDeletedAtIsNull(matchedUserIds).stream()
-                .map(ChatRoomMember::getRoomId)
-                .filter(myRoomIds::contains) // 내가 속한 채팅방과 교집합
-                .distinct()
-                .toList();
-
-        // 1:1 채팅방 목록 조회
-        List<ChatRoom> filteredRooms = chatRepository.findByIdInAndRoomType(matchedRoomIds, ChatRoomType.PRIVATE);
-
-        // 최근 대화 순서
-        List<ChatMessage> recentMessages = chatMessageRepository.findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(matchedRoomIds);
-
-        // 각 채팅방마다 가장 최근 메시지를 Map에 저장
-        Map<Long, ChatMessage> lastMessageMap = recentMessages.stream()
-                .collect(Collectors.toMap(
-                        ChatMessage::getRoomId,
-                        Function.identity(),
-                        (m1, m2) -> m1.getCreatedAt().isAfter(m2.getCreatedAt()) ? m1 : m2 // 최신 메시지 유지
-                ));
-
-        // 정렬
-        filteredRooms.sort(Comparator
-                .comparing((ChatRoom room) -> {
-                    ChatMessage lastMessage = lastMessageMap.get(room.getId());
-                    return lastMessage != null ? lastMessage.getCreatedAt() : room.getCreatedAt();
-                }, Comparator.reverseOrder()) // 최신순
-                .thenComparing(ChatRoom::getCreatedAt, Comparator.reverseOrder()) // 생성일 순
-        );
-
-        // 페이징 처리
-        Page<ChatRoom> chatRoomPage = PaginationUtil.paginate(filteredRooms, pageable);
-
-        // DTO 변환
-        List<ChatRoomResponse> chatRoomDtos = chatMapper.toChatRoomDtoList(chatRoomPage.getContent(), userId);
-        PaginationResponse pagination = PaginationUtil.from(chatRoomPage);
-
+        List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
         return ChatListResponse.builder()
-                .chats(chatRoomDtos)
-                .pagination(pagination)
+                .chats(chats)
+                .pagination(PaginationResponse.of(page))
                 .build();
     }
 
