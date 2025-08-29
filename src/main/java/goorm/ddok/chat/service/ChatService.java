@@ -203,84 +203,35 @@ public class ChatService {
                 .build();
     }
 
-    @Transactional
-    public ChatMessage saveMessageAndUpdateRoom(
-            ChatRoom chatRoom,
-            Long senderId,
-            ChatContentType contentType,
-            String contentText,
-            String fileUrl,
-            Long replyToId
-    ) {
-        User sender = userRepository.findById(senderId).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND));
-
-        ChatMessage replyTo = null;
-        if (replyToId != null) {
-            replyTo = chatMessageRepository.findById(replyToId)
-                    .orElse(null);
-        }
-
-        ChatMessage chatMessage = ChatMessage.builder()
-                .room(chatRoom)
-                .sender(sender)
-                .contentType(contentType)
-                .contentText(contentText)
-                .fileUrl(fileUrl)
-                .replyTo(replyTo)
-                .build();
-
-        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
-
-        chatRoom.setLastMessageAt(savedMessage.getCreatedAt());
-        chatRepository.save(chatRoom);
-
-        return savedMessage;
-    }
-
     // 마지막 읽은 메세지 처리
+    @Transactional
     public void lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
 
-        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+        User me = getUserByEmail(email);
+        ChatRoom roomRef = chatRepository.getReferenceById(roomId);
 
-        ChatRoomMember chatRoomMember = chatRoomMemberRepository.findByRoom_IdAndUser_Id(roomId, userId)
+        ChatRoomMember m = chatRoomMemberRepository.findByRoomAndUser(roomRef, me)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
 
-        chatRoomMember.setLastReadMessageId(request.getMessageId());
-        chatRoomMemberRepository.save(chatRoomMember);
+        m.setLastReadMessageId(request.getMessageId());
     }
 
     @Transactional
     public void createPrivateChatRoom(User sender, User receiver) {
-        // 기존 1:1 채팅방 존재 확인
-        Optional<ChatRoom> originChatRoom = chatRepository.findPrivateRoomByUserIds(sender.getId(), receiver.getId());
-
-        if (originChatRoom.isPresent()) {
+        if (chatRepository.existsPrivateRoomByUserIds(sender.getId(), receiver.getId())) {
             throw new GlobalException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
         }
 
-        // ChatRoom 저장
-        ChatRoom chatRoom = ChatRoom.builder()
+        ChatRoom room = chatRepository.save(ChatRoom.builder()
                 .roomType(ChatRoomType.PRIVATE)
                 .owner(sender)
-                .build();
+                .build());
 
-        chatRepository.save(chatRoom);
+        ChatRoomMember admin = ChatRoomMember.builder()
+                .room(room).user(sender).role(ChatMemberRole.ADMIN).build();
+        ChatRoomMember member = ChatRoomMember.builder()
+                .room(room).user(receiver).role(ChatMemberRole.MEMBER).build();
 
-        // ChatRoomMember 저장
-        ChatRoomMember member1 = ChatRoomMember.builder()
-                .room(chatRoom)
-                .user(sender)
-                .role(ChatMemberRole.ADMIN) // 요청자가 owner라 생각함.
-                .build();
-
-        ChatRoomMember member2 = ChatRoomMember.builder()
-                .room(chatRoom)
-                .user(receiver)
-                .role(ChatMemberRole.MEMBER)
-                .build();
-
-        chatRoomMemberRepository.saveAll(List.of(member1, member2));
+        chatRoomMemberRepository.saveAll(List.of(admin, member));
     }
 }
