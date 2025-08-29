@@ -169,6 +169,40 @@ public class ChatService {
                 .build();
     }
 
+    // 채팅 메세지 메시지 목록/검색
+    @Transactional
+    public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
+        User me = getUserByEmail(email);
+        ChatRoom room = getRoomById(roomId);
+
+        if (!chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(room, me)) {
+            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
+        }
+
+        Page<ChatMessageRepository.MessageView> page =
+                (search == null || search.isBlank())
+                        ? chatMessageRepository.pageViewsByRoom(room, pageable)
+                        : chatMessageRepository.pageViewsByRoomAndKeyword(room, search, pageable);
+
+        List<ChatMessageResponse> messages = page.getContent().stream()
+                .map(v -> ChatMessageResponse.builder()
+                        .messageId(v.getId())
+                        .roomId(room.getId())
+                        .senderId(v.getSenderId())
+                        .senderNickname(v.getSenderNickname())
+                        .contentType(v.getContentType())
+                        .contentText(v.getContentText())
+                        .fileUrl(v.getFileUrl())
+                        .createdAt(v.getCreatedAt())
+                        .build())
+                .toList();
+
+        return ChatMessageListResponse.builder()
+                .messages(messages)
+                .pagination(PaginationResponse.of(page))
+                .build();
+    }
+
     @Transactional
     public ChatMessage saveMessageAndUpdateRoom(
             ChatRoom chatRoom,
@@ -202,46 +236,6 @@ public class ChatService {
         chatRepository.save(chatRoom);
 
         return savedMessage;
-    }
-
-    // 채팅 메세지 키워드 검색 조회
-    @Transactional
-    public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
-        User sender = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND));
-
-        ChatRoom chatRoom = chatRepository.findById(roomId)
-                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-
-        Integer size = pageable.getPageSize();
-        List<ChatMessage> messages = (search == null || search.trim().isEmpty())
-                ? chatMessageRepository.findAllByRoom_IdAndDeletedAtIsNullOrderByCreatedAtDesc(roomId)
-                : chatMessageRepository.findAllByRoom_IdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(roomId, search);
-
-        Page<ChatMessage> chatMessagePage = PaginationUtil.paginate(messages, pageable);
-        PaginationResponse pagination = PaginationUtil.from(chatMessagePage);
-
-        List<ChatMessageResponse> messageResponses = chatMessagePage.getContent().stream()
-                .map(message -> ChatMessageResponse.builder()
-                        .messageId(message.getId())
-                        .roomId(message.getRoomId())
-                        .senderId(message.getSenderId())
-                        .senderNickname(
-                                userRepository.findById(message.getSenderId())
-                                        .map(User::getNickname)
-                                        .orElse("알 수 없음")
-                        )
-                        .contentType(message.getContentType())
-                        .contentText(message.getContentText())
-                        .fileUrl(message.getFileUrl())
-                        .createdAt(message.getCreatedAt())
-                        .build())
-                .toList();
-
-        return ChatMessageListResponse.builder()
-                .messages(messageResponses)
-                .pagination(pagination)
-                .build();
     }
 
     // 마지막 읽은 메세지 처리
