@@ -66,7 +66,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
       join r.members mMe
       join r.members mPeer
       join mPeer.user uPeer
-      where r.roomType = goorm.ddok.chat.domain.ChatRoomType.PRIVATE
+      where r.roomType = "PRIVATE"
         and mMe.user = :me
         and mPeer.user <> :me
         and mMe.deletedAt is null and mPeer.deletedAt is null
@@ -81,11 +81,11 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     @Query("""
       select distinct r
       from ChatRoom r
-      join r.members mm /* 내 멤버십 보장 */
+      join r.members mm
       left join r.members mx
       left join mx.user ux
       where mm.user = :me
-        and r.roomType = goorm.ddok.chat.domain.ChatRoomType.GROUP
+        and r.roomType = "GROUP"
         and mm.deletedAt is null
         and (
              r.name like concat('%', :search, '%')
@@ -103,7 +103,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
       from ChatRoom r
       join r.members m1
       join r.members m2
-      where r.roomType = goorm.ddok.chat.domain.ChatRoomType.PRIVATE
+      where r.roomType = "PRIVATE"
         and m1.user.id = :u1 and m2.user.id = :u2
         and m1.deletedAt is null and m2.deletedAt is null
     """)
