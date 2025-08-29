@@ -166,7 +166,7 @@ public class ChatMapper {
                     .type(message.getContentType())
                     .content(content)
                     .createdAt(message.getCreatedAt())
-                    .senderId(message.getSenderId()) // 수정: User 엔티티가 아닌 senderId 직접 사용
+                    .senderId(message.getSender().getId())
                     .build());
         });
     }
