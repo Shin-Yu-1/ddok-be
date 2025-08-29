@@ -1,4 +1,4 @@
-package goorm.ddok.player.dto.reaponse;
+package goorm.ddok.player.dto.response;
 
 import goorm.ddok.project.domain.ProjectRecruitment;
 import io.swagger.v3.oas.annotations.media.Schema;

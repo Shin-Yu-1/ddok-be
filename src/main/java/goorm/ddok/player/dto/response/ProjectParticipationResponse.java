@@ -1,4 +1,4 @@
-package goorm.ddok.player.dto.reaponse;
+package goorm.ddok.player.dto.response;
 
 import goorm.ddok.project.domain.ProjectParticipant;
 import goorm.ddok.project.domain.ProjectRecruitment;
@@ -48,7 +48,7 @@ public class ProjectParticipationResponse {
     private ProjectLocationResponse location;
 
     @Schema(description = "모집 기간 (시작일 ~ 종료일)")
-    private ProjectPeriodResponse period;
+    private ProjectPeriodResponse projectPeriod;
 
     public static ProjectParticipationResponse from(ProjectParticipant participant) {
         ProjectRecruitment project = participant.getPosition().getProjectRecruitment();
@@ -58,7 +58,7 @@ public class ProjectParticipationResponse {
                 .title(project.getTitle())
                 .teamStatus(project.getTeamStatus())
                 .location(ProjectLocationResponse.from(project))
-                .recruitmentPeriod(RecruitmentPeriodResponse.from(
+                .projectPeriod(ProjectPeriodResponse.from(
                         project.getStartDate(),
                         project.getExpectedMonths(),
                         project.getTeamStatus()
