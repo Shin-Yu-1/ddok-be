@@ -12,13 +12,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -61,11 +56,13 @@ public class ProfileStackQueryController {
     @GetMapping("/{userId}/profile/stacks")
     public ResponseEntity<ApiResponseDto<?>> getUserTechStacks(
             @PathVariable Long userId,
-            @PageableDefault(size = 14) Pageable pageable
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "14") int size
     ) {
-        Page<TechStackResponse> stacks = profileStackQueryService.getUserTechStacks(userId, pageable);
+        System.out.println(">>> page=" + page + ", size=" + size);
+        Page<TechStackResponse> stacks = profileStackQueryService.getUserTechStacks(userId, page, size);
         return ResponseEntity.ok(
-                ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", goorm.ddok.global.dto.PageResponse.of(stacks))
+                ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", PageResponse.of(stacks))
         );
     }
 }
