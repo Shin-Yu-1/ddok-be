@@ -108,37 +108,28 @@ public class ChatService {
     }
 
     // 채팅 멤버 조회
-    public ChatMembersResponse getRoomMembers(Long roomID, String email) {
-        Long userId = userRepository.findByEmail(email).orElseThrow(() ->
-                new GlobalException(ErrorCode.USER_NOT_FOUND)).getId();
+    public ChatMembersResponse getRoomMembers(Long roomId, String email) {
+        User me = getUserByEmail(email);
+        ChatRoom roomRef = chatRepository.getReferenceById(roomId);
 
-        boolean isMember = chatRoomMemberRepository.existsByRoom_IdAndUser_IdAndDeletedAtIsNull(roomID, userId);
+        boolean isMember = chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(roomRef, me);
+        if (!isMember) throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
 
-        if (!isMember) {
-            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
-        }
-
-        // 채팅방 멤버 조회 (User 정보 포함)
-        List<Object[]> roomMemberWithUserList = chatRoomMemberRepository.findAllByRoomIdWithUserInfo(roomID);
-
-        List<ChatMembersResponse.Member> members = roomMemberWithUserList.stream()
-                .map(result -> {
-                    ChatRoomMember roomMember = (ChatRoomMember) result[0];
-                    User user = (User) result[1];
-
-                    return ChatMembersResponse.Member.builder()
-                            .userId(roomMember.getUserId()) // 실제 사용자 ID
-                            .nickname(user.getNickname())
-                            .profileImage(user.getProfileImageUrl())
-                            .role(String.valueOf(roomMember.getRole()))
-                            .joinedAt(roomMember.getCreatedAt())
-                            .build();
-                })
-                .collect(Collectors.toList());
+        // User를 한 번에 가져오도록 EntityGraph/Fetch Join 사용
+        List<ChatRoomMember> members = chatRoomMemberRepository.findByRoomWithUser(roomRef);
+        List<ChatMembersResponse.Member> dtos = members.stream()
+                .map(m -> ChatMembersResponse.Member.builder()
+                        .userId(m.getUser().getId())
+                        .nickname(m.getUser().getNickname())
+                        .profileImage(m.getUser().getProfileImageUrl())
+                        .role(String.valueOf(m.getRole()))
+                        .joinedAt(m.getCreatedAt())
+                        .build())
+                .toList();
 
         return ChatMembersResponse.builder()
-                .members(members)
-                .totalCount(members.size())
+                .members(dtos)
+                .totalCount(dtos.size())
                 .build();
     }
 
