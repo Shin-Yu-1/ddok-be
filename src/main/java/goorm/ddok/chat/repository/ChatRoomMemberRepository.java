@@ -17,8 +17,8 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     boolean existsByRoomAndUser(ChatRoom room, User user);
     boolean existsByRoomAndUserAndDeletedAtIsNull(ChatRoom room, User user);
 
-    // roomId + userId로 단일 멤버십 조회
-    Optional<ChatRoomMember> findByRoom_IdAndUser_Id(Long roomId, Long userId);
+    // 단일 멤버십 조회
+    Optional<ChatRoomMember> findByRoomAndUser(ChatRoom room, User user);
 
     // User 엔티티 정보가 필요한 경우를 위한 별도 쿼리
     @Query("""

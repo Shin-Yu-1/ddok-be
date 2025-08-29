@@ -18,12 +18,6 @@ import java.util.Optional;
 @Repository
 public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
-    // Room type + Room ID list 조회
-    List<ChatRoom> findByIdInAndRoomType(List<Long> roomIds, ChatRoomType type);
-
-    // Room type + Room Id + Room name 키워드 조회
-    List<ChatRoom> findByIdInAndRoomTypeAndNameContaining(List<Long> roomIds, ChatRoomType type, String name);
-
     // 특정 채팅방에 대한 사용자의 멤버십 조회
     @Query("""
         SELECT crm FROM ChatRoomMember crm
@@ -50,19 +44,6 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
         LIMIT 1
         """)
     Optional<ChatMessage> findLastMessageByRoomId(@Param("roomId") Long roomId);
-
-    // 기존 1:1 채팅방 존재 여부 확인
-    @Query("""
-        SELECT cr FROM ChatRoom cr
-        JOIN ChatRoomMember crm1 ON cr.id = crm1.room.id
-        JOIN ChatRoomMember crm2 ON cr.id = crm2.room.id
-        WHERE cr.roomType = 'PRIVATE'
-          AND crm1.room.id = :roomid1
-          AND crm2.room.id = :roomid2
-          AND crm1.deletedAt IS NULL
-          AND crm2.deletedAt IS NULL
-    """)
-    Optional<ChatRoom> findPrivateRoomByUserIds(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
 
     // 내가 속한 특정 타입의 방을 최근 대화순
     @Query("""
@@ -115,4 +96,16 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     Page<ChatRoom> pageGroupRoomsByMemberAndRoomOrMemberName(@Param("me") User me,
                                                              @Param("search") String search,
                                                              Pageable pageable);
+
+    // 기존 1:1 채팅방 존재 여부 확인
+    @Query("""
+      select case when count(r) > 0 then true else false end
+      from ChatRoom r
+      join r.members m1
+      join r.members m2
+      where r.roomType = goorm.ddok.chat.domain.ChatRoomType.PRIVATE
+        and m1.user.id = :u1 and m2.user.id = :u2
+        and m1.deletedAt is null and m2.deletedAt is null
+    """)
+    boolean existsPrivateRoomByUserIds(@Param("u1") Long u1, @Param("u2") Long u2);
 }
