@@ -4,6 +4,7 @@ import goorm.ddok.chat.domain.ChatMessage;
 import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
 import goorm.ddok.chat.domain.ChatRoomType;
+import goorm.ddok.member.domain.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -62,4 +63,18 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
           AND crm2.deletedAt IS NULL
     """)
     Optional<ChatRoom> findPrivateRoomByUserIds(@Param("userId1") Long userId1, @Param("userId2") Long userId2);
+
+    // 내가 속한 특정 타입의 방을 최근 대화순
+    @Query("""
+      select distinct r
+      from ChatRoom r
+      join r.members m
+      where m.user = :user
+        and r.roomType = :type
+        and m.deletedAt is null
+      order by coalesce(r.lastMessageAt, r.createdAt) desc, r.createdAt desc
+    """)
+    Page<ChatRoom> pageRoomsByMemberAndTypeOrderByRecent(@Param("user") User user,
+                                                         @Param("type") ChatRoomType type,
+                                                         Pageable pageable);
 }
