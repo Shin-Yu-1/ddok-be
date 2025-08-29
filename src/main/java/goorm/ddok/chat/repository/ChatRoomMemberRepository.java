@@ -26,7 +26,7 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
         FROM ChatRoomMember crm
         JOIN User u ON crm.user.id = u.id
         WHERE crm.room.id = :roomId
-        AND crm.deletedAt IS NULL 
+        AND crm.deletedAt IS NULL
     """)
     List<Object[]> findAllByRoomIdWithUserInfo(@Param("roomId") Long roomId);
 

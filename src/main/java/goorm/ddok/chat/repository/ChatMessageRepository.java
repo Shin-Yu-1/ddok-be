@@ -30,14 +30,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     Optional<ChatMessage> findById(Long id);
 
-    // createdAt 기준으로 정렬해서 반환
-    List<ChatMessage> findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(List<Long> roomIds);
-
-    // ContentText 조회
-    List<ChatMessage> findAllByRoom_IdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId, String contentText);
-
-    List<ChatMessage> findAllByRoom_IdAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId);
-
     @Query("""
       select new goorm.ddok.chat.repository.projection.MessageViewImpl(
         m.id, s.id, s.nickname, m.contentType, m.contentText, m.fileUrl, m.createdAt
