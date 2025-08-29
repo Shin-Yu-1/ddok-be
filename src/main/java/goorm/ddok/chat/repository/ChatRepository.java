@@ -95,4 +95,24 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     Page<ChatRoom> pagePrivateRoomsByMemberAndPeerNickname(@Param("me") User me,
                                                            @Param("search") String search,
                                                            Pageable pageable);
+
+    // 팀방: 방 이름 OR 멤버 닉네임으로 검색
+    @Query("""
+      select distinct r
+      from ChatRoom r
+      join r.members mm /* 내 멤버십 보장 */
+      left join r.members mx
+      left join mx.user ux
+      where mm.user = :me
+        and r.roomType = goorm.ddok.chat.domain.ChatRoomType.GROUP
+        and mm.deletedAt is null
+        and (
+             r.name like concat('%', :search, '%')
+             or (ux is not null and ux.nickname like concat('%', :search, '%'))
+        )
+      order by coalesce(r.lastMessageAt, r.createdAt) desc, r.createdAt desc
+    """)
+    Page<ChatRoom> pageGroupRoomsByMemberAndRoomOrMemberName(@Param("me") User me,
+                                                             @Param("search") String search,
+                                                             Pageable pageable);
 }
