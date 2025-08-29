@@ -26,8 +26,8 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 채팅방에 대한 사용자의 멤버십 조회
     @Query("""
         SELECT crm FROM ChatRoomMember crm
-        WHERE crm.roomId = :roomId
-        AND crm.userId = :userId
+        WHERE crm.room.id = :roomId
+        AND crm.user.id = :roomId
         AND crm.deletedAt IS NULL
         """)
     Optional<ChatRoomMember> findMembershipByRoomIdAndUserId(@Param("roomId") Long roomId, @Param("userId") Long userId);
@@ -35,7 +35,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 채팅방의 멤버 수 조회
     @Query("""
         SELECT COUNT(crm) FROM ChatRoomMember crm
-        WHERE crm.roomId = :roomId
+        WHERE crm.room.id = :roomId
         AND crm.deletedAt IS NULL
         """)
     Long countMembersByRoomId(@Param("roomId") Long roomId);
@@ -43,7 +43,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     // 특정 채팅방의 마지막 메시지 조회
     @Query("""
         SELECT cm FROM ChatMessage cm
-        WHERE cm.roomId = :roomId
+        WHERE cm.room.id = :roomId
         AND cm.deletedAt IS NULL
         ORDER BY cm.createdAt DESC
         LIMIT 1
@@ -53,11 +53,11 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     // 기존 1:1 채팅방 존재 여부 확인
     @Query("""
         SELECT cr FROM ChatRoom cr
-        JOIN ChatRoomMember crm1 ON cr.id = crm1.roomId
-        JOIN ChatRoomMember crm2 ON cr.id = crm2.roomId
+        JOIN ChatRoomMember crm1 ON cr.id = crm1.room.id
+        JOIN ChatRoomMember crm2 ON cr.id = crm2.room.id
         WHERE cr.roomType = 'PRIVATE'
-          AND crm1.userId = :userId1
-          AND crm2.userId = :userId2
+          AND crm1.room.id = :roomid1
+          AND crm2.room.id = :roomid2
           AND crm1.deletedAt IS NULL
           AND crm2.deletedAt IS NULL
     """)

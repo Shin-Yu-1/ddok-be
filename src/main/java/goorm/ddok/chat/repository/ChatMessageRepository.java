@@ -11,13 +11,13 @@ import java.util.Optional;
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
 
-    Optional<ChatMessage> findById(@NotNull Long userId);
+    Optional<ChatMessage> findById(Long id);
 
     // createdAt 기준으로 정렬해서 반환
-    List<ChatMessage> findAllByRoomIdInAndDeletedAtIsNullOrderByCreatedAtDesc(List<Long> roomIds);
+    List<ChatMessage> findAllByRoom_IdInAndDeletedAtIsNullOrderByCreatedAtDesc(List<Long> roomIds);
 
     // ContentText 조회
-    List<ChatMessage> findAllByRoomIdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId, String contentText);
+    List<ChatMessage> findAllByRoom_IdAndContentTextContainingAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId, String contentText);
 
-    List<ChatMessage> findAllByRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId);
+    List<ChatMessage> findAllByRoom_IdAndDeletedAtIsNullOrderByCreatedAtDesc(Long roomId);
 }
