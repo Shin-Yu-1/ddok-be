@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class UserPortfolioResponse {
-    @Schema(description = "링크 제목", examples = "github link")
+    @Schema(description = "링크 제목", example = "github link")
     private String linkTitle;
 
-    @Schema(description = "링크 주소", examples = "https://~")
+    @Schema(description = "링크 주소", example = "https://~")
     private String link;
 }
