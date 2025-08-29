@@ -46,8 +46,6 @@ public class StudyParticipationResponse {
     @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "CLOSED")
     private TeamStatus teamStatus;
 
-    @Schema(description = "참여자 역할 (LEADER / MEMBER)", example = "MEMBER")
-    private ParticipantRole role;
 
     @Schema(description = "스터디 장소 정보 (OFFLINE일 경우만 존재)")
     private StudyLocationResponse location;
@@ -63,7 +61,6 @@ public class StudyParticipationResponse {
                 .studyId(study.getId())
                 .title(study.getTitle())
                 .teamStatus(study.getTeamStatus())
-                .role(participant.getRole())
                 .location(StudyLocationResponse.from(study))
                 .recruitmentPeriod(RecruitmentPeriodResponse.from(
                         study.getStartDate(),
