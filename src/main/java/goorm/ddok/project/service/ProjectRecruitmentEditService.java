@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,9 +73,8 @@ public class ProjectRecruitmentEditService {
                 ))
                 .toList();
 
-        String address = pr.getProjectMode() == ProjectMode.ONLINE
-                ? "ONLINE"
-                : Optional.ofNullable(pr.getRoadName()).orElse("-");
+        // ✅ 주소 조립 사용
+        String address = composeAddress(pr);
 
         // 무관(0/0)일 때는 null, 아니면 DTO
         PreferredAgesDto ages = (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
@@ -168,10 +166,10 @@ public class ProjectRecruitmentEditService {
         // 배너: 파일 > 요청 URL > 기존 > 기본
         String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
 
-        // 위치 업데이트
+        // 위치 업데이트 (카카오 필드 개별 저장)
         boolean offline = req.getMode() == ProjectMode.OFFLINE;
         if (offline) {
-            pr = updateOfflineLocation(pr, req.getLocation());
+            pr = applyOfflineLocation(pr, req.getLocation());
         } else {
             pr = clearLocation(pr);
         }
@@ -213,7 +211,6 @@ public class ProjectRecruitmentEditService {
         Map<String, ProjectRecruitmentTrait> current = pr.getTraits().stream()
                 .collect(Collectors.toMap(ProjectRecruitmentTrait::getTraitName, t -> t, (a, b) -> a));
 
-        // 추가
         for (String name : desired) {
             if (!current.containsKey(name)) {
                 pr.getTraits().add(ProjectRecruitmentTrait.builder()
@@ -222,20 +219,13 @@ public class ProjectRecruitmentEditService {
                         .build());
             }
         }
-        // 제거
         pr.getTraits().removeIf(t -> !desired.contains(t.getTraitName()));
     }
 
-    /**
-     * 엄격 삭제 버전:
-     * - 요청에 있는 이름은 유지/추가
-     * - 요청에 없는 기존 포지션은 '참여자/지원서 참조가 있으면' 에러, 아니면 삭제
-     */
     private void mergePositionsStrict(ProjectRecruitment pr, List<String> desired) {
         Map<String, ProjectRecruitmentPosition> byName = pr.getPositions().stream()
                 .collect(Collectors.toMap(ProjectRecruitmentPosition::getPositionName, p -> p, (a, b) -> a));
 
-        // 추가
         for (String name : desired) {
             if (!byName.containsKey(name)) {
                 pr.getPositions().add(ProjectRecruitmentPosition.builder()
@@ -245,12 +235,10 @@ public class ProjectRecruitmentEditService {
             }
         }
 
-        // 삭제 후보
         List<ProjectRecruitmentPosition> toRemove = pr.getPositions().stream()
                 .filter(pos -> !desired.contains(pos.getPositionName()))
                 .toList();
 
-        // 참조 검사 -> 있으면 에러
         for (ProjectRecruitmentPosition pos : toRemove) {
             long refByParticipants = participantRepository.countByPosition_IdAndDeletedAtIsNull(pos.getId());
             long refByApplications = applicationRepository.countByPosition_Id(pos.getId());
@@ -258,8 +246,6 @@ public class ProjectRecruitmentEditService {
                 throw new GlobalException(ErrorCode.POSITION_IN_USE);
             }
         }
-
-        // 실제 삭제
         pr.getPositions().removeIf(pos -> !desired.contains(pos.getPositionName()));
     }
 
@@ -278,22 +264,20 @@ public class ProjectRecruitmentEditService {
                 .ifPresent(leader -> leader.changePosition(target));
     }
 
-    /* ---------- location helpers ---------- */
+    /* ---------- 주소/위치 helpers (여기만 변경) ---------- */
 
-    private ProjectRecruitment updateOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
-        BigDecimal lat = loc.getLatitude();
-        BigDecimal lng = loc.getLongitude();
-
-        // 카카오 응답을 프론트가 그대로 매핑해줬다는 전제
-        String addressLine = buildAddressLine(loc);
-
+    /** 카카오 road_address 필드를 엔티티 각 컬럼에 저장 */
+    private ProjectRecruitment applyOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
         return pr.toBuilder()
                 .region1depthName(loc.getRegion1depthName())
                 .region2depthName(loc.getRegion2depthName())
                 .region3depthName(loc.getRegion3depthName())
-                .roadName(addressLine) // 합쳐진 전체 주소로 roadName 저장
-                .latitude(lat)
-                .longitude(lng)
+                .roadName(loc.getRoadName())
+                .mainBuildingNo(loc.getMainBuildingNo())
+                .subBuildingNo(loc.getSubBuildingNo())
+                .zoneNo(loc.getZoneNo())
+                .latitude(loc.getLatitude())
+                .longitude(loc.getLongitude())
                 .build();
     }
 
@@ -304,25 +288,36 @@ public class ProjectRecruitmentEditService {
                 .region2depthName(null)
                 .region3depthName(null)
                 .roadName(null)
+                .mainBuildingNo(null)
+                .subBuildingNo(null)
+                .zoneNo(null)
                 .latitude(null)
                 .longitude(null)
                 .build();
     }
 
-    /** "전북 익산시 망산길 11-17" 형태로 합치기 */
-    private String buildAddressLine(LocationDto loc) {
-        String r1 = Optional.ofNullable(loc.getRegion1depthName()).orElse("");
-        String r2 = Optional.ofNullable(loc.getRegion2depthName()).orElse("");
-        String road = Optional.ofNullable(loc.getRoadName()).orElse("");
-        String main = Optional.ofNullable(loc.getMainBuildingNo()).orElse("");
-        String sub = Optional.ofNullable(loc.getSubBuildingNo()).orElse("");
-        String mainSub = sub.isBlank() ? main : (main + "-" + sub);
+    /** 응답용 전체 주소 만들기: "r1 r2 r3 road main-sub" */
+    private String composeAddress(ProjectRecruitment pr) {
+        if (pr.getProjectMode() == ProjectMode.ONLINE) return "ONLINE";
 
-        String base = (r1 + " " + r2 + " " + road).trim().replaceAll("\\s+", " ");
-        if (!mainSub.isBlank()) {
-            return (base + " " + mainSub).trim();
-        }
-        return base;
+        String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
+        String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
+        String r3 = Optional.ofNullable(pr.getRegion3depthName()).orElse("");
+        String road = Optional.ofNullable(pr.getRoadName()).orElse("");
+        String main = Optional.ofNullable(pr.getMainBuildingNo()).orElse("");
+        String sub  = Optional.ofNullable(pr.getSubBuildingNo()).orElse("");
+
+        StringBuilder sb = new StringBuilder();
+        if (!r1.isBlank()) sb.append(r1).append(" ");
+        if (!r2.isBlank()) sb.append(r2).append(" ");
+        if (!r3.isBlank()) sb.append(r3).append(" ");
+        if (!road.isBlank()) sb.append(road).append(" ");
+
+        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
+        else if (!main.isBlank()) sb.append(main);
+
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? "-" : s;
     }
 
     /* ---------- banner helper ---------- */
@@ -341,7 +336,7 @@ public class ProjectRecruitmentEditService {
         );
     }
 
-    /* ---------- response builders ---------- */
+    /* ---------- response builders (기존) ---------- */
 
     private String resolveLeaderPositionName(Long projectId) {
         return participantRepository
@@ -363,7 +358,7 @@ public class ProjectRecruitmentEditService {
                             .mainPosition(null)
                             .temperature(null)
                             .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .IsMine(mine) // DTO 필드 네이밍에 맞춤
+                            .IsMine(mine)
                             .chatRoomId(null)
                             .dmRequestPending(false)
                             .build();
@@ -420,15 +415,14 @@ public class ProjectRecruitmentEditService {
                         .position(p.getPositionName())
                         .applied(applied.getOrDefault(p.getPositionName(), 0L))
                         .confirmed(confirmed.getOrDefault(p.getPositionName(), 0L))
-                        .IsApplied(myApplied)   // DTO 필드 네이밍에 맞춤
+                        .IsApplied(myApplied)
                         .IsApproved(myApproved)
                         .IsAvailable(pr.getTeamStatus() == TeamStatus.RECRUITING)
                         .build())
                 .toList();
 
-        String address = pr.getProjectMode() == ProjectMode.ONLINE
-                ? "ONLINE"
-                : Optional.ofNullable(pr.getRoadName()).orElse("-");
+        // ✅ 응답 주소도 조립 사용
+        String address = composeAddress(pr);
 
         boolean isMine = meId != null && Objects.equals(pr.getUser().getId(), meId);
 
@@ -440,7 +434,7 @@ public class ProjectRecruitmentEditService {
 
         return ProjectUpdateResultResponse.builder()
                 .projectId(projectId)
-                .IsMine(isMine) // DTO 필드 네이밍에 맞춤
+                .IsMine(isMine)
                 .title(pr.getTitle())
                 .teamStatus(pr.getTeamStatus().name())
                 .bannerImageUrl(pr.getBannerImageUrl())
