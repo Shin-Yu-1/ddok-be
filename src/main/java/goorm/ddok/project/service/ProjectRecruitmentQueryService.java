@@ -16,9 +16,6 @@ import goorm.ddok.project.dto.response.ProjectDetailResponse;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
-// 온도 실제 연동 시 Repository 주입해 사용
-// import goorm.ddok.reputation.repository.UserReputationRepository;
-// import goorm.ddok.reputation.domain.UserReputation;
 
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
@@ -39,13 +36,14 @@ public class ProjectRecruitmentQueryService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
-     private final UserReputationRepository userReputationRepository;
+    private final UserReputationRepository userReputationRepository;
 
     /** 프로젝트 모집글 상세 조회 */
     public ProjectDetailResponse getProjectDetail(Long projectId, CustomUserDetails userDetails) {
-        // 1) 프로젝트 존재 확인
+        // 1) 프로젝트 존재 + 삭제여부 확인
         ProjectRecruitment project = projectRecruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND));
+        ensureNotDeleted(project);
 
         User me = (userDetails != null) ? userDetails.getUser() : null;
 
@@ -94,7 +92,7 @@ public class ProjectRecruitmentQueryService {
                 })
                 .toList();
 
-        // 6) 리더/멤버 요약 (온도 기본 36.5, 배지/DM/채팅방 기본 로직)
+        // 6) 리더/멤버 요약 (온도/배지/DM/채팅방: 조회 실패 시 null 폴백)
         BigDecimal leaderTemp = userReputationRepository.findByUserId(leader.getUser().getId())
                 .map(UserReputation::getTemperature)
                 .orElse(null);
@@ -141,6 +139,13 @@ public class ProjectRecruitmentQueryService {
                 .build();
     }
 
+    /** soft delete 확인 */
+    private void ensureNotDeleted(ProjectRecruitment pr) {
+        if (pr.getDeletedAt() != null) {
+            throw new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND);
+        }
+    }
+
     /** 전체 주소 합치기: "r1 r2 r3 road main-sub" (ONLINE이면 null) */
     private String composeAddress(ProjectRecruitment pr) {
         if (pr.getProjectMode() == ProjectMode.ONLINE) return null;
@@ -164,7 +169,7 @@ public class ProjectRecruitmentQueryService {
         return s.isBlank() ? null : s;
     }
 
-    /** UserSummary 변환 (+ 배지/DM/채팅방 기본값) */
+    /** UserSummary 변환 (+ 배지/DM/채팅방 기본값: null 폴백) */
     private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser, BigDecimal temperature) {
         User user = participant.getUser();
 
@@ -197,22 +202,9 @@ public class ProjectRecruitmentQueryService {
                 .build();
     }
 
-    // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점) ====
-    private BadgeDto resolveMainBadge(User user) {
-        return BadgeDto.builder().type(null).tier(null).build(); // 일단 뱃지는 null로
-    }
-
-    private AbandonBadgeDto resolveAbandonBadge(User user) {
-        return AbandonBadgeDto.builder().IsGranted(false).count(null).build(); //일단 null로
-    }
-
-    private Long resolveChatRoomId(Long meId, Long otherId) {
-        if (meId == null || Objects.equals(meId, otherId)) return null;
-        return null; // TODO: 실제 채팅 연동
-    }
-
-    private boolean resolveDmPending(Long meId, Long otherId) {
-        if (meId == null || Objects.equals(meId, otherId)) return false;
-        return false; // TODO: 실제 DM 연동
-    }
+    // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====
+    private BadgeDto resolveMainBadge(User user) { return null; }
+    private AbandonBadgeDto resolveAbandonBadge(User user) { return null; }
+    private Long resolveChatRoomId(Long meId, Long otherId) { return null; }
+    private boolean resolveDmPending(Long meId, Long otherId) { return false; }
 }

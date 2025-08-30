@@ -55,6 +55,7 @@ public class ProjectRecruitmentEditService {
 
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
+        ensureNotDeleted(pr);
 
         // 리더만 조회 가능
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
@@ -154,6 +155,7 @@ public class ProjectRecruitmentEditService {
 
         ProjectRecruitment pr = recruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
+        ensureNotDeleted(pr);
 
         // 리더만 수정
         if (!Objects.equals(pr.getUser().getId(), me.getUser().getId())) {
@@ -247,6 +249,13 @@ public class ProjectRecruitmentEditService {
         ProjectRecruitment saved = recruitmentRepository.save(pr);
 
         return buildUpdateResult(saved, me);
+    }
+
+    /* ---------- soft delete 공통 체크 ---------- */
+    private void ensureNotDeleted(ProjectRecruitment pr) {
+        if (pr.getDeletedAt() != null) {
+            throw new GlobalException(ErrorCode.PROJECT_NOT_FOUND);
+        }
     }
 
     /* ---------- merge helpers ---------- */
@@ -459,8 +468,8 @@ public class ProjectRecruitmentEditService {
                 .startDate(pr.getStartDate())
                 .detail(pr.getContentMd())
                 .positions(positionItems)
-                .leader(leaderBlock)                 // 값이 있으면 채움, 없으면 null
-                .participants(participantBlocks)     // 값이 있으면 리스트, 없으면 빈 리스트
+                .leader(leaderBlock)
+                .participants(participantBlocks)
                 .build();
     }
 
@@ -476,13 +485,11 @@ public class ProjectRecruitmentEditService {
                 .findFirst()
                 .orElse(null);
 
-        // 온도: 레포에서 못 찾으면 null
         Double temperature = userReputationRepository.findByUserId(u.getId())
                 .map(UserReputation::getTemperature)
                 .map(BigDecimal::doubleValue)
                 .orElse(null);
 
-        // 배지: 실제 조회로 연결되면 값, 아니면 null
         BadgeDto mainBadge = fetchMainBadge(u.getId());
         AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
 
@@ -554,10 +561,10 @@ public class ProjectRecruitmentEditService {
 
         BigDecimal temperature = userReputationRepository.findByUserId(u.getId())
                 .map(UserReputation::getTemperature)
-                .orElse(null); // ← 기본값 없이 null 폴백
+                .orElse(null);
 
-        BadgeDto mainBadge = fetchMainBadge(u.getId());              // null 허용
-        AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId()); // null 허용
+        BadgeDto mainBadge = fetchMainBadge(u.getId());
+        AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
 
         return ProjectUserSummaryDto.builder()
                 .userId(u.getId())
