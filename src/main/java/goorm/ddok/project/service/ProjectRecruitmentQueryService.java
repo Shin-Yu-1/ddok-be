@@ -97,18 +97,16 @@ public class ProjectRecruitmentQueryService {
         // 6) 리더/멤버 요약 (온도 기본 36.5, 배지/DM/채팅방 기본 로직)
         BigDecimal leaderTemp = userReputationRepository.findByUserId(leader.getUser().getId())
                 .map(UserReputation::getTemperature)
-                .orElse(BigDecimal.valueOf(36.5));
+                .orElse(null);
         ProjectUserSummaryDto leaderDto = toUserSummaryDto(leader, me, leaderTemp);
 
         List<ProjectUserSummaryDto> memberDtos = participants.stream()
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
                 .map(p -> {
-                    BigDecimal temp = BigDecimal.valueOf(36.5);
-                    /*
                     BigDecimal temp = userReputationRepository.findByUserId(p.getUser().getId())
                             .map(UserReputation::getTemperature)
-                            .orElse(BigDecimal.valueOf(36.5));
-                    */
+                            .orElse(null);
+
                     return toUserSummaryDto(p, me, temp);
                 })
                 .toList();
@@ -201,11 +199,11 @@ public class ProjectRecruitmentQueryService {
 
     // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점) ====
     private BadgeDto resolveMainBadge(User user) {
-        return BadgeDto.builder().type("login").tier("bronze").build();
+        return BadgeDto.builder().type(null).tier(null).build(); // 일단 뱃지는 null로
     }
 
     private AbandonBadgeDto resolveAbandonBadge(User user) {
-        return AbandonBadgeDto.builder().IsGranted(true).count(5).build();
+        return AbandonBadgeDto.builder().IsGranted(false).count(null).build(); //일단 null로
     }
 
     private Long resolveChatRoomId(Long meId, Long otherId) {

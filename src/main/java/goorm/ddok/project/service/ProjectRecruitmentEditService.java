@@ -19,7 +19,6 @@ import goorm.ddok.project.dto.ProjectPositionDto;
 import goorm.ddok.project.dto.ProjectUserSummaryDto;
 import goorm.ddok.project.dto.request.ProjectRecruitmentUpdateRequest;
 import goorm.ddok.project.dto.response.ProjectDetailResponse;
-import goorm.ddok.project.dto.response.ProjectEditPageResponse; // 사용 안하면 제거해도 됨
 import goorm.ddok.project.dto.response.ProjectUpdateResultResponse;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
@@ -62,7 +61,7 @@ public class ProjectRecruitmentEditService {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
 
-        // 참가자 및 리더
+        // 참가자(리더 포함)
         List<ProjectParticipant> participants =
                 participantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(projectId);
 
@@ -111,7 +110,7 @@ public class ProjectRecruitmentEditService {
         // 주소(ONLINE이면 null)
         String address = composeAddressForRead(pr);
 
-        // 리더/참가자 요약(온도·배지 포함)
+        // 리더/참가자 요약(온도·배지: 조회 실패 시 null 폴백)
         ProjectUserSummaryDto leaderDto = toUserSummaryDto(leader, me.getUser());
         List<ProjectUserSummaryDto> memberDtos = participants.stream()
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
@@ -133,7 +132,7 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount((int) applicantCount)
                 .mode(pr.getProjectMode())
-                .address(address) // online이면 null
+                .address(address)
                 .preferredAges(ages)
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())
@@ -145,7 +144,7 @@ public class ProjectRecruitmentEditService {
     }
 
     /* =========================
-     *  수정 저장 (기존 기능 유지)
+     *  수정 저장
      * ========================= */
     public ProjectUpdateResultResponse updateProject(Long projectId,
                                                      ProjectRecruitmentUpdateRequest req,
@@ -166,18 +165,18 @@ public class ProjectRecruitmentEditService {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        // 위치/포지션/리더포지션/연령 검증
+        // 위치 검증
         if (req.getMode() == ProjectMode.OFFLINE) {
             LocationDto loc = req.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
+
+        // 포지션 정규화
         if (req.getPositions() == null || req.getPositions().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_POSITIONS);
         }
-
-        // 요청 포지션 정규화(중복/공백 제거)
         List<String> desiredPositions = req.getPositions().stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
@@ -185,12 +184,14 @@ public class ProjectRecruitmentEditService {
                 .distinct()
                 .toList();
 
+        // 리더 포지션 포함 확인
         if (!desiredPositions.contains(req.getLeaderPosition())) {
             throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
         }
 
-        // capacity <= unique positions
-        if (req.getCapacity() != null && req.getCapacity() > desiredPositions.size()) {
+        // 정원 vs 포지션 개수 검증 (요청에 capacity 없으면 기존 값으로 비교)
+        int newCapacity = Optional.ofNullable(req.getCapacity()).orElse(pr.getCapacity());
+        if (desiredPositions.size() > newCapacity) {
             throw new GlobalException(ErrorCode.INVALID_CAPACITY_POSITIONS);
         }
 
@@ -229,7 +230,7 @@ public class ProjectRecruitmentEditService {
                 .projectMode(req.getMode())
                 .bannerImageUrl(bannerUrl)
                 .contentMd(req.getDetail())
-                .capacity(req.getCapacity())
+                .capacity(newCapacity)
                 .ageMin(ageMin)
                 .ageMax(ageMax)
                 .build();
@@ -272,6 +273,7 @@ public class ProjectRecruitmentEditService {
         Map<String, ProjectRecruitmentPosition> byName = pr.getPositions().stream()
                 .collect(Collectors.toMap(ProjectRecruitmentPosition::getPositionName, p -> p, (a, b) -> a));
 
+        // 1) 필요한 포지션 추가
         for (String name : desired) {
             if (!byName.containsKey(name)) {
                 pr.getPositions().add(ProjectRecruitmentPosition.builder()
@@ -281,10 +283,12 @@ public class ProjectRecruitmentEditService {
             }
         }
 
+        // 2) 삭제 후보 산정
         List<ProjectRecruitmentPosition> toRemove = pr.getPositions().stream()
                 .filter(pos -> !desired.contains(pos.getPositionName()))
                 .toList();
 
+        // 3) 참조 여부 확인 → 있으면 에러
         for (ProjectRecruitmentPosition pos : toRemove) {
             long refByParticipants = participantRepository.countByPosition_IdAndDeletedAtIsNull(pos.getId());
             long refByApplications = applicationRepository.countByPosition_Id(pos.getId());
@@ -292,6 +296,8 @@ public class ProjectRecruitmentEditService {
                 throw new GlobalException(ErrorCode.POSITION_IN_USE);
             }
         }
+
+        // 4) 실제 삭제 (참조 없음을 보장한 상태)
         pr.getPositions().removeIf(pos -> !desired.contains(pos.getPositionName()));
     }
 
@@ -381,7 +387,7 @@ public class ProjectRecruitmentEditService {
         );
     }
 
-    /* ---------- 업데이트 응답 빌더 (기존) ---------- */
+    /* ---------- 업데이트 응답 빌더 (leader/participants 채움) ---------- */
 
     private ProjectUpdateResultResponse buildUpdateResult(ProjectRecruitment pr, CustomUserDetails me) {
         Long projectId = pr.getId();
@@ -417,7 +423,6 @@ public class ProjectRecruitmentEditService {
                 .toList();
 
         String address = composeAddressForRead(pr);
-
         boolean isMine = meId != null && Objects.equals(pr.getUser().getId(), meId);
 
         // 무관(0/0)일 때 null
@@ -425,6 +430,18 @@ public class ProjectRecruitmentEditService {
                 (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
                         ? null
                         : new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax());
+
+        // 리더/참여자 조회
+        List<ProjectParticipant> participants =
+                participantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(projectId);
+
+        ProjectParticipant leader = participants.stream()
+                .filter(p -> p.getRole() == ParticipantRole.LEADER)
+                .findFirst()
+                .orElse(null);
+
+        ProjectUpdateResultResponse.LeaderBlock leaderBlock = buildLeaderBlock(leader, isMine);
+        List<ProjectUpdateResultResponse.ParticipantBlock> participantBlocks = buildParticipantBlocks(participants, meId);
 
         return ProjectUpdateResultResponse.builder()
                 .projectId(projectId)
@@ -442,32 +459,105 @@ public class ProjectRecruitmentEditService {
                 .startDate(pr.getStartDate())
                 .detail(pr.getContentMd())
                 .positions(positionItems)
-                // leader/participants는 업데이트 응답에서는 간략형 유지(필요 시 ProjectUserSummaryDto로 확장 가능)
-                .leader(null)
-                .participants(List.of())
+                .leader(leaderBlock)                 // 값이 있으면 채움, 없으면 null
+                .participants(participantBlocks)     // 값이 있으면 리스트, 없으면 빈 리스트
                 .build();
     }
 
-    /* ---------- 요약 DTO 변환 (온도/배지 포함) ---------- */
+    /** LeaderBlock 구성: 온도/배지 조회 실패 시 null 폴백 */
+    private ProjectUpdateResultResponse.LeaderBlock buildLeaderBlock(ProjectParticipant leader, boolean isMine) {
+        if (leader == null) return null;
 
-    private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser) {
-        User u = participant.getUser();
+        User u = leader.getUser();
 
-        // 대표 포지션
         String mainPosition = u.getPositions().stream()
                 .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
                 .map(UserPosition::getPositionName)
                 .findFirst()
                 .orElse(null);
 
-        // 온도
-        BigDecimal temperature = userReputationRepository.findByUserId(u.getId())
+        // 온도: 레포에서 못 찾으면 null
+        Double temperature = userReputationRepository.findByUserId(u.getId())
                 .map(UserReputation::getTemperature)
-                .orElse(BigDecimal.valueOf(36.5));
+                .map(BigDecimal::doubleValue)
+                .orElse(null);
 
-        // 배지(실서비스에 맞게 Repository/Service로 교체)
+        // 배지: 실제 조회로 연결되면 값, 아니면 null
         BadgeDto mainBadge = fetchMainBadge(u.getId());
         AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
+
+        return ProjectUpdateResultResponse.LeaderBlock.builder()
+                .userId(u.getId())
+                .nickname(u.getNickname())
+                .profileImageUrl(u.getProfileImageUrl())
+                .mainPosition(mainPosition)
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
+                .temperature(temperature)
+                .decidedPosition(leader.getPosition() != null ? leader.getPosition().getPositionName() : null)
+                .IsMine(isMine)
+                .chatRoomId(null)
+                .dmRequestPending(false)
+                .build();
+    }
+
+    /** ParticipantBlock: 온도/배지 조회 실패 시 null 폴백 */
+    private List<ProjectUpdateResultResponse.ParticipantBlock> buildParticipantBlocks(List<ProjectParticipant> participants,
+                                                                                      Long meId) {
+        if (participants == null) return List.of();
+
+        return participants.stream()
+                .filter(p -> p.getRole() == ParticipantRole.MEMBER)
+                .map(p -> {
+                    User u = p.getUser();
+
+                    String mainPosition = u.getPositions().stream()
+                            .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
+                            .map(UserPosition::getPositionName)
+                            .findFirst()
+                            .orElse(null);
+
+                    Double temperature = userReputationRepository.findByUserId(u.getId())
+                            .map(UserReputation::getTemperature)
+                            .map(BigDecimal::doubleValue)
+                            .orElse(null);
+
+                    BadgeDto mainBadge = fetchMainBadge(u.getId());
+                    AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
+
+                    return ProjectUpdateResultResponse.ParticipantBlock.builder()
+                            .userId(u.getId())
+                            .nickname(u.getNickname())
+                            .profileImageUrl(u.getProfileImageUrl())
+                            .mainPosition(mainPosition)
+                            .mainBadge(mainBadge)
+                            .abandonBadge(abandonBadge)
+                            .temperature(temperature)
+                            .decidedPosition(p.getPosition() != null ? p.getPosition().getPositionName() : null)
+                            .IsMine(meId != null && Objects.equals(meId, u.getId()))
+                            .chatRoomId(null)
+                            .dmRequestPending(false)
+                            .build();
+                })
+                .toList();
+    }
+
+    /* ---------- 편집 페이지용 요약 DTO (온도/배지 null 폴백) ---------- */
+    private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser) {
+        User u = participant.getUser();
+
+        String mainPosition = u.getPositions().stream()
+                .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
+                .map(UserPosition::getPositionName)
+                .findFirst()
+                .orElse(null);
+
+        BigDecimal temperature = userReputationRepository.findByUserId(u.getId())
+                .map(UserReputation::getTemperature)
+                .orElse(null); // ← 기본값 없이 null 폴백
+
+        BadgeDto mainBadge = fetchMainBadge(u.getId());              // null 허용
+        AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId()); // null 허용
 
         return ProjectUserSummaryDto.builder()
                 .userId(u.getId())
@@ -484,14 +574,7 @@ public class ProjectRecruitmentEditService {
                 .build();
     }
 
-    // === 배지 조회 더미 ===
-    // 실서비스에서는 BadgeQueryService 등으로 교체하여 주입/호출하세요.
-    private BadgeDto fetchMainBadge(Long userId) {
-        // TODO: 실제 배지 조회로 대체
-        return null;
-    }
-    private AbandonBadgeDto fetchAbandonBadge(Long userId) {
-        // TODO: 실제 이탈 배지 조회로 대체
-        return null;
-    }
+    // === 배지 조회 Stub (실제 구현으로 교체 예정) ===
+    private BadgeDto fetchMainBadge(Long userId) { return null; }
+    private AbandonBadgeDto fetchAbandonBadge(Long userId) { return null; }
 }

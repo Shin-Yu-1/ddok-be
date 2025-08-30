@@ -78,7 +78,7 @@ public class ProjectRecruitmentEditController {
             @AuthenticationPrincipal CustomUserDetails user
     ) {
         ProjectDetailResponse data = service.getEditPage(projectId, user);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "수정하기 페이지 조회에 성공했습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "수정하기 페이지 조회가 성공했습니다.", data));
     }
 
 
