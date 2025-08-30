@@ -49,30 +49,62 @@ public class ProjectRecruitmentService {
         }
         User user = userDetails.getUser();
 
-        // 1) 검증
+        // 1) 포지션 정규화 (트리밍 + 중복 제거)
+        List<String> desiredPositions = request.getPositions().stream()
+                .filter(s -> s != null && !s.trim().isBlank())
+                .map(String::trim)
+                .distinct()
+                .toList();
+        String leaderPosName = request.getLeaderPosition() == null ? null : request.getLeaderPosition().trim();
+
+        if (desiredPositions.isEmpty()) {
+            throw new GlobalException(ErrorCode.INVALID_POSITIONS);
+        }
+        if (leaderPosName == null || leaderPosName.isBlank() || !desiredPositions.contains(leaderPosName)) {
+            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
+        }
+
+        // (선택) capacity <= unique positions 강제 — 생성 단계도 편의상 동일 정책 적용
+        if (request.getCapacity() != null && request.getCapacity() > desiredPositions.size()) {
+            throw new GlobalException(ErrorCode.INVALID_CAPACITY_POSITIONS);
+        }
+
+        // 2) 위치 검증
         if (request.getMode() == ProjectMode.OFFLINE) {
             LocationDto loc = request.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
-        if (request.getPreferredAges() != null &&
-                request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
-            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+
+        // 3) 연령대 검증 (null=무관, 값이 있으면 범위+10단위 강제)
+        int ageMin, ageMax;
+        if (request.getPreferredAges() == null) {
+            ageMin = 0;
+            ageMax = 0;
+        } else {
+            ageMin = request.getPreferredAges().getAgeMin();
+            ageMax = request.getPreferredAges().getAgeMax();
+            if (ageMin > ageMax) {
+                throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+            }
+            // ★ 10단위 강제
+            if (ageMin % 10 != 0 || ageMax % 10 != 0) {
+                throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
+            }
         }
-        if (!request.getPositions().contains(request.getLeaderPosition())) {
-            throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
-        }
+
+        // 4) 시작일 검증
         if (request.getExpectedStart().isBefore(LocalDate.now())) {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        // 2) 배너
+        // 5) 배너
         String bannerImageUrl = (bannerImage != null && !bannerImage.isEmpty())
                 ? uploadBannerImage(bannerImage)
                 : bannerImageService.generateBannerImageUrl(request.getTitle(), "PROJECT", 1200, 600);
 
-        // 3) 엔티티 생성 (주소 필드 개별 저장)
+        // 6) 엔티티 생성 (주소 필드 개별 저장)
         ProjectRecruitment.ProjectRecruitmentBuilder builder = ProjectRecruitment.builder()
                 .user(user)
                 .title(request.getTitle())
@@ -80,8 +112,8 @@ public class ProjectRecruitmentService {
                 .startDate(request.getExpectedStart())
                 .expectedMonths(request.getExpectedMonth())
                 .projectMode(request.getMode())
-                .ageMin(request.getPreferredAges() != null ? request.getPreferredAges().getAgeMin() : 0)
-                .ageMax(request.getPreferredAges() != null ? request.getPreferredAges().getAgeMax() : 0)
+                .ageMin(ageMin)
+                .ageMax(ageMax)
                 .capacity(request.getCapacity())
                 .bannerImageUrl(bannerImageUrl)
                 .contentMd(request.getDetail())
@@ -115,11 +147,8 @@ public class ProjectRecruitmentService {
 
         ProjectRecruitment recruitment = builder.build();
 
-        // 4) positions / traits
-        List<ProjectRecruitmentPosition> positions = request.getPositions().stream()
-                .filter(s -> s != null && !s.trim().isBlank())
-                .map(String::trim)
-                .distinct()
+        // 7) positions / traits
+        List<ProjectRecruitmentPosition> positions = desiredPositions.stream()
                 .map(pos -> ProjectRecruitmentPosition.builder()
                         .projectRecruitment(recruitment)
                         .positionName(pos)
@@ -140,16 +169,16 @@ public class ProjectRecruitmentService {
         recruitment.getPositions().addAll(positions);
         recruitment.getTraits().addAll(traits);
 
-        // 5) 저장
+        // 8) 저장
         try {
             projectRecruitmentRepository.save(recruitment);
         } catch (Exception e) {
             throw new GlobalException(ErrorCode.PROJECT_SAVE_FAILED);
         }
 
-        // 6) 리더 참가자 등록
+        // 9) 리더 참가자 등록 (정규화된 이름으로 검색)
         ProjectRecruitmentPosition leaderPos = recruitment.getPositions().stream()
-                .filter(p -> p.getPositionName().equals(request.getLeaderPosition()))
+                .filter(p -> p.getPositionName().equals(leaderPosName))
                 .findFirst()
                 .orElseThrow(() -> new GlobalException(ErrorCode.INVALID_LEADER_POSITION));
 
@@ -162,7 +191,7 @@ public class ProjectRecruitmentService {
                 .build();
         participantRepository.save(leader);
 
-        // 7) 응답 DTO: 주소는 합쳐서 내려주기
+        // 10) 응답 DTO: 주소는 합쳐서 내려주기(OFFLINE일 때만)
         LocationDto respLocation = null;
         if (recruitment.getProjectMode() == ProjectMode.OFFLINE) {
             String fullAddress = composeAddress(recruitment); // "전북 익산시 부송동 망산길 11-17"
@@ -180,21 +209,26 @@ public class ProjectRecruitmentService {
                     .build();
         }
 
+        // preferredAges: 0/0(무관) → null 로 응답
+        PreferredAgesDto respAges = (recruitment.getAgeMin() == 0 && recruitment.getAgeMax() == 0)
+                ? null
+                : PreferredAgesDto.builder()
+                .ageMin(recruitment.getAgeMin())
+                .ageMax(recruitment.getAgeMax())
+                .build();
+
         return ProjectRecruitmentResponse.builder()
                 .projectId(recruitment.getId())
                 .userId(user.getId())
                 .nickname(user.getNickname())
-                .leaderPosition(request.getLeaderPosition())
+                .leaderPosition(leaderPosName)
                 .title(recruitment.getTitle())
                 .teamStatus(recruitment.getTeamStatus())
                 .expectedStart(recruitment.getStartDate())
                 .expectedMonth(recruitment.getExpectedMonths())
                 .mode(recruitment.getProjectMode())
                 .location(respLocation) // ONLINE이면 null
-                .preferredAges(PreferredAgesDto.builder()
-                        .ageMin(recruitment.getAgeMin())
-                        .ageMax(recruitment.getAgeMax())
-                        .build())
+                .preferredAges(respAges)
                 .capacity(recruitment.getCapacity())
                 .bannerImageUrl(recruitment.getBannerImageUrl())
                 .traits(recruitment.getTraits().stream().map(ProjectRecruitmentTrait::getTraitName).toList())
@@ -233,7 +267,7 @@ public class ProjectRecruitmentService {
         return s.isBlank() ? "-" : s;
     }
 
-    // toggleJoin 메서드는 변경 없음
+
     @Transactional
     public boolean toggleJoin(CustomUserDetails userDetails, Long projectId, String appliedPosition) {
         if (userDetails == null || userDetails.getUser() == null) {

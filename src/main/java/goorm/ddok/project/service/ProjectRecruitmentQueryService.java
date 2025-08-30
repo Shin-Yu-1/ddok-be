@@ -1,13 +1,14 @@
 package goorm.ddok.project.service;
 
 import goorm.ddok.global.dto.PreferredAgesDto;
+import goorm.ddok.global.dto.BadgeDto;
+import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
-import goorm.ddok.reputation.repository.UserReputationRepository;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.ProjectPositionDto;
 import goorm.ddok.project.dto.ProjectUserSummaryDto;
@@ -15,7 +16,12 @@ import goorm.ddok.project.dto.response.ProjectDetailResponse;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+// 온도 실제 연동 시 Repository 주입해 사용
+// import goorm.ddok.reputation.repository.UserReputationRepository;
+// import goorm.ddok.reputation.domain.UserReputation;
+
 import goorm.ddok.reputation.domain.UserReputation;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,8 +38,8 @@ public class ProjectRecruitmentQueryService {
 
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
-    private final UserReputationRepository userReputationRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
+     private final UserReputationRepository userReputationRepository;
 
     /** 프로젝트 모집글 상세 조회 */
     public ProjectDetailResponse getProjectDetail(Long projectId, CustomUserDetails userDetails) {
@@ -43,7 +49,7 @@ public class ProjectRecruitmentQueryService {
 
         User me = (userDetails != null) ? userDetails.getUser() : null;
 
-        // 2) 참가자 전체 조회 (리더 포함)
+        // 2) 참가자 조회 (리더 포함)
         List<ProjectParticipant> participants =
                 projectParticipantRepository.findByPosition_ProjectRecruitment(project);
 
@@ -88,32 +94,34 @@ public class ProjectRecruitmentQueryService {
                 })
                 .toList();
 
-        // 6) 리더 요약 정보
+        // 6) 리더/멤버 요약 (온도 기본 36.5, 배지/DM/채팅방 기본 로직)
         BigDecimal leaderTemp = userReputationRepository.findByUserId(leader.getUser().getId())
                 .map(UserReputation::getTemperature)
                 .orElse(BigDecimal.valueOf(36.5));
         ProjectUserSummaryDto leaderDto = toUserSummaryDto(leader, me, leaderTemp);
 
-        // 7) 멤버 요약 정보(리더 제외)
         List<ProjectUserSummaryDto> memberDtos = participants.stream()
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
                 .map(p -> {
+                    BigDecimal temp = BigDecimal.valueOf(36.5);
+                    /*
                     BigDecimal temp = userReputationRepository.findByUserId(p.getUser().getId())
                             .map(UserReputation::getTemperature)
                             .orElse(BigDecimal.valueOf(36.5));
+                    */
                     return toUserSummaryDto(p, me, temp);
                 })
                 .toList();
 
-        // 8) 주소 조립
-        String address = resolveFullAddress(project);
+        // 7) 주소 합치기
+        String address = composeAddress(project);
 
-        // 9) 선호 연령: 0/0이면 null
+        // 8) 선호 연령 (0/0이면 null)
         PreferredAgesDto ages = (project.getAgeMin() == 0 && project.getAgeMax() == 0)
                 ? null
                 : PreferredAgesDto.builder().ageMin(project.getAgeMin()).ageMax(project.getAgeMax()).build();
 
-        // 10) 응답
+        // 9) 응답 조립
         return ProjectDetailResponse.builder()
                 .projectId(project.getId())
                 .IsMine(me != null && project.getUser().getId().equals(me.getId()))
@@ -124,7 +132,7 @@ public class ProjectRecruitmentQueryService {
                 .capacity(project.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(project.getProjectMode())
-                .address(address) // ← 합쳐진 전체 주소 또는 ONLINE/null
+                .address(address)
                 .preferredAges(ages)
                 .expectedMonth(project.getExpectedMonths())
                 .startDate(project.getStartDate())
@@ -135,36 +143,30 @@ public class ProjectRecruitmentQueryService {
                 .build();
     }
 
-    /** 전체 주소 조립(ONLINE 이면 null).
-     *  저장 정책:
-     *  - OFFLINE 저장 시, 프론트가 Kakao road_address로 보낸 값을
-     *    region1/2/3 + roadName + mainBuildingNo/subBuildingNo(있다면) 로 합쳐 roadName 필드에 풀 주소를 저장한 경우가 많음.
-     *  - 우선 순위: roadName(풀주소로 저장돼 있으면 그대로) > 조합(region1/2/3 + roadName + 빌딩번호)
-     */
-    private String resolveFullAddress(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.ONLINE) {
-            return null;
-        }
+    /** 전체 주소 합치기: "r1 r2 r3 road main-sub" (ONLINE이면 null) */
+    private String composeAddress(ProjectRecruitment pr) {
+        if (pr.getProjectMode() == ProjectMode.ONLINE) return null;
 
-        // roadName 자체가 이미 완성형(예: "전북 익산시 부송동 망산길 11-17")으로 저장돼 있을 수 있음
-        if (pr.getRoadName() != null && !pr.getRoadName().isBlank()) {
-            return pr.getRoadName().trim();
-        }
-
-        // 도메인에 main/sub 빌딩 번호 컬럼이 없다면(현재 구조) region + roadName만 조합
         String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
         String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
         String r3 = Optional.ofNullable(pr.getRegion3depthName()).orElse("");
         String road = Optional.ofNullable(pr.getRoadName()).orElse("");
+        String main = Optional.ofNullable(pr.getMainBuildingNo()).orElse("");
+        String sub  = Optional.ofNullable(pr.getSubBuildingNo()).orElse("");
 
-        String base = String.join(" ", new String[]{
-                r1, r2, r3, road
-        }).replaceAll("\\s+", " ").trim();
+        StringBuilder sb = new StringBuilder();
+        if (!r1.isBlank()) sb.append(r1).append(" ");
+        if (!r2.isBlank()) sb.append(r2).append(" ");
+        if (!r3.isBlank()) sb.append(r3).append(" ");
+        if (!road.isBlank()) sb.append(road).append(" ");
+        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
+        else if (!main.isBlank()) sb.append(main);
 
-        return base.isBlank() ? null : base;
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? null : s;
     }
 
-    /** UserSummary 변환 */
+    /** UserSummary 변환 (+ 배지/DM/채팅방 기본값) */
     private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser, BigDecimal temperature) {
         User user = participant.getUser();
 
@@ -174,18 +176,45 @@ public class ProjectRecruitmentQueryService {
                 .findFirst()
                 .orElse(null);
 
+        Long meId = (currentUser != null) ? currentUser.getId() : null;
+        Long otherId = user.getId();
+
+        BadgeDto mainBadge = resolveMainBadge(user);
+        AbandonBadgeDto abandonBadge = resolveAbandonBadge(user);
+        Long chatRoomId = resolveChatRoomId(meId, otherId);
+        boolean dmPending = resolveDmPending(meId, otherId);
+
         return ProjectUserSummaryDto.builder()
                 .userId(user.getId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .mainPosition(mainPosition)
-                .mainBadge(null)       // TODO: 뱃지 매핑 시 연결
-                .abandonBadge(null)    // TODO: 이탈 뱃지 매핑 시 연결
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
                 .temperature(temperature)
                 .decidedPosition(participant.getPosition().getPositionName())
                 .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
-                .chatRoomId(null)
-                .dmRequestPending(false)
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .build();
+    }
+
+    // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점) ====
+    private BadgeDto resolveMainBadge(User user) {
+        return BadgeDto.builder().type("login").tier("bronze").build();
+    }
+
+    private AbandonBadgeDto resolveAbandonBadge(User user) {
+        return AbandonBadgeDto.builder().IsGranted(true).count(5).build();
+    }
+
+    private Long resolveChatRoomId(Long meId, Long otherId) {
+        if (meId == null || Objects.equals(meId, otherId)) return null;
+        return null; // TODO: 실제 채팅 연동
+    }
+
+    private boolean resolveDmPending(Long meId, Long otherId) {
+        if (meId == null || Objects.equals(meId, otherId)) return false;
+        return false; // TODO: 실제 DM 연동
     }
 }

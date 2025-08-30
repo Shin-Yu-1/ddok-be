@@ -2,12 +2,16 @@ package goorm.ddok.project.service;
 
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
+import goorm.ddok.global.dto.BadgeDto;
+import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.member.domain.UserPosition;
+import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.request.ProjectRecruitmentUpdateRequest;
 import goorm.ddok.project.dto.response.ProjectEditPageResponse;
@@ -73,10 +77,8 @@ public class ProjectRecruitmentEditService {
                 ))
                 .toList();
 
-        // ✅ 주소 조립 사용
         String address = composeAddress(pr);
 
-        // 무관(0/0)일 때는 null, 아니면 DTO
         PreferredAgesDto ages = (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
                 ? null
                 : new PreferredAgesDto(pr.getAgeMin(), pr.getAgeMax());
@@ -100,7 +102,7 @@ public class ProjectRecruitmentEditService {
     }
 
     /* =========================
-     *  수정 저장 (업데이트 방식)
+     *  수정 저장
      * ========================= */
     public ProjectUpdateResultResponse updateProject(Long projectId,
                                                      ProjectRecruitmentUpdateRequest req,
@@ -131,7 +133,7 @@ public class ProjectRecruitmentEditService {
         if (req.getPositions() == null || req.getPositions().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_POSITIONS);
         }
-        // 요청 포지션 정규화(중복/공백 제거)
+
         List<String> desiredPositions = req.getPositions().stream()
                 .filter(Objects::nonNull)
                 .map(String::trim)
@@ -143,12 +145,11 @@ public class ProjectRecruitmentEditService {
             throw new GlobalException(ErrorCode.INVALID_LEADER_POSITION);
         }
 
-        // capacity <= unique positions
         if (req.getCapacity() != null && req.getCapacity() > desiredPositions.size()) {
             throw new GlobalException(ErrorCode.INVALID_CAPACITY_POSITIONS);
         }
 
-        // 연령 무관(null) 또는 10단위 강제
+        // 연령(무관 null) + 10단위 강제
         int ageMin;
         int ageMax;
         if (req.getPreferredAges() == null) {
@@ -163,18 +164,17 @@ public class ProjectRecruitmentEditService {
             }
         }
 
-        // 배너: 파일 > 요청 URL > 기존 > 기본
+        // 배너
         String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
 
-        // 위치 업데이트 (카카오 필드 개별 저장)
-        boolean offline = req.getMode() == ProjectMode.OFFLINE;
-        if (offline) {
+        // 위치 업데이트
+        if (req.getMode() == ProjectMode.OFFLINE) {
             pr = applyOfflineLocation(pr, req.getLocation());
         } else {
             pr = clearLocation(pr);
         }
 
-        // 기본 필드 업데이트 (toBuilder)
+        // 기본 필드 업데이트
         pr = pr.toBuilder()
                 .title(req.getTitle())
                 .teamStatus(req.getTeamStatus())
@@ -188,10 +188,8 @@ public class ProjectRecruitmentEditService {
                 .ageMax(ageMax)
                 .build();
 
-        // Traits 머지(단순 추가/제거)
+        // 트레잇 / 포지션
         mergeTraits(pr, req.getTraits());
-
-        // Positions 머지(요청에 없는 것은 참조 없을 때만 삭제, 있으면 에러)
         mergePositionsStrict(pr, desiredPositions);
 
         // 리더 포지션 동기화
@@ -222,10 +220,12 @@ public class ProjectRecruitmentEditService {
         pr.getTraits().removeIf(t -> !desired.contains(t.getTraitName()));
     }
 
+    /** 엄격 삭제(요청에 없는 기존 포지션: 참조 있으면 에러, 없으면 삭제) */
     private void mergePositionsStrict(ProjectRecruitment pr, List<String> desired) {
         Map<String, ProjectRecruitmentPosition> byName = pr.getPositions().stream()
                 .collect(Collectors.toMap(ProjectRecruitmentPosition::getPositionName, p -> p, (a, b) -> a));
 
+        // 추가
         for (String name : desired) {
             if (!byName.containsKey(name)) {
                 pr.getPositions().add(ProjectRecruitmentPosition.builder()
@@ -235,10 +235,12 @@ public class ProjectRecruitmentEditService {
             }
         }
 
+        // 삭제 후보
         List<ProjectRecruitmentPosition> toRemove = pr.getPositions().stream()
                 .filter(pos -> !desired.contains(pos.getPositionName()))
                 .toList();
 
+        // 참조 검사
         for (ProjectRecruitmentPosition pos : toRemove) {
             long refByParticipants = participantRepository.countByPosition_IdAndDeletedAtIsNull(pos.getId());
             long refByApplications = applicationRepository.countByPosition_Id(pos.getId());
@@ -246,10 +248,12 @@ public class ProjectRecruitmentEditService {
                 throw new GlobalException(ErrorCode.POSITION_IN_USE);
             }
         }
+
+        // 실제 삭제
         pr.getPositions().removeIf(pos -> !desired.contains(pos.getPositionName()));
     }
 
-    /** 리더 참가자의 포지션을 새 이름으로 동기화 */
+    /** 리더 참가자의 포지션을 요청한 이름으로 동기화 */
     private void syncLeaderPositionTo(ProjectRecruitment pr, String leaderPositionName) {
         if (leaderPositionName == null) return;
 
@@ -264,7 +268,7 @@ public class ProjectRecruitmentEditService {
                 .ifPresent(leader -> leader.changePosition(target));
     }
 
-    /* ---------- 주소/위치 helpers (여기만 변경) ---------- */
+    /* ---------- 위치/주소 helpers ---------- */
 
     /** 카카오 road_address 필드를 엔티티 각 컬럼에 저장 */
     private ProjectRecruitment applyOfflineLocation(ProjectRecruitment pr, LocationDto loc) {
@@ -296,7 +300,7 @@ public class ProjectRecruitmentEditService {
                 .build();
     }
 
-    /** 응답용 전체 주소 만들기: "r1 r2 r3 road main-sub" */
+    /** 응답용 전체 주소: ONLINE → "ONLINE", 그 외 "r1 r2 r3 road main-sub" */
     private String composeAddress(ProjectRecruitment pr) {
         if (pr.getProjectMode() == ProjectMode.ONLINE) return "ONLINE";
 
@@ -312,7 +316,6 @@ public class ProjectRecruitmentEditService {
         if (!r2.isBlank()) sb.append(r2).append(" ");
         if (!r3.isBlank()) sb.append(r3).append(" ");
         if (!road.isBlank()) sb.append(road).append(" ");
-
         if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
         else if (!main.isBlank()) sb.append(main);
 
@@ -320,7 +323,7 @@ public class ProjectRecruitmentEditService {
         return s.isBlank() ? "-" : s;
     }
 
-    /* ---------- banner helper ---------- */
+    /* ---------- 배너 helper ---------- */
     private String resolveBannerUrl(MultipartFile file, String requestUrl, String currentUrl, String titleForDefault) {
         if (file != null && !file.isEmpty()) {
             try {
@@ -336,8 +339,7 @@ public class ProjectRecruitmentEditService {
         );
     }
 
-    /* ---------- response builders (기존) ---------- */
-
+    /* ---------- 공통 정보 helpers (배지/DM/채팅/대표포지션/온도) ---------- */
     private String resolveLeaderPositionName(Long projectId) {
         return participantRepository
                 .findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(projectId, ParticipantRole.LEADER)
@@ -345,48 +347,36 @@ public class ProjectRecruitmentEditService {
                 .orElse(null);
     }
 
-    private ProjectUpdateResultResponse.LeaderBlock resolveLeader(Long projectId, CustomUserDetails me) {
-        return participantRepository
-                .findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(projectId, ParticipantRole.LEADER)
-                .map(pp -> {
-                    User u = pp.getUser();
-                    boolean mine = me != null && me.getUser() != null && Objects.equals(u.getId(), me.getUser().getId());
-                    return ProjectUpdateResultResponse.LeaderBlock.builder()
-                            .userId(u.getId())
-                            .nickname(u.getNickname())
-                            .profileImageUrl(u.getProfileImageUrl())
-                            .mainPosition(null)
-                            .temperature(null)
-                            .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .IsMine(mine)
-                            .chatRoomId(null)
-                            .dmRequestPending(false)
-                            .build();
-                })
-                .orElse(null);
+    private String resolvePrimaryPosition(User user) {
+        return user.getPositions().stream()
+                .filter(p -> p.getType() == UserPositionType.PRIMARY)
+                .map(UserPosition::getPositionName)
+                .findFirst().orElse(null);
     }
 
-    private List<ProjectUpdateResultResponse.ParticipantBlock> resolveParticipants(Long projectId, CustomUserDetails me) {
-        Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
-
-        return participantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(projectId).stream()
-                .filter(pp -> pp.getRole() == ParticipantRole.MEMBER) // 리더 제외
-                .map(pp -> {
-                    User u = pp.getUser();
-                    return ProjectUpdateResultResponse.ParticipantBlock.builder()
-                            .userId(u.getId())
-                            .nickname(u.getNickname())
-                            .profileImageUrl(u.getProfileImageUrl())
-                            .mainPosition(null)
-                            .temperature(null)
-                            .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
-                            .IsMine(meId != null && Objects.equals(meId, u.getId()))
-                            .chatRoomId(null)
-                            .dmRequestPending(false)
-                            .build();
-                })
-                .toList();
+    private BadgeDto resolveMainBadge(User user) {
+        // TODO: 실제 배지 연동 시 교체
+        return BadgeDto.builder().type("login").tier("bronze").build();
     }
+
+    private AbandonBadgeDto resolveAbandonBadge(User user) {
+        // TODO: 실제 이탈 배지 연동 시 교체
+        return AbandonBadgeDto.builder().IsGranted(true).count(5).build();
+    }
+
+    private Long resolveChatRoomId(Long meId, Long otherId) {
+        if (meId == null || Objects.equals(meId, otherId)) return null;
+        // TODO: 실제 채팅 연동 시 교체
+        return null;
+    }
+
+    private boolean resolveDmPending(Long meId, Long otherId) {
+        if (meId == null || Objects.equals(meId, otherId)) return false;
+        // TODO: 실제 DM 연동 시 교체
+        return false;
+    }
+
+    /* ---------- 응답 조립 ---------- */
 
     private ProjectUpdateResultResponse buildUpdateResult(ProjectRecruitment pr, CustomUserDetails me) {
         Long projectId = pr.getId();
@@ -421,12 +411,10 @@ public class ProjectRecruitmentEditService {
                         .build())
                 .toList();
 
-        // ✅ 응답 주소도 조립 사용
         String address = composeAddress(pr);
 
         boolean isMine = meId != null && Objects.equals(pr.getUser().getId(), meId);
 
-        // 무관(0/0)일 때 null
         PreferredAgesDto prefAges =
                 (pr.getAgeMin() == 0 && pr.getAgeMax() == 0)
                         ? null
@@ -448,8 +436,58 @@ public class ProjectRecruitmentEditService {
                 .startDate(pr.getStartDate())
                 .detail(pr.getContentMd())
                 .positions(positionItems)
-                .leader(resolveLeader(projectId, me))
-                .participants(resolveParticipants(projectId, me))
+                .leader(resolveLeaderBlock(projectId, me))
+                .participants(resolveParticipantBlocks(projectId, me))
                 .build();
+    }
+
+    private ProjectUpdateResultResponse.LeaderBlock resolveLeaderBlock(Long projectId, CustomUserDetails me) {
+        return participantRepository
+                .findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(projectId, ParticipantRole.LEADER)
+                .map(pp -> {
+                    User u = pp.getUser();
+                    Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
+
+                    Double temperature = 36.5; // TODO: 실제 온도 연동 시 교체
+                    return ProjectUpdateResultResponse.LeaderBlock.builder()
+                            .userId(u.getId())
+                            .nickname(u.getNickname())
+                            .profileImageUrl(u.getProfileImageUrl())
+                            .mainPosition(resolvePrimaryPosition(u))
+                            .mainBadge(resolveMainBadge(u))
+                            .abandonBadge(resolveAbandonBadge(u))
+                            .temperature(temperature)
+                            .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
+                            .IsMine(meId != null && Objects.equals(meId, u.getId()))
+                            .chatRoomId(resolveChatRoomId(meId, u.getId()))
+                            .dmRequestPending(resolveDmPending(meId, u.getId()))
+                            .build();
+                })
+                .orElse(null);
+    }
+
+    private List<ProjectUpdateResultResponse.ParticipantBlock> resolveParticipantBlocks(Long projectId, CustomUserDetails me) {
+        Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
+
+        return participantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(projectId).stream()
+                .filter(pp -> pp.getRole() == ParticipantRole.MEMBER)
+                .map(pp -> {
+                    User u = pp.getUser();
+                    Double temperature = 36.5; // TODO: 실제 온도 연동 시 교체
+                    return ProjectUpdateResultResponse.ParticipantBlock.builder()
+                            .userId(u.getId())
+                            .nickname(u.getNickname())
+                            .profileImageUrl(u.getProfileImageUrl())
+                            .mainPosition(resolvePrimaryPosition(u))
+                            .mainBadge(resolveMainBadge(u))
+                            .abandonBadge(resolveAbandonBadge(u))
+                            .temperature(temperature)
+                            .decidedPosition(pp.getPosition() != null ? pp.getPosition().getPositionName() : null)
+                            .IsMine(meId != null && Objects.equals(meId, u.getId()))
+                            .chatRoomId(resolveChatRoomId(meId, u.getId()))
+                            .dmRequestPending(resolveDmPending(meId, u.getId()))
+                            .build();
+                })
+                .toList();
     }
 }

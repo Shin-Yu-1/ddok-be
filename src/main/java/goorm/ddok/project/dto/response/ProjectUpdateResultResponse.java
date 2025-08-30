@@ -1,5 +1,7 @@
 package goorm.ddok.project.dto.response;
 
+import goorm.ddok.global.dto.AbandonBadgeDto;
+import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import lombok.Builder;
 import lombok.Getter;
@@ -54,6 +56,8 @@ public class ProjectUpdateResultResponse {
         private String nickname;
         private String profileImageUrl;
         private String mainPosition;
+        private BadgeDto mainBadge;
+        private AbandonBadgeDto abandonBadge;
         private Double temperature;
         private String decidedPosition;
         private boolean IsMine;
@@ -68,6 +72,8 @@ public class ProjectUpdateResultResponse {
         private String nickname;
         private String profileImageUrl;
         private String mainPosition;
+        private BadgeDto mainBadge;
+        private AbandonBadgeDto abandonBadge;
         private Double temperature;
         private String decidedPosition;
         private boolean IsMine;
