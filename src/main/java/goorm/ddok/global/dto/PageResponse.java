@@ -1,6 +1,5 @@
 package goorm.ddok.global.dto;
 
-
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,4 +52,5 @@ public class PageResponse<T> {
                 .items(page.getContent())
                 .build();
     }
+
 }
