@@ -70,7 +70,7 @@ public class StudyRecruitmentCreateRequest {
     private LocationDto location;
 
     @NotNull
-    @Schema(description = "선호 연령대 (무관 시 0 입력)")
+    @Schema(description = "선호 연령대 (무관 시 null)")
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")
