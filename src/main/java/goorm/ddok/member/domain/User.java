@@ -1,6 +1,7 @@
 package goorm.ddok.member.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import goorm.ddok.reputation.domain.UserReputation;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Past;
 import lombok.*;
@@ -32,10 +33,10 @@ public class User {
     @Column(name = "nickname", unique = true, length = 12)
     private String nickname;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(unique = true, length = 255)
     private String email;
 
-    @Column(name = "phone_number", nullable = false, unique = true, length = 11)
+    @Column(name = "phone_number", unique = true, length = 11)
     private String phoneNumber;
 
     @JsonIgnore
@@ -52,6 +53,13 @@ public class User {
     @Column(name = "birth_date")
     @Past
     private LocalDate birthDate;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean isPublic = true;
+
+    @Column(length = 130)
+    private String introduce;
 
 
     @CreatedDate
@@ -113,6 +121,17 @@ public class User {
     @Builder.Default
     private java.util.List<UserTechStack> techStacks = new java.util.ArrayList<>();
 
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            fetch = FetchType.LAZY,
+            optional = false
+    )
+    @ToString.Exclude
+    @JsonIgnore
+    private UserReputation reputation;
+
+
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
         this.nickname = nickname;
@@ -125,4 +144,19 @@ public class User {
     public void updatePassword(String newEncodedPassword) {
         this.password = newEncodedPassword;
     }
+
+    public String getAgeGroup() {
+        if (birthDate == null) {
+            return null;
+        }
+        int age = java.time.Period.between(birthDate, LocalDate.now()).getYears();
+
+        if (age < 10) {
+            return "10세 미만";
+        }
+
+        int decade = (age / 10) * 10;
+        return decade + "대";
+    }
+
 }
