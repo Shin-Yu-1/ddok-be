@@ -2,10 +2,7 @@ package goorm.ddok.chat.controller;
 
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
-import goorm.ddok.chat.dto.response.ChatListResponseResponse;
-import goorm.ddok.chat.dto.response.ChatMembersResponse;
-import goorm.ddok.chat.dto.response.ChatMessageListResponse;
-import goorm.ddok.chat.dto.response.ChatMessageResponse;
+import goorm.ddok.chat.dto.response.*;
 import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -36,7 +33,7 @@ public class ChatController {
 
     @GetMapping("/private")
     @Operation(summary = "개인 채팅 목록 조회", description = "사용자의 1:1 개인 채팅 목록을 조회합니다.")
-    public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getPrivateChats(
+    public ResponseEntity<ApiResponseDto<ChatListResponse>> getPrivateChats(
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
@@ -50,7 +47,7 @@ public class ChatController {
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-        ChatListResponseResponse response =
+        ChatListResponse response =
                 (search == null)
                         ? chatService.getPrivateChats(email, pageable)
                         : chatService.searchPrivateChats(email, search.trim(), pageable);
@@ -75,7 +72,7 @@ public class ChatController {
                                     """)
             )
     )
-    public ResponseEntity<ApiResponseDto<ChatListResponseResponse>> getTeamChats(
+    public ResponseEntity<ApiResponseDto<ChatListResponse>> getTeamChats(
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
@@ -89,7 +86,7 @@ public class ChatController {
         Pageable pageable = PageRequest.of(page, size);
         String email = authentication.getName();
 
-        ChatListResponseResponse response =
+        ChatListResponse response =
                 (search == null)
                         ? chatService.getTeamChats(email, pageable)
                         : chatService.searchTeamChats(email, search.trim(), pageable);
@@ -186,15 +183,15 @@ public class ChatController {
 
     @PostMapping("/{roomId}/messages/read")
     @Operation(summary = "채팅방 마지막 읽은 메세지 저장", description = "채팅방별 마지막 읽은 메세지를 저장합니다.")
-    public ResponseEntity<ApiResponseDto<String>> sendReadMessage(
+    public ResponseEntity<ApiResponseDto<ChatReadResponse>> sendReadMessage(
             @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
             @Valid @RequestBody LastReadMessageRequest request,
             Authentication authentication) {
 
         String email = authentication.getName();
-        chatService.lastReadMessage(email, roomId, request);
+        ChatReadResponse response = chatService.lastReadMessage(email, roomId, request);
 
-        return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", null));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", response));
     }
 }
