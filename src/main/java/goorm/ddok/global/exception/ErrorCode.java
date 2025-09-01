@@ -29,6 +29,13 @@ public enum ErrorCode {
     INVALID_AGE_BUCKET(HttpStatus.BAD_REQUEST, "연령은 10단위(예: 20, 30, 40)만 허용합니다."),
     INVALID_CAPACITY_POSITIONS(HttpStatus.BAD_REQUEST,"포지션의 개수는 모집인원을 넘을 수 없습니다."),
     POSITION_IN_USE(HttpStatus.BAD_REQUEST, "참여자/지원 이력 때문에 삭제할 수 없는 포지션입니다."),
+    PROFILE_MAIN_POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "메인 포지션은 필수입니다."),
+    PROFILE_SECONDARY_POSITION_TOO_MANY(HttpStatus.BAD_REQUEST, "서브 포지션은 최대 2개까지 설정할 수 있습니다."),
+    PROFILE_POSITION_DUPLICATED(HttpStatus.BAD_REQUEST, "메인/서브 포지션에 중복 값이 포함되어 있습니다."),
+    ACTIVE_HOURS_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "활동 시간 형식이 올바르지 않습니다.(00~24)"),
+    ACTIVE_HOURS_RANGE_INVALID(HttpStatus.BAD_REQUEST, "활동 종료 시간은 시작 시간보다 빠를 수 없습니다."),
+    TECH_STACK_NAME_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 기술 스택 값이 포함되어 있습니다."),
+    TRAIT_NAME_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 성향 값이 포함되어 있습니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

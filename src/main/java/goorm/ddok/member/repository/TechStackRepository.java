@@ -14,4 +14,6 @@ public interface TechStackRepository extends JpaRepository<TechStack, Long> {
 
     @Query("select t.name from TechStack t where lower(t.name) like lower(concat('%', :keyword, '%'))")
     List<String> findNamesByKeyword(String keyword, Pageable pageable);
+
+    Optional<TechStack> findByNameIgnoreCase(String name);
 }
