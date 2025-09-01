@@ -36,8 +36,8 @@ public class StudyRecruitmentController {
                 request 필드에는 JSON 요청 본문을, bannerImage 필드에는 배너 이미지를 포함할 수 있습니다. 
                 배너 이미지를 null로 보낼경우 기본 이미지가 자동 생성 됩니다.
                 
-                - ONLINE 모드 -> 위치 정보 불필요
-                - OFFLINE 모드 -> 위치 정보 필수
+                - online 모드 -> 위치 정보 불필요
+                - offline 모드 -> 위치 정보 필수
                 """
     )
     @ApiResponses({
@@ -55,7 +55,7 @@ public class StudyRecruitmentController {
                     "title": "백엔드 스터디",
                     "expectedStart": "2025-09-01",
                     "expectedMonth": 3,
-                    "mode": "ONLINE",
+                    "mode": "online",
                     "location": null,
                     "preferredAges": { "ageMin": 20, "ageMax": 30 },
                     "capacity": 5,

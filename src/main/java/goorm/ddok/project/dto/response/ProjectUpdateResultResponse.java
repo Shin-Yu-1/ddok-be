@@ -24,8 +24,8 @@ public class ProjectUpdateResultResponse {
     private Integer capacity;
     private Long applicantCount;
 
-    private String mode;     // "ONLINE" | "ONLINE"
-    private String address;  // ONLINE: 도로명 / ONLINE: "ONLINE"
+    private String mode;     // "online" | "online"
+    private String address;  // online: 도로명 / online: "online"
 
     private PreferredAgesDto preferredAges;
 

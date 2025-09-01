@@ -31,7 +31,7 @@ import java.util.List;
           "title": "구지라지",
           "expectedStart": "2025-09-16",
           "expectedMonth": 3,
-          "mode": "OFFLINE",
+          "mode": "offline",
           "location": {
             "address": "전북 익산시 부송동 망산길 11-17",
             "region1depthName": "전북",

@@ -38,8 +38,8 @@ public class ProjectRecruitmentController {
         - request: JSON (아래 예시 참고, Kakao road_address 매핑 LocationDto 허용)
         - bannerImage: 선택 파일
         
-        ONLINE 모드 -> location 생략
-        OFFLINE 모드 -> location 필수 (region1/2/3, roadName, main/subBuildingNo, zoneNo, latitude(y), longitude(x))
+        online 모드 -> location 생략
+        offline 모드 -> location 필수 (region1/2/3, roadName, main/subBuildingNo, zoneNo, latitude(y), longitude(x))
         """
     )
     @ApiResponses({
@@ -58,7 +58,7 @@ public class ProjectRecruitmentController {
                 "teamStatus": "RECRUITING",
                 "expectedStart": "2025-09-01",
                 "expectedMonth": 3,
-                "mode": "ONLINE",
+                "mode": "online",
                 "location": null,
                 "preferredAges": { "ageMin": 20, "ageMax": 30 },
                 "capacity": 5,

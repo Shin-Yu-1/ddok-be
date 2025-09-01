@@ -24,7 +24,7 @@ public class StudyUpdateResultResponse {
     private Integer applicantCount;
 
     private String mode;     // "online" | "offline"
-    private String address;  // online이면 "ONLINE" 또는 null
+    private String address;  // online이면 "online" 또는 null
 
     private PreferredAgesDto preferredAges;
 

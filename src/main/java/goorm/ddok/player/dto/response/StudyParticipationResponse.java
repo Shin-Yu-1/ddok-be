@@ -46,7 +46,7 @@ public class StudyParticipationResponse {
     private TeamStatus teamStatus;
 
 
-    @Schema(description = "스터디 장소 정보 (OFFLINE일 경우만 존재)")
+    @Schema(description = "스터디 장소 정보 (offline일 경우만 존재)")
     private StudyLocationResponse location;
 
     @Schema(description = "진행 기간 (시작일 ~ 종료일)")

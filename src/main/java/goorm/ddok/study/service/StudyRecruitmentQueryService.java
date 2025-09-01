@@ -72,7 +72,7 @@ public class StudyRecruitmentQueryService {
                 .map(p -> toUserSummaryDto(p, me))
                 .toList();
 
-        // 6) 주소(ONLINE → null), 선호연령(0/0 → null)
+        // 6) 주소(online → null), 선호연령(0/0 → null)
         String address = composeFullAddress(study);
         PreferredAgesDto ages = (isZero(study.getAgeMin()) && isZero(study.getAgeMax()))
                 ? null

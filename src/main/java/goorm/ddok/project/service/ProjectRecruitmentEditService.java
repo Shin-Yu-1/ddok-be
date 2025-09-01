@@ -341,7 +341,7 @@ public class ProjectRecruitmentEditService {
                 .build();
     }
 
-    /** ONLINE 등 위치 초기화 */
+    /** online 등 위치 초기화 */
     private ProjectRecruitment clearLocation(ProjectRecruitment pr) {
         return pr.toBuilder()
                 .region1depthName(null)
@@ -356,7 +356,7 @@ public class ProjectRecruitmentEditService {
                 .build();
     }
 
-    /** 조회 응답용 전체 주소(ONLINE이면 null). */
+    /** 조회 응답용 전체 주소(online이면 null). */
     private String composeAddressForRead(ProjectRecruitment pr) {
         if (pr.getProjectMode() == ProjectMode.online) return null;
 

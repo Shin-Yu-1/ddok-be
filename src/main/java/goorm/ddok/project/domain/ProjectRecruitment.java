@@ -2,10 +2,6 @@ package goorm.ddok.project.domain;
 
 import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -52,7 +48,7 @@ public class ProjectRecruitment {
     @Column(nullable = false)
     private int expectedMonths;
 
-    /** 프로젝트 진행 방식 : ONLINE / OFFLINE */
+    /** 프로젝트 진행 방식 : online / offline */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ProjectMode projectMode;
@@ -158,9 +154,9 @@ public class ProjectRecruitment {
         if (zoneNo != null) zoneNo = zoneNo.trim();
     }
 
-    /** OFFLINE일 때 응답용 전체 도로명 주소 조립 */
+    /** offline일 때 응답용 전체 도로명 주소 조립 */
     public String fullRoadAddress() {
-        if (projectMode == ProjectMode.ONLINE) return "ONLINE";
+        if (projectMode == ProjectMode.online) return "online";
         if (roadName == null && region1depthName == null && region2depthName == null) return "-";
 
         StringBuilder sb = new StringBuilder();

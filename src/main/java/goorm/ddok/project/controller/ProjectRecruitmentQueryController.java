@@ -35,8 +35,8 @@ public class ProjectRecruitmentQueryController {
             summary = "프로젝트 모집 글 상세 조회",
             description = """
             특정 프로젝트 모집글의 상세 정보를 조회합니다.
-            - OFFLINE 프로젝트: region1/2/3 + roadName (+건물번호가 저장되어 있으면 함께) 를 합쳐 address 로 반환
-            - ONLINE 프로젝트: address 는 null
+            - offline 프로젝트: region1/2/3 + roadName (+건물번호가 저장되어 있으면 함께) 를 합쳐 address 로 반환
+            - online 프로젝트: address 는 null
             """
     )
     @ApiResponses({
@@ -47,7 +47,7 @@ public class ProjectRecruitmentQueryController {
                             schema = @Schema(implementation = ApiResponseDto.class),
                             examples = {
                                     @ExampleObject(
-                                            name = "OFFLINE (주소 합쳐서 반환)",
+                                            name = "offline (주소 합쳐서 반환)",
                                             value = """
                                         {
                                           "status": 200,
@@ -61,7 +61,7 @@ public class ProjectRecruitmentQueryController {
                                             "traits": ["정리의 신", "실행력 갓", "내향인"],
                                             "capacity": 4,
                                             "applicantCount": 6,
-                                            "mode": "OFFLINE",
+                                            "mode": "offline",
                                             "address": "전북 익산시 부송동 망산길 11-17",
                                             "preferredAges": { "ageMin": 20, "ageMax": 30 },
                                             "expectedMonth": 3,
@@ -75,7 +75,7 @@ public class ProjectRecruitmentQueryController {
                                         """
                                     ),
                                     @ExampleObject(
-                                            name = "ONLINE (주소 null)",
+                                            name = "online (주소 null)",
                                             value = """
                                         {
                                           "status": 200,
@@ -89,7 +89,7 @@ public class ProjectRecruitmentQueryController {
                                             "traits": [],
                                             "capacity": 5,
                                             "applicantCount": 0,
-                                            "mode": "ONLINE",
+                                            "mode": "online",
                                             "address": null,
                                             "preferredAges": null,
                                             "expectedMonth": 2,

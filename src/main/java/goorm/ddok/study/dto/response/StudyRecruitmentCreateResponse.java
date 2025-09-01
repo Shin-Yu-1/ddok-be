@@ -30,7 +30,7 @@ import java.util.List;
           "title": "구지라지",
           "expectedStart": "2025-08-16",
           "expectedMonth": 3,
-          "mode": "OFFLINE",
+          "mode": "offline",
           "location": {
             "latitude": 37.5665,
             "longitude": 126.9780,
@@ -71,10 +71,10 @@ public class StudyRecruitmentCreateResponse {
     @Schema(description = "예상 진행 개월 수", example = "3")
     private Integer expectedMonth;
 
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE")
+    @Schema(description = "진행 방식 (online / offline)", example = "offline")
     private StudyMode mode;
 
-    @Schema(description = "스터디 진행 장소 (OFFLINE일 경우만 존재)")
+    @Schema(description = "스터디 진행 장소 (offline일 경우만 존재)")
     private LocationDto location;
 
     @Schema(description = "선호 연령대 (없을 경우 null)")

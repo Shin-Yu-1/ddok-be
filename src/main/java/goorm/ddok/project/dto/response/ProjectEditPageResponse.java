@@ -45,10 +45,10 @@ public class ProjectEditPageResponse {
     @Schema(description = "지원자 수", example = "6")
     private Integer applicantCount;
 
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "ONLINE")
+    @Schema(description = "진행 방식 (online / offline)", example = "online")
     private ProjectMode mode;
 
-    @Schema(description = "진행 주소 (ONLINE이면 \"ONLINE\" 또는 null, OFFLINE은 전체 주소 문자열)", example = "서울 강남구 테헤란로 123")
+    @Schema(description = "진행 주소 (online이면 \"online\" 또는 null, offline은 전체 주소 문자열)", example = "서울 강남구 테헤란로 123")
     private String address;
 
     @Schema(description = "선호 연령대 (무관이면 null)")

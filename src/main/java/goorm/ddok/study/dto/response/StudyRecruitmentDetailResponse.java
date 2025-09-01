@@ -34,7 +34,7 @@ import java.util.List;
           "traits": ["정리의 신", "실행력 갓", "내향인"],
           "capacity": 4,
           "applicantCount": 6,
-          "mode": "ONLINE",
+          "mode": "online",
           "address": null,
           "preferredAges": { "ageMin": 20, "ageMax": 30 },
           "expectedMonth": 3,
@@ -100,10 +100,10 @@ public class StudyRecruitmentDetailResponse {
     @Schema(description = "지원자 수", example = "6")
     private Integer applicantCount;
 
-    @Schema(description = "진행 방식", example = "ONLINE")
+    @Schema(description = "진행 방식", example = "online")
     private StudyMode mode;
 
-    @Schema(description = "주소 (ONLINE이면 null)")
+    @Schema(description = "주소 (online이면 null)")
     private String address;
 
     @Schema(description = "선호 연령대 (무관 시 null)")

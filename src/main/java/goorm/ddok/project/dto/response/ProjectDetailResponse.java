@@ -1,6 +1,5 @@
 package goorm.ddok.project.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.TeamStatus;
@@ -46,10 +45,10 @@ public class ProjectDetailResponse {
     @Schema(description = "지원자 수", example = "6")
     private Integer applicantCount;
 
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "ONLINE")
+    @Schema(description = "진행 방식 (online / offline)", example = "online")
     private ProjectMode mode;
 
-    @Schema(description = "진행 주소 (ONLINE 일 경우 null, OFFLINE 시/구 주소)", example = "서울 강남구")
+    @Schema(description = "진행 주소 (online 일 경우 null, offline 시/구 주소)", example = "서울 강남구")
     private String address;
 
     @Schema(description = "선호 연령대")

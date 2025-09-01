@@ -16,7 +16,7 @@ import java.util.List;
         name = "ProjectRecruitmentResponse",
         description = """
             프로젝트 모집글 상세/생성 응답 DTO.
-            - mode 가 ONLINE 이면 location 은 null 일 수 있습니다.
+            - mode 가 online 이면 location 은 null 일 수 있습니다.
             - location 은 카카오 road_address 매핑 필드로 내려가며,
               프론트는 region + roadName + (main/sub) 를 합쳐 전체 주소를 보여줄 수 있습니다.
             """,
@@ -30,7 +30,7 @@ import java.util.List;
           "teamStatus": "RECRUITING",
           "expectedStart": "2025-09-16",
           "expectedMonth": 3,
-          "mode": "OFFLINE",
+          "mode": "offline",
           "location": {
             "address": "전북 익산시 부송동 망산길 11-17",
             "region1depthName": "전북",
@@ -78,12 +78,12 @@ public class ProjectRecruitmentResponse {
     @Schema(description = "예상 진행 개월 수", example = "3")
     private Integer expectedMonth;
 
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE")
+    @Schema(description = "진행 방식 (online / offline)", example = "offline")
     private ProjectMode mode;
 
     @Schema(
             description = """
-                프로젝트 진행 장소 (OFFLINE일 때만 존재).
+                프로젝트 진행 장소 (offline일 때만 존재).
                 Kakao road_address 매핑 필드 사용.
                 """,
             implementation = LocationDto.class

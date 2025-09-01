@@ -32,8 +32,8 @@ public class StudyRecruitmentQueryController {
                 특정 스터디 모집글의 상세 정보를 조회합니다.
                 
                 - 로그인 사용자일 경우 isMine, isApplied, isApproved 값이 반영됩니다.
-                - ONLINE 모드일 경우 address = "ONLINE"
-                - OFFLINE 모드일 경우 address = "시 구"
+                - online 모드일 경우 address = "online"
+                - offline 모드일 경우 address = "시 구"
                 """
     )
     @ApiResponses({
@@ -55,8 +55,8 @@ public class StudyRecruitmentQueryController {
                     "traits": ["정리의 신", "실행력 갓", "내향인"],
                     "capacity": 4,
                     "applicantCount": 6,
-                    "mode": "ONLINE",
-                    "address": "ONLINE",
+                    "mode": "online",
+                    "address": "online",
                     "preferredAges": { "ageMin": 20, "ageMax": 30 },
                     "expectedMonth": 3,
                     "startDate": "2025-09-10",
@@ -77,7 +77,7 @@ public class StudyRecruitmentQueryController {
                             examples = @ExampleObject(value = """
                 { "status": 404, "message": "리더 정보를 찾을 수 없습니다.", "data": null }
                 """))),
-            @ApiResponse(responseCode = "400", description = "주소 정보가 누락된 경우 (OFFLINE인데 region 정보 없음)",
+            @ApiResponse(responseCode = "400", description = "주소 정보가 누락된 경우 (offline인데 region 정보 없음)",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
                 { "status": 400, "message": "주소 정보가 올바르지 않습니다.", "data": null }

@@ -64,7 +64,7 @@ public class StudyRecruitmentUpdateRequest {
     @Schema(description = "진행 방식 (online / offline). 미전달 시 기존 유지", example = "online")
     private StudyMode mode;          // online | offline
 
-    @Schema(description = "OFFLINE일 때만 필요. FRONT에서 카카오 road_address 매핑값 사용", example = """
+    @Schema(description = "offline일 때만 필요. FRONT에서 카카오 road_address 매핑값 사용", example = """
         {
           "latitude": 37.5665,
           "longitude": 126.9780,
@@ -78,7 +78,7 @@ public class StudyRecruitmentUpdateRequest {
           "zoneNo": "06236"
         }
         """)
-    private LocationDto location;    // OFFLINE일 때 필요
+    private LocationDto location;    // offline일 때 필요
 
     @Schema(description = "선호 연령대 (무관: null 또는 {ageMin:0, ageMax:0})")
     private PreferredAgesDto preferredAges; // null → 무관(0/0)
