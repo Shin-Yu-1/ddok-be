@@ -24,26 +24,33 @@ public class SocialSignInService {
     private final RefreshTokenService refreshTokenService;
 
     @Transactional
-    public SignInResponse signInWithKakaoCode(String authorizationCode, String redirectUri, HttpServletResponse response) {
+    public SignInResponse signInWithKakaoCode(String authorizationCode,
+                                              String redirectUri,
+                                              HttpServletResponse response) {
 
-        String kakaoAccessToken = kakaoOAuthService.exchangeCodeForAccessToken(authorizationCode, redirectUri);
+        // 1) Authorization Code → Access Token 교환
+        KakaoOAuthService.KakaoTokenResponse tokenRes =
+                kakaoOAuthService.exchangeCodeForAccessToken(authorizationCode, redirectUri);
 
+        String kakaoAccessToken = tokenRes.getAccess_token();
+        String kakaoRefreshToken = tokenRes.getRefresh_token(); // 카카오 refresh_token (필요 시 저장/재사용)
 
+        // 2) 카카오 사용자 정보 조회
         var kuser = kakaoOAuthService.fetchUser(kakaoAccessToken);
 
-
+        // 3) User DB upsert
         User user = socialAuthService.upsertKakaoUser(
                 kuser.kakaoId(), kuser.email(), kuser.nickname(), kuser.profileImageUrl()
         );
 
-
+        // 4) JWT 발급
         String accessToken  = jwtTokenProvider.createToken(user.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
 
-
+        // 5) JWT RefreshToken 저장
         refreshTokenService.save(user.getId(), refreshToken);
 
-
+        // 6) RefreshToken을 HttpOnly 쿠키로 내려줌
         long ttlMs  = jwtTokenProvider.getRefreshTokenExpireMillis();
         long ttlSec = Math.max(1, ttlMs / 1000);
         ResponseCookie cookie = ResponseCookie.from("refreshToken", refreshToken)
@@ -55,19 +62,20 @@ public class SocialSignInService {
                 .build();
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
-
+        // 7) 위치 정보 매핑
         LocationResponse location = null;
         if (user.getLocation() != null) {
             var loc = user.getLocation();
-            BigDecimal lat = (loc.getActivityLatitude()  != null) ? loc.getActivityLatitude()  : null;
-            BigDecimal lon = (loc.getActivityLongitude() != null) ? loc.getActivityLongitude() : null;
+            var lat = (loc.getActivityLatitude()  != null) ? loc.getActivityLatitude()  : null;
+            var lon = (loc.getActivityLongitude() != null) ? loc.getActivityLongitude() : null;
             String address = loc.getRoadName();
             location = new LocationResponse(lat, lon, address);
         }
 
+        // 8) 사용자 DTO 생성
         boolean isPreferences = false;
-
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
+
         return new SignInResponse(accessToken, userDto);
     }
 }
