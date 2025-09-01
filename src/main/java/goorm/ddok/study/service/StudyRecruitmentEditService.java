@@ -83,7 +83,7 @@ public class StudyRecruitmentEditService {
         }
 
         // 위치 검증
-        if (req.getMode() == StudyMode.OFFLINE) {
+        if (req.getMode() == StudyMode.offline) {
             if (req.getLocation() == null
                     || req.getLocation().getLatitude() == null
                     || req.getLocation().getLongitude() == null) {
@@ -102,9 +102,9 @@ public class StudyRecruitmentEditService {
         }
 
         // 위치 반영
-        if (req.getMode() == StudyMode.OFFLINE) {
+        if (req.getMode() == StudyMode.offline) {
             study = applyOfflineLocation(study, req);
-        } else if (req.getMode() == StudyMode.ONLINE) {
+        } else if (req.getMode() == StudyMode.online) {
             study = clearLocation(study);
         }
 
@@ -214,9 +214,9 @@ public class StudyRecruitmentEditService {
                 .build();
     }
 
-    /** 주소 합성 (ONLINE → null) */
+    /** 주소 합성 (online → null) */
     private String composeFullAddress(StudyRecruitment s) {
-        if (s.getMode() == StudyMode.ONLINE) return null;
+        if (s.getMode() == StudyMode.online) return null;
 
         String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
         String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");

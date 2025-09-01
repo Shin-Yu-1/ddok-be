@@ -46,7 +46,7 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        if (req.getMode() == StudyMode.OFFLINE) {
+        if (req.getMode() == StudyMode.offline) {
             LocationDto loc = req.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
@@ -84,7 +84,7 @@ public class StudyRecruitmentService {
                 .ageMin(ageMin)
                 .ageMax(ageMax);
 
-        if (req.getMode() == StudyMode.OFFLINE && req.getLocation() != null) {
+        if (req.getMode() == StudyMode.offline && req.getLocation() != null) {
             LocationDto loc = req.getLocation();
             b.region1DepthName(loc.getRegion1depthName())
                     .region2DepthName(loc.getRegion2depthName())

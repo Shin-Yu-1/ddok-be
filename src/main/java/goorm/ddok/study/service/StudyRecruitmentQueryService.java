@@ -107,7 +107,7 @@ public class StudyRecruitmentQueryService {
 
     /** 오프라인: r1 r2 r3 road main-sub, 온라인: null */
     private String composeFullAddress(StudyRecruitment s) {
-        if (s.getMode() == StudyMode.ONLINE) return null;
+        if (s.getMode() == StudyMode.online) return null;
 
         String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
         String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");
