@@ -18,8 +18,8 @@ import java.util.List;
         name = "ProjectCreateRequest",
         description = """
             프로젝트 모집글 생성 요청 DTO.
-            - ONLINE 모드: location 생략 가능
-            - OFFLINE 모드: location 필수 (카카오 road_address 매핑 필드 사용)
+            - online 모드: location 생략 가능
+            - offline 모드: location 필수 (카카오 road_address 매핑 필드 사용)
             - preferredAges는 null(무관) 가능
             """,
         requiredProperties = {
@@ -74,13 +74,13 @@ public class ProjectRecruitmentCreateRequest {
     private Integer expectedMonth;
 
     @NotNull(message = "프로젝트 진행 방식은 필수 입력값입니다.")
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "진행 방식 (online / offline)", example = "offline", requiredMode = Schema.RequiredMode.REQUIRED)
     private ProjectMode mode;
 
     @Schema(description = """
             프로젝트 진행 장소.
-            - OFFLINE일 때만 필요 (Kakao road_address 매핑)
-            - ONLINE일 때는 null 또는 생략
+            - offline 때만 필요 (Kakao road_address 매핑)
+            - online 때는 null 또는 생략
             """,
             example = """
             {

@@ -33,10 +33,10 @@ public class ProjectRecruitmentUpdateRequest {
     private Integer expectedMonth;
 
     @NotNull
-    @Schema(example = "OFFLINE", allowableValues = {"ONLINE","OFFLINE"})
+    @Schema(example = "offline", allowableValues = {"online","offline"})
     private ProjectMode mode;
 
-    @Schema(description = "OFFLINE 필수. 카카오 road_address 매핑값 사용")
+    @Schema(description = "offline 필수. 카카오 road_address 매핑값 사용")
     private LocationDto location;
 
     @Schema(description = "없으면 null")
