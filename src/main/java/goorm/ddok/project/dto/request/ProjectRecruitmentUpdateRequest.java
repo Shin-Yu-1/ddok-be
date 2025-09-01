@@ -15,7 +15,34 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@Schema(name = "ProjectRecruitmentUpdateRequest", description = "프로젝트 수정 요청 DTO")
+@Schema(
+        name = "ProjectRecruitmentUpdateRequest",
+        description = "프로젝트 수정 요청 DTO",
+        example = """
+        {
+          "title": "구지라지",
+          "expectedStart": "2025-09-15",
+          "expectedMonth": 3,
+          "mode": "offline",
+          "location": {
+            "latitude": 37.5665,
+            "longitude": 126.9780,
+            "address": "서울특별시 강남구 테헤란로…"
+          },
+          "preferredAges": {
+            "ageMin": 20,
+            "ageMax": 30
+          },
+          "capacity": 6,
+          "traits": ["정리의 신", "실행력 갓", "내향인"],
+          "positions": ["PM", "UI/UX", "백엔드"],
+          "leaderPosition": "PM",
+          "detail": "멋진 웹을 함께 만들 사람을 찾습니다.",
+          "bannerImageUrl": "https://cdn.example.com/images/default.png",
+          "teamStatus": "RECRUITING"
+        }
+        """
+)
 public class ProjectRecruitmentUpdateRequest {
 
     @NotBlank
@@ -42,8 +69,9 @@ public class ProjectRecruitmentUpdateRequest {
     @Schema(description = "없으면 null")
     private PreferredAgesDto preferredAges;
 
-    @NotNull
-    @Min(1) @Max(7)
+    @NotNull(message = "모집 정원은 필수 입력값입니다.")
+    @Min(value = 1, message = "모집 정원은 최소 1명 이상이어야 합니다.")
+    @Max(value = 7, message = "모집 정원은 최대 7명 이하이어야 합니다.")
     @Schema(example = "6")
     private Integer capacity;
 
