@@ -50,7 +50,7 @@ public class StudyParticipationResponse {
     @Schema(description = "스터디 장소 정보 (OFFLINE일 경우만 존재)")
     private StudyLocationResponse location;
 
-    @Schema(description = "모집 기간 (시작일 ~ 종료일)")
+    @Schema(description = "진행 기간 (시작일 ~ 종료일)")
     private RecruitmentPeriodResponse recruitmentPeriod;
 
     public static StudyParticipationResponse from(StudyParticipant participant) {
