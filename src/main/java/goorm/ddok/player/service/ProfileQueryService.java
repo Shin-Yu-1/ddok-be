@@ -51,7 +51,7 @@ public class ProfileQueryService {
                     .nickname(user.getNickname())
                     .temperature(findTemperature(user))
                     .ageGroup(user.getAgeGroup())
-                    .mainBadge(toBadgeDto(user))
+                    .badges(toBadgeDto(user))
                     .content(user.getIntroduce())
                     .build();
         }
@@ -69,7 +69,7 @@ public class ProfileQueryService {
                 .ageGroup(user.getAgeGroup())
                 .mainPosition(findMainPosition(user))
                 .subPositions(findSubPositions(user))
-                .mainBadge(toBadgeDto(user))
+                .badges(toBadgeDto(user))
                 .abandonBadge(toAbandonBadgeDto(user))
                 .activeHours(toActiveHours(user.getActivity()))
                 .traits(findTraits(user))
@@ -132,9 +132,13 @@ public class ProfileQueryService {
         );
     }
 
-    private BadgeDto toBadgeDto(User user) {
-        // TODO: 대표 뱃지 조회 로직 구현
-        return new BadgeDto("login", "bronze");
+    private List<BadgeDto> toBadgeDto(User user) {
+        // TODO: User 엔티티에 뱃지 매핑된 엔티티 있으면 거기서 가져오기
+        // 지금은 임시 데이터로 세팅
+        return List.of(
+                new BadgeDto("login", "bronze"),
+                new BadgeDto("comlpete", "silver")
+        );
     }
 
     private AbandonBadgeDto toAbandonBadgeDto(User user) {
