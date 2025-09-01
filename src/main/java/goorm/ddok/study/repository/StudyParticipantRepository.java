@@ -27,6 +27,7 @@ public interface StudyParticipantRepository extends JpaRepository<StudyParticipa
     // 스터디 모집글 기준으로 참가자 전체 조회
     List<StudyParticipant> findByStudyRecruitment(StudyRecruitment study);
 
+    List<StudyParticipant> findByStudyRecruitment_IdAndDeletedAtIsNull(Long studyId);
 
     // 유저 기준 참여 스터디 조회 (Soft Delete 제외)
     @Query("""
@@ -36,5 +37,4 @@ public interface StudyParticipantRepository extends JpaRepository<StudyParticipa
               and p.deletedAt is null
            """)
     Page<StudyParticipant> findByUserId(@Param("userId") Long userId, Pageable pageable);
-
 }
