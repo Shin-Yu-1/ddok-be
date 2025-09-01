@@ -202,15 +202,19 @@ public class ChatService {
 
     // 마지막 읽은 메세지 처리
     @Transactional
-    public void lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
+    public ChatReadResponse lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
 
         User me = getUserByEmail(email);
         ChatRoom roomRef = chatRepository.getReferenceById(roomId);
 
-        ChatRoomMember m = chatRoomMemberRepository.findByRoomAndUser(roomRef, me)
+        ChatRoomMember member = chatRoomMemberRepository.findByRoomAndUser(roomRef, me)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
 
-        m.setLastReadMessageId(request.getMessageId());
+        member.setLastReadMessageId(request.getMessageId());
+
+        return ChatReadResponse.builder()
+                .messageId(request.getMessageId())
+                .build();
     }
 
     @Transactional
