@@ -40,7 +40,7 @@ import java.util.List;
           },
           "capacity": 6,
           "traits": ["정리의 신", "실행력 갓", "내향인"],
-          "studyType": "JOB_INTERVIEW",
+          "studyType": "취업/면접",
           "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
         }
         """
@@ -82,8 +82,7 @@ public class StudyRecruitmentCreateRequest {
     @Schema(description = "모집 성향 리스트", example = "[\"정리의 신\", \"실행력 갓\", \"내향인\"]")
     private List<String> traits;
 
-    @NotNull(message = "스터디 유형은 필수 입력값입니다.")
-    @Schema(description = "스터디 유형 (ENUM)", example = "JOB_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "스터디 유형 (ENUM)", example = "취업/면접", requiredMode = Schema.RequiredMode.REQUIRED)
     private StudyType studyType;
 
     @NotBlank(message = "상세 설명은 필수 입력값입니다.")
