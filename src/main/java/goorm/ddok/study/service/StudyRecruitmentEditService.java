@@ -82,6 +82,10 @@ public class StudyRecruitmentEditService {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
+        if (req.getCapacity() == null || req.getCapacity() < 1 || req.getCapacity() > 7) {
+            throw new GlobalException(ErrorCode.INVALID_CAPACITY);
+        }
+
         // 위치 검증
         if (req.getMode() == StudyMode.offline) {
             if (req.getLocation() == null
