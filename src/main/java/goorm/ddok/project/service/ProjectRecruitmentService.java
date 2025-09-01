@@ -70,7 +70,7 @@ public class ProjectRecruitmentService {
         }
 
         // 2) 위치 검증
-        if (request.getMode() == ProjectMode.OFFLINE) {
+        if (request.getMode() == ProjectMode.offline) {
             LocationDto loc = request.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
@@ -120,7 +120,7 @@ public class ProjectRecruitmentService {
                 .createdAt(Instant.now())
                 .updatedAt(Instant.now());
 
-        if (request.getMode() == ProjectMode.OFFLINE && request.getLocation() != null) {
+        if (request.getMode() == ProjectMode.offline && request.getLocation() != null) {
             LocationDto loc = request.getLocation();
             builder
                     .region1depthName(loc.getRegion1depthName())
@@ -191,9 +191,9 @@ public class ProjectRecruitmentService {
                 .build();
         participantRepository.save(leader);
 
-        // 10) 응답 DTO: 주소는 합쳐서 내려주기(OFFLINE일 때만)
+        // 10) 응답 DTO: 주소는 합쳐서 내려주기(offline일 때만)
         LocationDto respLocation = null;
-        if (recruitment.getProjectMode() == ProjectMode.OFFLINE) {
+        if (recruitment.getProjectMode() == ProjectMode.offline) {
             String fullAddress = composeAddress(recruitment); // "전북 익산시 부송동 망산길 11-17"
             respLocation = LocationDto.builder()
                     .address(fullAddress)
@@ -227,7 +227,7 @@ public class ProjectRecruitmentService {
                 .expectedStart(recruitment.getStartDate())
                 .expectedMonth(recruitment.getExpectedMonths())
                 .mode(recruitment.getProjectMode())
-                .location(respLocation) // ONLINE이면 null
+                .location(respLocation) // online이면 null
                 .preferredAges(respAges)
                 .capacity(recruitment.getCapacity())
                 .bannerImageUrl(recruitment.getBannerImageUrl())
@@ -247,7 +247,7 @@ public class ProjectRecruitmentService {
 
     /** 엔티티에 저장된 주소 조합 -> "r1 r2 r3 road main-sub" */
     private String composeAddress(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.ONLINE) return "ONLINE";
+        if (pr.getProjectMode() == ProjectMode.online) return "online";
         String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
         String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
         String r3 = Optional.ofNullable(pr.getRegion3depthName()).orElse("");

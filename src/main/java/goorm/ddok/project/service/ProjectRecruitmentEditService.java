@@ -167,7 +167,7 @@ public class ProjectRecruitmentEditService {
         }
 
         // 위치 검증
-        if (req.getMode() == ProjectMode.OFFLINE) {
+        if (req.getMode() == ProjectMode.offline) {
             LocationDto loc = req.getLocation();
             if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
@@ -215,7 +215,7 @@ public class ProjectRecruitmentEditService {
         String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
 
         // 위치 업데이트 (카카오 필드 개별 저장)
-        boolean offline = req.getMode() == ProjectMode.OFFLINE;
+        boolean offline = req.getMode() == ProjectMode.offline;
         if (offline) {
             pr = applyOfflineLocation(pr, req.getLocation());
         } else {
@@ -358,7 +358,7 @@ public class ProjectRecruitmentEditService {
 
     /** 조회 응답용 전체 주소(ONLINE이면 null). */
     private String composeAddressForRead(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.ONLINE) return null;
+        if (pr.getProjectMode() == ProjectMode.online) return null;
 
         String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
         String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
@@ -461,7 +461,7 @@ public class ProjectRecruitmentEditService {
                 .capacity(pr.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(pr.getProjectMode().name().toLowerCase())
-                .address(address == null ? "ONLINE" : address)
+                .address(address == null ? "online" : address)
                 .preferredAges(prefAges)
                 .expectedMonth(pr.getExpectedMonths())
                 .startDate(pr.getStartDate())

@@ -146,9 +146,9 @@ public class ProjectRecruitmentQueryService {
         }
     }
 
-    /** 전체 주소 합치기: "r1 r2 r3 road main-sub" (ONLINE이면 null) */
+    /** 전체 주소 합치기: "r1 r2 r3 road main-sub" (online null) */
     private String composeAddress(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.ONLINE) return null;
+        if (pr.getProjectMode() == ProjectMode.online) return null;
 
         String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
         String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
