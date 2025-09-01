@@ -30,7 +30,7 @@ import java.util.List;
         {
           "title": "프리토킹 스터디(수정)",
           "studyType": "취업/면접",
-          "teamStatus": "RECRUITING",
+          "teamStatus": "자격증 취득",
           "expectedStart": "2025-09-15",
           "expectedMonth": 2,
           "mode": "online",
