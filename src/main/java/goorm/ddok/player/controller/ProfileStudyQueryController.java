@@ -55,7 +55,7 @@ public class ProfileStudyQueryController {
                                               "longitude": 126.9780,
                                               "address": "서울특별시 강남구 테헤란로…"
                                             },
-                                            "recruitmentPeriod": {
+                                            "period": {
                                               "start": "2025-08-08",
                                               "end": "2025-09-09"
                                             }

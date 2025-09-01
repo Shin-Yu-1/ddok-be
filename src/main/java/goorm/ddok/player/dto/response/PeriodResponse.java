@@ -1,7 +1,6 @@
 package goorm.ddok.player.dto.response;
 
 
-import goorm.ddok.study.domain.StudyRecruitment;
 import goorm.ddok.study.domain.TeamStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
@@ -16,8 +15,8 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Schema(
-        name = "RecruitmentPeriodResponse",
-        description = "스터디 기간 정보",
+        name = "PeriodResponse",
+        description = "스터디 진행 기간 정보",
         example = """
         {
           "start": "2025-06-04",
@@ -25,7 +24,7 @@ import java.time.LocalDate;
         }
         """
 )
-public class RecruitmentPeriodResponse {
+public class PeriodResponse {
 
     @Schema(description = "스터디 시작일", example = "2025-06-04")
     private LocalDate start;
@@ -34,7 +33,7 @@ public class RecruitmentPeriodResponse {
     private LocalDate end;
 
 
-    public static RecruitmentPeriodResponse from(LocalDate startDate, Integer expectedMonths, TeamStatus status) {
+    public static PeriodResponse from(LocalDate startDate, Integer expectedMonths, TeamStatus status) {
         LocalDate end = null;
 
         // TODO: team 도메인 추가되면 실제 종료일 컬럼 사용하도록 수정
@@ -42,7 +41,7 @@ public class RecruitmentPeriodResponse {
             end = startDate.plusMonths(expectedMonths);
         }
 
-        return RecruitmentPeriodResponse.builder()
+        return PeriodResponse.builder()
                 .start(startDate)
                 .end(end)
                 .build();

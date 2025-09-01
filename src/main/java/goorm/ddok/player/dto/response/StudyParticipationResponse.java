@@ -1,6 +1,5 @@
 package goorm.ddok.player.dto.response;
 
-import goorm.ddok.study.domain.ParticipantRole;
 import goorm.ddok.study.domain.StudyParticipant;
 import goorm.ddok.study.domain.StudyRecruitment;
 import goorm.ddok.study.domain.TeamStatus;
@@ -28,7 +27,7 @@ import lombok.NoArgsConstructor;
             "longitude": 126.9780,
             "address": "서울특별시 강남구 테헤란로…"
           },
-          "recruitmentPeriod": {
+          "period": {
             "start": "2025-08-08",
             "end": "2025-09-09"
           }
@@ -51,7 +50,7 @@ public class StudyParticipationResponse {
     private StudyLocationResponse location;
 
     @Schema(description = "진행 기간 (시작일 ~ 종료일)")
-    private RecruitmentPeriodResponse recruitmentPeriod;
+    private PeriodResponse period;
 
     public static StudyParticipationResponse from(StudyParticipant participant) {
         System.out.println("DEBUG role = " + participant.getRole());
@@ -62,7 +61,7 @@ public class StudyParticipationResponse {
                 .title(study.getTitle())
                 .teamStatus(study.getTeamStatus())
                 .location(StudyLocationResponse.from(study))
-                .recruitmentPeriod(RecruitmentPeriodResponse.from(
+                .period(PeriodResponse.from(
                         study.getStartDate(),
                         study.getExpectedMonths(),
                         study.getTeamStatus()
