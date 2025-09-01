@@ -12,7 +12,6 @@ import lombok.*;
         name = "ChatReadResponse",
         description = "채팅 메세지 읽음 처리 응답"
 )
-
 public class ChatReadResponse {
 
     @Schema(description = "메세지 ID", example = "1")
