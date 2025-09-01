@@ -64,6 +64,12 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
+        // studyType 검증
+        if (request.getStudyType() == null || !StudyType.isValid(request.getStudyType())) {
+            throw new GlobalException(ErrorCode.INVALID_STUDY_TYPE);
+        }
+
+
 
         // 1. 배너 이미지 업로드 or 기본값
         String bannerImageUrl = (bannerImage != null && !bannerImage.isEmpty())
