@@ -33,10 +33,10 @@ public class User {
     @Column(name = "nickname", unique = true, length = 12)
     private String nickname;
 
-    @Column(nullable = false, unique = true, length = 255)
+    @Column(unique = true, length = 255)
     private String email;
 
-    @Column(name = "phone_number", nullable = false, unique = true, length = 11)
+    @Column(name = "phone_number", unique = true, length = 11)
     private String phoneNumber;
 
     @JsonIgnore

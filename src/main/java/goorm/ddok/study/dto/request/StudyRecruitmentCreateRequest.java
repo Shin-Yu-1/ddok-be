@@ -74,8 +74,8 @@ public class StudyRecruitmentCreateRequest {
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")
-    @Min(value = 2, message = "모집 정원은 최소 2명 이상이어야 합니다.")
-    @Max(value = 8, message = "모집 정원은 최대 8명 이하이어야 합니다.")
+    @Min(value = 1, message = "모집 정원은 최소 1명 이상이어야 합니다.")
+    @Max(value = 7, message = "모집 정원은 최대 7명 이하이어야 합니다.")
     @Schema(description = "모집 정원", example = "6", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer capacity;
 

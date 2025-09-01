@@ -3,6 +3,8 @@ package goorm.ddok.project.repository;
 import goorm.ddok.project.domain.ParticipantRole;
 import goorm.ddok.project.domain.ProjectParticipant;
 import goorm.ddok.project.domain.ProjectRecruitment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -26,6 +28,10 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
     List<ProjectParticipant> findByPosition_ProjectRecruitment_Id(Long projectId);
 
     // 특정 포지션을 참조하는 참가자 수
-
     List<ProjectParticipant> findByPosition_ProjectRecruitment(ProjectRecruitment recruitment);
+
+    /**
+     * 특정 사용자(userId)가 참여한 프로젝트 목록 조회 (Soft Delete 제외)
+     */
+    Page<ProjectParticipant> findByUser_IdAndDeletedAtIsNull(Long userId, Pageable pageable);
 }

@@ -9,7 +9,16 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-@Schema(name = "StudyDeleteRequest", description = "스터디 삭제 확인 요청")
+@Schema(
+        name = "StudyDeleteRequest",
+        description = "스터디 삭제 확인 요청 DTO. " +
+                "삭제 시 반드시 확인 문구를 전달해야 하며, 문구는 정확히 '삭제합니다.' 여야 합니다.",
+        example = """
+        {
+          "confirmText": "삭제합니다."
+        }
+        """
+)
 public class StudyDeleteRequest {
 
     @NotBlank(message = "확인 문구는 필수입니다.")
