@@ -2,10 +2,7 @@ package goorm.ddok.chat.controller;
 
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
-import goorm.ddok.chat.dto.response.ChatListResponse;
-import goorm.ddok.chat.dto.response.ChatMembersResponse;
-import goorm.ddok.chat.dto.response.ChatMessageListResponse;
-import goorm.ddok.chat.dto.response.ChatMessageResponse;
+import goorm.ddok.chat.dto.response.*;
 import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -186,16 +183,15 @@ public class ChatController {
 
     @PostMapping("/{roomId}/messages/read")
     @Operation(summary = "채팅방 마지막 읽은 메세지 저장", description = "채팅방별 마지막 읽은 메세지를 저장합니다.")
-    public ResponseEntity<ApiResponseDto<String>> sendReadMessage(
+    public ResponseEntity<ApiResponseDto<ChatReadResponse>> sendReadMessage(
             @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
             @Valid @RequestBody LastReadMessageRequest request,
             Authentication authentication) {
 
         String email = authentication.getName();
-        chatService.lastReadMessage(email, roomId, request);
+        ChatReadResponse response = chatService.lastReadMessage(email, roomId, request);
 
-        return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", null));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", response));
     }
 }
-
