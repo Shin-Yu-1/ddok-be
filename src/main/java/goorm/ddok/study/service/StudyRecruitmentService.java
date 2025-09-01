@@ -34,106 +34,92 @@ public class StudyRecruitmentService {
     private final BannerImageService bannerImageService;
     private final FileService fileService;
 
-    public StudyRecruitmentCreateResponse createStudy(StudyRecruitmentCreateRequest req,
-                                                      MultipartFile bannerImage,
-                                                      CustomUserDetails userDetails) {
+    public StudyRecruitmentCreateResponse createStudy(
+            StudyRecruitmentCreateRequest request,
+            MultipartFile bannerImage,
+            CustomUserDetails userDetails
+    ) {
+        // 로그인 유저 검증
         if (userDetails == null || userDetails.getUser() == null) {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
         User user = userDetails.getUser();
 
-        if (req.getExpectedStart().isBefore(LocalDate.now())) {
+        // 시작일 검증 (과거 날짜 금지)
+        if (request.getExpectedStart().isBefore(LocalDate.now())) {
             throw new GlobalException(ErrorCode.INVALID_START_DATE);
         }
 
-        if (req.getMode() == StudyMode.offline) {
-            LocationDto loc = req.getLocation();
-            if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+        // 오프라인 모드인데 위치가 없거나 위/경도가 없는 경우
+        if (request.getMode() == StudyMode.OFFLINE) {
+            if (request.getLocation() == null
+                    || request.getLocation().getLatitude() == null
+                    || request.getLocation().getLongitude() == null) {
                 throw new GlobalException(ErrorCode.INVALID_LOCATION);
             }
         }
 
-        // 연령: 무관(0/0) 또는 10단위
-        int ageMin = 0, ageMax = 0;
-        if (req.getPreferredAges() != null) {
-            ageMin = Optional.ofNullable(req.getPreferredAges().getAgeMin()).orElse(0);
-            ageMax = Optional.ofNullable(req.getPreferredAges().getAgeMax()).orElse(0);
-            if (ageMin > ageMax) throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
-            if (!(ageMin == 0 && ageMax == 0)) {
-                if (ageMin % 10 != 0 || ageMax % 10 != 0) {
-                    throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
-                }
-            }
+        // 연령대 범위 검증
+        if (request.getPreferredAges().getAgeMin() > request.getPreferredAges().getAgeMax()) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
-        // studyType 검증
-        if (req.getStudyType() == null || !StudyType.isValid(req.getStudyType())) {
-            throw new GlobalException(ErrorCode.INVALID_STUDY_TYPE);
-        }
 
-        // 배너 이미지 업로드 or 기본값
-        String bannerUrl = (bannerImage != null && !bannerImage.isEmpty())
+        // 1. 배너 이미지 업로드 or 기본값
+        String bannerImageUrl = (bannerImage != null && !bannerImage.isEmpty())
                 ? uploadBannerImage(bannerImage)
-                : bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);
+                :bannerImageService.generateBannerImageUrl(request.getTitle(), "STUDY", 1200, 600);
 
-        StudyRecruitment.StudyRecruitmentBuilder b = StudyRecruitment.builder()
+        // 2. StudyRecruitment 생성
+        StudyRecruitment study = StudyRecruitment.builder()
                 .user(user)
-                .title(req.getTitle())
+                .title(request.getTitle())
                 .teamStatus(TeamStatus.RECRUITING)
-                .startDate(req.getExpectedStart())
-                .expectedMonths(req.getExpectedMonth())
-                .mode(req.getMode())
-                .capacity(req.getCapacity())
-                .bannerImageUrl(bannerUrl)
-                .studyType(req.getStudyType())
-                .contentMd(req.getDetail())
-                .ageMin(ageMin)
-                .ageMax(ageMax);
+                .startDate(request.getExpectedStart())
+                .expectedMonths(request.getExpectedMonth())
+                .mode(request.getMode())
+                .region1DepthName(resolveRegion1(request))
+                .region2DepthName(resolveRegion2(request))
+                .region3DepthName(resolveRegion3(request))
+                .roadName(resolveRoadName(request))
+                .latitude(request.getLocation() != null ? request.getLocation().getLatitude() : null)
+                .longitude(request.getLocation() != null ? request.getLocation().getLongitude() : null)
+                .ageMin(request.getPreferredAges() != null ? request.getPreferredAges().getAgeMin() : null)
+                .ageMax(request.getPreferredAges() != null ? request.getPreferredAges().getAgeMax() : null)
+                .capacity(request.getCapacity())
+                .bannerImageUrl(bannerImageUrl)
+                .studyType(request.getStudyType())
+                .contentMd(request.getDetail())
+                .build();
 
-        if (req.getMode() == StudyMode.offline && req.getLocation() != null) {
-            LocationDto loc = req.getLocation();
-            b.region1DepthName(loc.getRegion1depthName())
-                    .region2DepthName(loc.getRegion2depthName())
-                    .region3DepthName(loc.getRegion3depthName())
-                    .roadName(loc.getRoadName())
-                    .mainBuildingNo(loc.getMainBuildingNo())
-                    .subBuildingNo(loc.getSubBuildingNo())
-                    .zoneNo(loc.getZoneNo())
-                    .latitude(loc.getLatitude())
-                    .longitude(loc.getLongitude());
-        } else {
-            b.region1DepthName(null).region2DepthName(null).region3DepthName(null)
-                    .roadName(null).mainBuildingNo(null).subBuildingNo(null).zoneNo(null)
-                    .latitude(null).longitude(null);
-        }
-
-        StudyRecruitment study = b.build();
-
-        if (req.getTraits() != null) {
-            req.getTraits().stream()
-                    .filter(s -> s != null && !s.trim().isBlank())
-                    .map(String::trim)
-                    .distinct()
-                    .forEach(tr -> study.getTraits().add(
+        // 3. traits 매핑
+        if (request.getTraits() != null) {
+            request.getTraits().forEach(tr ->
+                    study.getTraits().add(
                             StudyRecruitmentTrait.builder()
                                     .studyRecruitment(study)
                                     .traitName(tr)
                                     .build()
-                    ));
+                    )
+            );
         }
 
+        // 4. 저장
         try {
             studyRecruitmentRepository.save(study);
         } catch (Exception e) {
             throw new GlobalException(ErrorCode.STUDY_SAVE_FAILED);
         }
 
-        participantRepository.save(StudyParticipant.builder()
+        // 5. 리더 Participant 등록
+        StudyParticipant leader = StudyParticipant.builder()
                 .studyRecruitment(study)
                 .user(user)
                 .role(ParticipantRole.LEADER)
-                .build());
+                .build();
+        participantRepository.save(leader);
 
+        // 6. 응답 DTO 변환
         return StudyRecruitmentCreateResponse.builder()
                 .studyId(study.getId())
                 .userId(user.getId())
@@ -143,20 +129,17 @@ public class StudyRecruitmentService {
                 .expectedStart(study.getStartDate())
                 .expectedMonth(study.getExpectedMonths())
                 .mode(study.getMode())
-                .location((study.getLatitude() != null && study.getLongitude() != null)
+                .location(study.getLatitude() != null && study.getLongitude() != null
                         ? LocationDto.builder()
                         .latitude(study.getLatitude())
                         .longitude(study.getLongitude())
                         .address(study.getRoadName())
-                        .region1depthName(study.getRegion1DepthName())
-                        .region2depthName(study.getRegion2DepthName())
-                        .region3depthName(study.getRegion3DepthName())
-                        .roadName(study.getRoadName())
-                        .mainBuildingNo(study.getMainBuildingNo())
-                        .subBuildingNo(study.getSubBuildingNo())
-                        .zoneNo(study.getZoneNo())
-                        .build() : null)
-                .preferredAges(PreferredAgesDto.builder().ageMin(study.getAgeMin()).ageMax(study.getAgeMax()).build())
+                        .build()
+                        : null)
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(study.getAgeMin())
+                        .ageMax(study.getAgeMax())
+                        .build())
                 .capacity(study.getCapacity())
                 .bannerImageUrl(study.getBannerImageUrl())
                 .traits(study.getTraits().stream().map(StudyRecruitmentTrait::getTraitName).toList())
@@ -165,15 +148,28 @@ public class StudyRecruitmentService {
                 .build();
     }
 
-    private String uploadBannerImage(MultipartFile file) {
+    private String uploadBannerImage(MultipartFile bannerImage) {
         try {
-            return fileService.upload(file);
+            return fileService.upload(bannerImage);
         } catch (IOException e) {
             throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
         }
     }
 
-    /** 신청 토글 */
+    // TODO: 실제 location 파싱 로직
+    private String resolveRegion1(StudyRecruitmentCreateRequest request) {
+        return request.getLocation() != null ? "서울특별시" : null;
+    }
+    private String resolveRegion2(StudyRecruitmentCreateRequest request) {
+        return request.getLocation() != null ? "강남구" : null;
+    }
+    private String resolveRegion3(StudyRecruitmentCreateRequest request) {
+        return request.getLocation() != null ? "역삼동" : null;
+    }
+    private String resolveRoadName(StudyRecruitmentCreateRequest request) {
+        return request.getLocation() != null ? request.getLocation().getAddress() : null;
+    }
+
     @Transactional
     public boolean toggleJoin(CustomUserDetails userDetails, Long studyId) {
         if (userDetails == null || userDetails.getUser() == null) {
@@ -181,23 +177,32 @@ public class StudyRecruitmentService {
         }
         Long userId = userDetails.getUser().getId();
 
+        // 1. 스터디 모집글 확인
         StudyRecruitment study = studyRecruitmentRepository.findById(studyId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.STUDY_NOT_FOUND));
-        if (study.getDeletedAt() != null) throw new GlobalException(ErrorCode.STUDY_NOT_FOUND);
 
+        // 2. 리더가 자기 스터디 신청하려는 경우 금지
         if (study.getUser().getId().equals(userId)) {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
         }
 
-        return studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId)
-                .map(existing -> { studyApplicationRepository.delete(existing); return false; })
-                .orElseGet(() -> {
-                    studyApplicationRepository.save(StudyApplication.builder()
-                            .user(userDetails.getUser())
-                            .studyRecruitment(study)
-                            .applicationStatus(ApplicationStatus.PENDING)
-                            .build());
-                    return true;
-                });
+        // 3. 기존 신청 여부 확인
+        Optional<StudyApplication> existing = studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId);
+
+        if (existing.isPresent()) {
+            // 이미 신청한 경우 → 취소
+            studyApplicationRepository.delete(existing.get());
+            return false;
+        }
+
+        // 4. 새로운 신청
+        StudyApplication newApp = StudyApplication.builder()
+                .user(userDetails.getUser())
+                .studyRecruitment(study)
+                .applicationStatus(ApplicationStatus.PENDING)
+                .build();
+        studyApplicationRepository.save(newApp);
+
+        return true;
     }
 }
