@@ -1,10 +1,13 @@
 package goorm.ddok.member.service;
 
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.domain.SocialAccount;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.SocialAccountRepository;
 import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,25 +30,33 @@ public class SocialAuthService {
             throw new IllegalArgumentException("kakaoId is required");
         }
 
-        return socialAccountRepository.findByProviderAndProviderUserId(PROVIDER_KAKAO, kakaoId)
-                .map(sa -> {
-                    User u = sa.getUser();
-                    // 기존 유저도 원하는 규칙으로 동기화
-                    updateUserFields(u, kakaoId, email, kakaoNickname, profileImageUrl);
-                    return u;
-                })
-                .orElseGet(() -> {
-                    // 신규 유저 생성 + 소셜계정 연결
-                    User u = createNewUserFromKakao(kakaoId, email, kakaoNickname, profileImageUrl);
-                    SocialAccount sa = SocialAccount.builder()
-                            .provider(PROVIDER_KAKAO)
-                            .providerUserId(kakaoId)
-                            .user(u)
-                            .build();
-                    socialAccountRepository.save(sa);
-                    return u;
-                });
+        try {
+            return socialAccountRepository.findByProviderAndProviderUserId(PROVIDER_KAKAO, kakaoId)
+                    .map(sa -> {
+                        User u = sa.getUser();
+                        updateUserFields(u, kakaoId, email, kakaoNickname, profileImageUrl);
+                        return u;
+                    })
+                    .orElseGet(() -> {
+                        // 신규 생성
+                        User u = createNewUserFromKakao(kakaoId, email, kakaoNickname, profileImageUrl);
+                        SocialAccount sa = SocialAccount.builder()
+                                .provider(PROVIDER_KAKAO)
+                                .providerUserId(kakaoId)
+                                .user(u)
+                                .build();
+                        socialAccountRepository.save(sa);
+                        return u;
+                    });
+
+        } catch (DataIntegrityViolationException e) {
+            // 동시성으로 인한 Unique 제약 위반 발생 시 → 다시 조회
+            return socialAccountRepository.findByProviderAndProviderUserId(PROVIDER_KAKAO, kakaoId)
+                    .map(SocialAccount::getUser)
+                    .orElseThrow(() -> new GlobalException(ErrorCode.SOCIAL_LOGIN_FAILED));
+        }
     }
+
 
     private void updateUserFields(User u, String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
         // username ← 카카오 닉네임(사람 이름/표시용)
@@ -66,16 +77,15 @@ public class SocialAuthService {
     private User createNewUserFromKakao(String kakaoId, String email, String kakaoNickname, String profileImageUrl) {
         String desiredUsername = safeUsernameFromKakaoNickname(kakaoNickname);
 
-        String safeEmail  = ""; // 그냥 없는 거로 처리
-        String safePhone  = ""; // 그냥 없는 거로 처리
-        String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString()); // NOT NULL
+        String safeEmail  = (email != null && !email.isBlank()) ? email : null;
+        String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString());
 
         return userRepository.save(
                 User.builder()
-                        .username(desiredUsername)      // 카카오 닉네임 → username
+                        .username(desiredUsername)
                         .nickname(null)
                         .email(safeEmail)
-                        .phoneNumber(safePhone)
+                        .phoneNumber(null)
                         .password(encodedPw)
                         .profileImageUrl(profileImageUrl)
                         .build()
