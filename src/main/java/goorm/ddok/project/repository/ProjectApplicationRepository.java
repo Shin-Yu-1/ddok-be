@@ -21,12 +21,13 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
 
 
     // 프로젝트 기준 전체 지원 수
+    /** 프로젝트 기준 전체 지원 수 */
     @Query("""
            select count(a)
            from ProjectApplication a
            where a.position.projectRecruitment.id = :projectId
            """)
-    long countAllByProjectId(Long projectId);
+    long countAllByProjectId(@Param("projectId") Long projectId);
 
     // 포지션별 applied 집계
     interface PositionCountProjection {
@@ -52,8 +53,10 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
            """)
     List<PositionCountProjection> countApprovedByPosition(Long projectId);
 
-    // 이미 쓰고 있는 카운트 쿼리/프로젝션들은 그대로 두고,
-    // 삭제용만 추가
+    /** 내가 특정 포지션에 지원했는지 — 포지션 단위 체크 */
+    boolean existsByUser_IdAndPosition_Id(Long userId, Long positionId);
+
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from ProjectApplication a where a.position.projectRecruitment.id = :projectId")
     void deleteByPosition_ProjectRecruitment_Id(@Param("projectId") Long projectId);

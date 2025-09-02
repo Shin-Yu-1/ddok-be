@@ -24,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.xml.stream.Location;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
@@ -72,16 +71,24 @@ public class ProjectRecruitmentQueryService {
                     int appliedCountForPos = projectApplicationRepository.countByPosition(position);
 
                     boolean isApplied = (me != null) &&
-                            projectApplicationRepository.findByUser_IdAndPosition_ProjectRecruitment_Id(
-                                    me.getId(), project.getId()).isPresent();
+                            projectApplicationRepository.existsByUser_IdAndPosition_Id(me.getId(), position.getId());
 
                     boolean isApproved = (me != null) &&
-                            participants.stream().anyMatch(p ->
-                                    p.getRole() == ParticipantRole.MEMBER
-                                            && p.getUser().getId().equals(me.getId())
-                                            && Objects.equals(p.getPosition(), position));
+                            projectParticipantRepository.existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
+                                    me.getId(), position.getId(), ParticipantRole.MEMBER);
 
-                    boolean isAvailable = confirmedCount < project.getCapacity();
+                    boolean alreadyAppliedOtherPos = (me != null) &&
+                            projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_Id(me.getId(), project.getId())
+                            && !isApplied;
+
+                    boolean alreadyMemberAnyPos = (me != null) &&
+                            projectParticipantRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(
+                                    me.getId(), project.getId());
+
+                    boolean isAvailable = (project.getTeamStatus() == TeamStatus.RECRUITING)
+                            && (confirmedCount < project.getCapacity())
+                            && !alreadyMemberAnyPos
+                            && !alreadyAppliedOtherPos;
 
                     return ProjectPositionDto.builder()
                             .position(position.getPositionName())
@@ -111,7 +118,7 @@ public class ProjectRecruitmentQueryService {
                 })
                 .toList();
 
-        // 7) 주소 합치기
+        // 7) 위치 객체 구성
         LocationDto location = buildLocationForRead(project);
 
         // 8) 선호 연령 (0/0이면 null)
@@ -200,6 +207,7 @@ public class ProjectRecruitmentQueryService {
                 .longitude(pr.getLongitude())
                 .build();
     }
+
     private String composeFullAddress(String r1, String r2, String r3, String road, String main, String sub) {
         StringBuilder sb = new StringBuilder();
         if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
@@ -213,7 +221,6 @@ public class ProjectRecruitmentQueryService {
         String s = sb.toString().trim().replaceAll("\\s+", " ");
         return s.isBlank() ? null : s;
     }
-
 
     // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====
     private BadgeDto resolveMainBadge(User user) { return null; }

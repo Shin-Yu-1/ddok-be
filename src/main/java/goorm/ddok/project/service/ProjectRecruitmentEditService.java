@@ -74,35 +74,38 @@ public class ProjectRecruitmentEditService {
         // 총 지원자 수
         long applicantCount = applicationRepository.countAllByProjectId(projectId);
 
-        Map<String, Long> approvedByPosName = applicationRepository.countApprovedByPosition(projectId).stream()
-                .collect(Collectors.toMap(
-                        ProjectApplicationRepository.PositionCountProjection::getPositionName,
-                        ProjectApplicationRepository.PositionCountProjection::getCnt
-                ));
-
         Long meId = me.getUser().getId();
 
-        // 포지션별 현황 (confirmed=승인된 지원서 수, isApproved=내 승인 여부(지원서))
+        // 포지션별 현황 (확정자=Participant MEMBER 수, isApplied/isApproved=포지션별)
         List<ProjectPositionDto> positionDtos = pr.getPositions().stream()
                 .map(position -> {
+                    long confirmedCount = participantRepository
+                            .countByPosition_IdAndRoleAndDeletedAtIsNull(position.getId(), ParticipantRole.MEMBER);
+
                     int appliedForPos = applicationRepository.countByPosition_Id(position.getId());
 
-                    long confirmedApproved = approvedByPosName.getOrDefault(position.getPositionName(), 0L);
-
                     boolean isApplied = applicationRepository
-                            .existsByUser_IdAndPosition_ProjectRecruitment_Id(meId, projectId);
+                            .existsByUser_IdAndPosition_Id(meId, position.getId());
 
-                    boolean isApproved = applicationRepository
-                            .existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
-                                    meId, projectId, ApplicationStatus.APPROVED);
+                    boolean isApproved = participantRepository
+                            .existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
+                                    meId, position.getId(), ParticipantRole.MEMBER);
+
+                    boolean alreadyAppliedOtherPos = applicationRepository
+                            .existsByUser_IdAndPosition_ProjectRecruitment_Id(meId, pr.getId()) && !isApplied;
+
+                    boolean alreadyMemberAnyPos = participantRepository
+                            .existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(meId, pr.getId());
 
                     boolean isAvailable = (pr.getTeamStatus() == TeamStatus.RECRUITING)
-                            && (confirmedApproved < pr.getCapacity());
+                            && (confirmedCount < pr.getCapacity())
+                            && !alreadyMemberAnyPos
+                            && !alreadyAppliedOtherPos;
 
                     return ProjectPositionDto.builder()
                             .position(position.getPositionName())
                             .applied(appliedForPos)
-                            .confirmed((int) confirmedApproved)   // ← 승인 기준
+                            .confirmed((int) confirmedCount)
                             .IsApplied(isApplied)
                             .IsApproved(isApproved)
                             .IsAvailable(isAvailable)
@@ -379,32 +382,43 @@ public class ProjectRecruitmentEditService {
 
         long applicantCount = applicationRepository.countAllByProjectId(projectId);
 
-        Map<String, Long> applied = applicationRepository.countAppliedByPosition(projectId).stream()
-                .collect(Collectors.toMap(
-                        ProjectApplicationRepository.PositionCountProjection::getPositionName,
-                        ProjectApplicationRepository.PositionCountProjection::getCnt
-                ));
-        Map<String, Long> confirmed = applicationRepository.countApprovedByPosition(projectId).stream()
-                .collect(Collectors.toMap(
-                        ProjectApplicationRepository.PositionCountProjection::getPositionName,
-                        ProjectApplicationRepository.PositionCountProjection::getCnt
-                ));
-
         Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
-        boolean myApplied = (meId != null) && applicationRepository
-                .existsByUser_IdAndPosition_ProjectRecruitment_Id(meId, projectId);
-        boolean myApproved = (meId != null) && applicationRepository
-                .existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(meId, projectId, ApplicationStatus.APPROVED);
 
+        // 포지션별 집계/상태를 직접 계산
         List<ProjectUpdateResultResponse.PositionItem> positionItems = pr.getPositions().stream()
-                .map(p -> ProjectUpdateResultResponse.PositionItem.builder()
-                        .position(p.getPositionName())
-                        .applied(applied.getOrDefault(p.getPositionName(), 0L))
-                        .confirmed(confirmed.getOrDefault(p.getPositionName(), 0L))
-                        .IsApplied(myApplied)
-                        .IsApproved(myApproved)
-                        .IsAvailable(pr.getTeamStatus() == TeamStatus.RECRUITING)
-                        .build())
+                .map(p -> {
+                    long confirmedCount = participantRepository
+                            .countByPosition_IdAndRoleAndDeletedAtIsNull(p.getId(), ParticipantRole.MEMBER);
+
+                    long appliedCount = applicationRepository.countByPosition_Id(p.getId());
+
+                    boolean isApplied = (meId != null) && applicationRepository
+                            .existsByUser_IdAndPosition_Id(meId, p.getId());
+
+                    boolean isApproved = (meId != null) && participantRepository
+                            .existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(meId, p.getId(), ParticipantRole.MEMBER);
+
+                    boolean alreadyAppliedOtherPos = (meId != null)
+                            && applicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_Id(meId, pr.getId())
+                            && !isApplied;
+
+                    boolean alreadyMemberAnyPos = (meId != null)
+                            && participantRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(meId, pr.getId());
+
+                    boolean isAvailable = (pr.getTeamStatus() == TeamStatus.RECRUITING)
+                            && (confirmedCount < pr.getCapacity())
+                            && !alreadyMemberAnyPos
+                            && !alreadyAppliedOtherPos;
+
+                    return ProjectUpdateResultResponse.PositionItem.builder()
+                            .position(p.getPositionName())
+                            .applied(appliedCount)
+                            .confirmed(confirmedCount)
+                            .IsApplied(isApplied)
+                            .IsApproved(isApproved)
+                            .IsAvailable(isAvailable)
+                            .build();
+                })
                 .toList();
 
         LocationDto location = buildLocationForRead(pr);
@@ -556,6 +570,7 @@ public class ProjectRecruitmentEditService {
                 .dmRequestPending(false)
                 .build();
     }
+
     private LocationDto buildLocationForRead(ProjectRecruitment pr) {
         if (pr.getProjectMode() == ProjectMode.online) return null;
         String full = composeFullAddress(

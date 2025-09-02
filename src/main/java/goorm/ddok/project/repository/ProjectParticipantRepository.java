@@ -16,9 +16,21 @@ import java.util.Optional;
 public interface ProjectParticipantRepository extends JpaRepository<ProjectParticipant, Long> {
     // 리더/참가자 조회용 기존 메서드들 유지
     Optional<ProjectParticipant> findFirstByPosition_ProjectRecruitment_IdAndRoleAndDeletedAtIsNull(Long projectId, ParticipantRole role);
+
     List<ProjectParticipant> findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(Long projectId);
 
     long countByPosition_IdAndDeletedAtIsNull(Long positionId);
+
+    /** 특정 포지션 + 역할의 참가자 수 (확정자 집계용) */
+    long countByPosition_IdAndRoleAndDeletedAtIsNull(Long positionId, ParticipantRole role);
+
+    /** 내가 특정 포지션에 멤버로 확정됐는지 */
+    boolean existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
+            Long userId, Long positionId, ParticipantRole role
+    );
+
+    /** 내가 해당 프로젝트(어떤 포지션이든)에서 참가 중인지 (확정 여부/포지션 무관) */
+    boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(Long userId, Long projectId);
 
     // 삭제용
     @Modifying(clearAutomatically = true, flushAutomatically = true)
