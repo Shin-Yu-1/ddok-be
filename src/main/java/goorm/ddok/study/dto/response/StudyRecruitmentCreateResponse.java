@@ -22,31 +22,35 @@ import java.util.List;
         name = "StudyRecruitmentCreateResponse",
         description = "스터디 모집글 생성 응답 DTO",
         example = """
-        {
-          "studyId": 1,
-          "userId": 1,
-          "nickname": "고라니",
-          "teamStatus": "RECRUITING",
-          "title": "구지라지",
-          "expectedStart": "2025-08-16",
-          "expectedMonth": 3,
-          "mode": "offline",
-          "location": {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
+    {
+      "studyId": 1,
+      "userId": 1,
+      "nickname": "고라니",
+      "teamStatus": "RECRUITING",
+      "title": "구지라지",
+      "expectedStart": "2025-08-16",
+      "expectedMonth": 3,
+      "mode": "offline",
+      "location": {
+          "address": "서울 강남구 역삼동 테헤란로 123-45",
+          "region1depthName": "서울",
+          "region2depthName": "강남구",
+          "region3depthName": "역삼동",
+          "mainBuildingNo": "123",
+          "subBuildingNo": "45",
+          "roadName": "테헤란로",
+          "zoneNo": "06236",
+          "latitude": 37.5665,
+          "longitude": 126.9780
           },
-          "preferredAges": {
-            "ageMin": 20,
-            "ageMax": 30
-          },
-          "capacity": 6,
-          "bannerImageUrl": "https://cdn.example.com/images/default.png",
-          "traits": ["정리의 신", "실행력 갓", "내향인"],
-          "studyType": "JOB_INTERVIEW",
-          "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
-        }
-        """
+      "preferredAges": { "ageMin": 20, "ageMax": 30 },
+      "capacity": 6,
+      "bannerImageUrl": "https://cdn.example.com/images/default.png",
+      "traits": ["정리의 신", "실행력 갓", "내향인"],
+      "studyType": "취업/면접",
+      "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
+    }
+    """
 )
 public class StudyRecruitmentCreateResponse {
 
@@ -74,7 +78,13 @@ public class StudyRecruitmentCreateResponse {
     @Schema(description = "진행 방식 (online / offline)", example = "offline")
     private StudyMode mode;
 
-    @Schema(description = "스터디 진행 장소 (offline일 경우만 존재)")
+    @Schema(
+            description = """
+                스터디 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
     private LocationDto location;
 
     @Schema(description = "선호 연령대 (없을 경우 null)")
