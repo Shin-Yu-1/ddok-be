@@ -44,27 +44,45 @@ public class StudyRecruitmentController {
             @ApiResponse(responseCode = "201", description = "스터디 생성 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                {
-                  "status": 201,
-                  "message": "스터디 생성이 성공했습니다.",
-                  "data": {
-                    "studyId": 1,
-                    "userId": 10,
-                    "nickname": "고라니",
-                    "teamStatus": "RECRUITING",
-                    "title": "백엔드 스터디",
-                    "expectedStart": "2025-09-01",
-                    "expectedMonth": 3,
-                    "mode": "online",
-                    "location": null,
-                    "preferredAges": { "ageMin": 20, "ageMax": 30 },
-                    "capacity": 5,
-                    "bannerImageUrl": "https://cdn.example.com/images/study-banner.png",
-                    "traits": ["실행력 갑", "성실함"],
-                    "studyType": "자기 개발",
-                    "detail": "알고리즘 문제 풀이 및 코드 리뷰 중심 스터디"
-                  }
-                }
+                                    {
+                                        "status": 201,
+                                        "message": "스터디 생성이 성공했습니다.",
+                                        "data": {
+                                            "studyId": 8,
+                                            "userId": 1,
+                                            "nickname": null,
+                                            "teamStatus": "RECRUITING",
+                                            "title": "구지라지",
+                                            "expectedStart": "2025-09-16",
+                                            "expectedMonth": 3,
+                                            "mode": "offline",
+                                            "location": {
+                                                "address": "서울 강남구 역삼동 테헤란로 123-45",
+                                                "region1depthName": "서울",
+                                                "region2depthName": "강남구",
+                                                "region3depthName": "역삼동",
+                                                "mainBuildingNo": "123",
+                                                "subBuildingNo": "45",
+                                                "roadName": "테헤란로",
+                                                "zoneNo": "06236",
+                                                "latitude": 37.5665,
+                                                "longitude": 126.9780
+                                            },
+                                            "preferredAges": {
+                                                "ageMin": 20,
+                                                "ageMax": 30
+                                            },
+                                            "capacity": 6,
+                                            "bannerImageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjYwMCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI0ZGREFCOSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjgwIiBmaWxsPSJibGFjayIgZm9udC13ZWlnaHQ9ImJvbGQiCiAgICAgICAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkludGVyIj7qtazsp4Drnbzsp4A8L3RleHQ+Cjwvc3ZnPgo=",
+                                            "traits": [
+                                                "정리의 신",
+                                                "실행력 갓",
+                                                "내향인"
+                                            ],
+                                            "studyType": "취업/면접",
+                                            "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
+                                        }
+                                    }
                 """))),
             @ApiResponse(responseCode = "401", description = "인증 실패 (비로그인 사용자)",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),

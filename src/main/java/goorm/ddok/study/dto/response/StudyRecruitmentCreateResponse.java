@@ -34,7 +34,7 @@ import java.util.List;
       "location": {
         "latitude": 37.5665,
         "longitude": 126.9780,
-        "address": "서울특별시 강남구 테헤란로…"
+        "address": "서울 강남구 테헤란로…"
       },
       "preferredAges": { "ageMin": 20, "ageMax": 30 },
       "capacity": 6,

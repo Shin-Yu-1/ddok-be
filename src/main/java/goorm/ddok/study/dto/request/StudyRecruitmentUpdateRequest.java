@@ -35,7 +35,7 @@ import java.util.List;
           "expectedMonth": 2,
           "mode": "offline",
           "location": {
-            "address": "서울특별시 강남구 테헤란로 123-45",
+            "address": "서울 강남구 테헤란로 123-45",
             "region1depthName": "서울특별시",
             "region2depthName": "강남구",
             "region3depthName": "역삼동",

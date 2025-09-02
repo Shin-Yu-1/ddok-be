@@ -40,32 +40,48 @@ public class StudyRecruitmentQueryController {
             @ApiResponse(responseCode = "200", description = "조회 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-            {
-              "status": 200,
-              "message": "스터디 모집글 상세 조회가 성공했습니다.",
-              "data": {
-                "studyId": 2,
-                "title": "프리토킹 스터디",
-                "studyType": "취업/면접",
-                "isMine": true,
-                "isApplied": false,
-                "isApproved": false,
-                "teamStatus": "RECRUITING",
-                "bannerImageUrl": "https://cdn.example.com/images/default.png",
-                "traits": ["정리의 신", "실행력 갓", "내향인"],
-                "capacity": 4,
-                "applicantCount": 6,
-                "mode": "online",
-                "address": null,
-                "preferredAges": { "ageMin": 20, "ageMax": 30 },
-                "expectedMonth": 3,
-                "startDate": "2025-09-10",
-                "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?",
-                "leader": { },
-                "participants": [ ],
-                "participantsCount": 3
-              }
-            }
+                                    {
+                                        "status": 200,
+                                        "message": "스터디 모집글 상세 조회가 성공했습니다.",
+                                        "data": {
+                                            "studyId": 8,
+                                            "title": "구지라지",
+                                            "studyType": "취업/면접",
+                                            "teamStatus": "RECRUITING",
+                                            "bannerImageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjYwMCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI0ZGREFCOSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjgwIiBmaWxsPSJibGFjayIgZm9udC13ZWlnaHQ9ImJvbGQiCiAgICAgICAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkludGVyIj7qtazsp4Drnbzsp4A8L3RleHQ+Cjwvc3ZnPgo=",
+                                            "traits": [
+                                                "정리의 신",
+                                                "실행력 갓",
+                                                "내향인"
+                                            ],
+                                            "capacity": 6,
+                                            "applicantCount": 0,
+                                            "mode": "offline",
+                                            "address": "서울 강남구 역삼동 테헤란로 123-45",
+                                            "preferredAges": {
+                                                "ageMin": 20,
+                                                "ageMax": 30
+                                            },
+                                            "expectedMonth": 3,
+                                            "startDate": "2025-09-16",
+                                            "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?",
+                                            "leader": {
+                                                "userId": 1,
+                                                "nickname": null,
+                                                "profileImageUrl": "http://k.kakaocdn.net/dn/YwWOR/btsf5eC521B/jh2H7E9hYKPOK7Y8O7EPsk/img_640x640.jpg",
+                                                "mainPosition": null,
+                                                "mainBadge": null,
+                                                "abandonBadge": null,
+                                                "temperature": null,
+                                                "chatRoomId": null,
+                                                "isMine": true,
+                                                "dmRequestPending": false
+                                            },
+                                            "participants": [],
+                                            "participantsCount": 0,
+                                            "isMine": true
+                                        }
+                                    }
             """))),
             @ApiResponse(responseCode = "404", description = "스터디 없음/삭제됨",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
