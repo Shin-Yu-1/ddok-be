@@ -36,7 +36,6 @@ public class LocationDto {
             example = "17")
     private String subBuildingNo;
 
-
     @Schema(description = "도로명 (road_name)",
             example = "망산길")
     private String roadName;
