@@ -136,7 +136,7 @@ public class StudyRecruitmentService {
                         ? LocationDto.builder()
                         .latitude(study.getLatitude())
                         .longitude(study.getLongitude())
-                        .address(study.getRoadName())
+                        .address(composeFullAddress(study))
                         .region1depthName(study.getRegion1DepthName())
                         .region2depthName(study.getRegion2DepthName())
                         .region3depthName(study.getRegion3DepthName())
@@ -211,5 +211,28 @@ public class StudyRecruitmentService {
                             .build());
                     return true;
                 });
+    }
+
+    /** 주소 합성 (online → null) */
+    private String composeFullAddress(StudyRecruitment s) {
+        if (s.getMode() == StudyMode.online) return null;
+
+        String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
+        String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");
+        String r3 = Optional.ofNullable(s.getRegion3DepthName()).orElse("");
+        String road = Optional.ofNullable(s.getRoadName()).orElse("");
+        String main = Optional.ofNullable(s.getMainBuildingNo()).orElse("");
+        String sub  = Optional.ofNullable(s.getSubBuildingNo()).orElse("");
+
+        StringBuilder sb = new StringBuilder();
+        if (!r1.isBlank()) sb.append(r1).append(" ");
+        if (!r2.isBlank()) sb.append(r2).append(" ");
+        if (!r3.isBlank()) sb.append(r3).append(" ");
+        if (!road.isBlank()) sb.append(road).append(" ");
+        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
+        else if (!main.isBlank()) sb.append(main);
+
+        String addr = sb.toString().trim().replaceAll("\\s+", " ");
+        return addr.isBlank() ? null : addr;
     }
 }

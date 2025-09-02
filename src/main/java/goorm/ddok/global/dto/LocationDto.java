@@ -28,6 +28,15 @@ public class LocationDto {
             example = "부송동")
     private String region3depthName;
 
+    @Schema(description = "건물 본번 (main_building_no)",
+            example = "11")
+    private String mainBuildingNo;
+
+    @Schema(description = "건물 부번 (sub_building_no)",
+            example = "17")
+    private String subBuildingNo;
+
+
     @Schema(description = "도로명 (road_name)",
             example = "망산길")
     private String roadName;
@@ -43,12 +52,4 @@ public class LocationDto {
     @Schema(description = "경도(x)",
             example = "126.99599512792346")
     private BigDecimal longitude;  // kakao x
-
-    @Schema(description = "건물 본번 (main_building_no)",
-            example = "11")
-    private String mainBuildingNo;
-
-    @Schema(description = "건물 부번 (sub_building_no)",
-            example = "17")
-    private String subBuildingNo;
 }
