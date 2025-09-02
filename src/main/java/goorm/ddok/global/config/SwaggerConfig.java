@@ -31,6 +31,6 @@ public class SwaggerConfig {
 
     @Bean @org.springframework.context.annotation.Profile("prod")
     public OpenAPI openAPIProd() {
-        return base().servers(List.of(new Server().url("https://api.ddok.site").description("Prod")));
+        return base().servers(List.of(new Server().url("https://api.deepdirect.site").description("Prod")));
     }
 }
