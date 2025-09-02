@@ -160,6 +160,9 @@ public class StudyRecruitmentService {
         Integer min = preferredAges.getAgeMin();
         Integer max = preferredAges.getAgeMax();
 
+        // 연령 무관인데 Dto만 있고 값은 null인 경우도 방어
+        if (min == null && max == null) return;
+
         if (min == null || max == null) {
             throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
