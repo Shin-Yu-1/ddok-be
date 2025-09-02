@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "ProjectRecruitment-Delete", description = "프로젝트 소프트 삭제 API")
+@Tag(name = "Project", description = "프로젝트 API")
 public class ProjectSoftDeleteController {
 
     private final ProjectRecruitmentSoftDeleteService service;

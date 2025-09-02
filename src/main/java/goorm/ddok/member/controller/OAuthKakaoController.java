@@ -7,6 +7,7 @@ import goorm.ddok.member.dto.response.SignInResponse;
 import goorm.ddok.member.service.SocialSignInService;
 import io.sentry.Sentry;
 import io.sentry.SentryLevel;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Kakao Auth", description = "Kakao Auth API")
 public class OAuthKakaoController {
 
     private final SocialSignInService socialSignInService;

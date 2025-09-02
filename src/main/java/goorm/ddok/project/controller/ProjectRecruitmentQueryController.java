@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "ProjectRecruitmentQuery", description = "프로젝트 관련 API")
+@Tag(name = "Project", description = "프로젝트 API")
 public class ProjectRecruitmentQueryController {
 
     private final ProjectRecruitmentQueryService projectRecruitmentQueryService;

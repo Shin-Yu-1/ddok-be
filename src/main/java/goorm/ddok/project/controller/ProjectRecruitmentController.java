@@ -26,7 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "ProjectRectuitment", description = "프로젝트 모집 관련 API")
+@Tag(name = "Project", description = "프로젝트 API")
 public class ProjectRecruitmentController {
 
     private final ProjectRecruitmentService projectRecruitmentService;
