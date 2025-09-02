@@ -137,7 +137,7 @@ public class ProfileQueryService {
         // 지금은 임시 데이터로 세팅
         return List.of(
                 new BadgeDto("login", "bronze"),
-                new BadgeDto("comlpete", "silver")
+                new BadgeDto("complete", "silver")
         );
     }
 

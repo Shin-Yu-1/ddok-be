@@ -46,14 +46,17 @@ public class ProfileQueryController {
                     "userId": 1,
                     "isMine": true,
                     "isPublic": true,
+                    "chatRoomId": null,
+                    "dmRequestPending": false,
                     "nickname": "똑똑한 똑똑이",
                     "temperature": 36.6,
                     "ageGroup": "20대",
-                    "mainPosition": "backend",
-                    "subPositions": ["frontend", "devops"],
+                    "profileImageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI0Q3QkRFMiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjE1IiBmaWxsPSJibGFjayIgZm9udC13ZWlnaHQ9ImJvbGQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJJbnRlciI+7Ius7ZSEPC90ZXh0Pgo8L3N2Zz4K",
+                    "mainPosition": "백엔드",
+                    "subPositions": ["프론트엔드", "디자이너"],
                     "badges": [
                       { "type": "login","tier": "bronze" },
-                      { "type": "comlpete","tier": "silver" },
+                      { "type": "complete","tier": "silver" },
                     ],
                     "abandonBadge": { "isGranted": true, "count": 5 },
                     "activeHours": { "start": "19", "end": "23" },
@@ -66,7 +69,7 @@ public class ProfileQueryController {
                     "location": {
                       "latitude": 37.5665,
                       "longitude": 126.9780,
-                      "address": "서울특별시 강남구 ..."
+                      "address": "강원특별자치도 삼척시 가곡면 가곡천로 249"
                     }
                   }
                 }
