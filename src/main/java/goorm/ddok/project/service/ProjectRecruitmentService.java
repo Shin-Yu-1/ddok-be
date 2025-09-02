@@ -65,7 +65,7 @@ public class ProjectRecruitmentService {
         }
 
         // (선택) capacity <= unique positions 강제 — 생성 단계도 편의상 동일 정책 적용
-        if (request.getCapacity() != null && request.getCapacity() > desiredPositions.size()) {
+        if (request.getCapacity() != null && request.getCapacity() < desiredPositions.size()) {
             throw new GlobalException(ErrorCode.INVALID_CAPACITY_POSITIONS);
         }
 
