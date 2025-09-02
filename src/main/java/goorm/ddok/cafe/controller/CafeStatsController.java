@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Cafe Stats", description = "카페 후기 통계 조회 API")
+@Tag(name = "Cafe Reviews", description = "카페 후기 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/map/cafes")

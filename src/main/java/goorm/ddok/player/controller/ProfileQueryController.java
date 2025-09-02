@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/players")
 @RequiredArgsConstructor
-@Tag(name = "ProfileQuery", description = "프로필 관련 API")
+@Tag(name = "Profile", description = "프로필 API")
 public class ProfileQueryController {
 
     private final ProfileQueryService profileQueryService;

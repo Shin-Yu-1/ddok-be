@@ -21,7 +21,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "ProjectRecruitment-Edit", description = "프로젝트 수정/조회 API")
+@Tag(name = "Project", description = "프로젝트 API")
 public class ProjectRecruitmentEditController {
 
     private final ProjectRecruitmentEditService service;

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-@Tag(name = "Cafe Map", description = "지도 카페 조회 API")
+@Tag(name = "Map", description = "지도 API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/map/cafes")

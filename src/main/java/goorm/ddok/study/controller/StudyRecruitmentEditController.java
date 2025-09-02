@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/studies")
 @RequiredArgsConstructor
-@Tag(name = "StudyRecruitmentEdit", description = "스터디 모집글 수정/수정페이지 조회 API")
+@Tag(name = "Study", description = "스터디 API)")
 public class StudyRecruitmentEditController {
 
     private final StudyRecruitmentEditService Service;

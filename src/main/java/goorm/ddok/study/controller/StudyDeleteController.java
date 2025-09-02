@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/studies")
 @RequiredArgsConstructor
-@Tag(name = "Study-Delete", description = "스터디 삭제 API (Soft Delete)")
+@Tag(name = "Study", description = "스터디 API)")
 public class StudyDeleteController {
 
     private final StudyDeleteService studyDeleteService;
