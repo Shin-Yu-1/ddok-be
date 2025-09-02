@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/players")
 @RequiredArgsConstructor
-@Tag(name = "ProfileQuery", description = "프로필 관련 API")
+@Tag(name = "Profile", description = "프로필 API")
 public class ProfileQueryController {
 
     private final ProfileQueryService profileQueryService;
@@ -51,7 +51,10 @@ public class ProfileQueryController {
                     "ageGroup": "20대",
                     "mainPosition": "backend",
                     "subPositions": ["frontend", "devops"],
-                    "mainBadge": { "type": "login", "tier": "bronze" },
+                    "badges": [
+                      { "type": "login","tier": "bronze" },
+                      { "type": "comlpete","tier": "silver" },
+                    ],
                     "abandonBadge": { "isGranted": true, "count": 5 },
                     "activeHours": { "start": "19", "end": "23" },
                     "traits": ["정리의 신", "실행력 갓", "내향인"],

@@ -54,8 +54,8 @@ public class ProfileDetailResponse {
     @Schema(description = "서브 포지션 목록", example = "[\"frontend\", \"devops\"]")
     private List<String> subPositions;
 
-    @Schema(description = "대표 배지")
-    private BadgeDto mainBadge;
+    @Schema(description = "보유 뱃지 목록")
+    private List<BadgeDto> badges;
 
     @Schema(description = "탈주 배지 정보")
     private AbandonBadgeDto abandonBadge;

@@ -53,26 +53,43 @@ public class StudyRecruitment {
     @Column(name = "mode", nullable = false, length = 20)
     private StudyMode mode;
 
-    /** 지역 정보 (오프라인일 경우 필수) */
-    @Column(name = "region1_depth_name", length = 50)
-    private String region1DepthName;
+    /** 프로젝트 진행 장소 (광역시/도) */
+    @Column(length = 50)
+    private String region1depthName;
 
-    @Column(name = "region2_depth_name", length = 50)
-    private String region2DepthName;
+    /** 프로젝트 진행 장소 (시/군/구) */
+    @Column(length = 50)
+    private String region2depthName;
 
-    @Column(name = "region3_depth_name", length = 50)
-    private String region3DepthName;
+    /** 프로젝트 진행 장소 (동/읍/면) */
+    @Column(length = 50)
+    private String region3depthName;
 
-    @Column(name = "road_name", length = 50)
+    /** 프로젝트 진행 장소 (도로명 주소) */
+    @Column(length = 50)
     private String roadName;
 
-    @Column(name = "latitude")
+    /** 프로젝트 진행 장소 (건물 번호) */
+    @Column(length = 16)
+    private String mainBuildingNo;
+
+    /** 프로젝트 진행 장소 (건물 부번호) */
+    @Column(length = 16)
+    private String subBuildingNo;
+
+    /** 프로젝트 진행 장소 (우편번호) */
+    @Column(length = 16)
+    private String zoneNo;
+
+    /** 위도 (소수점 6자리) */
+    @Column(precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(name = "longitude")
+    /** 경도 (소수점 6자리) */
+    @Column(precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    /** 나이 제한 */
+    /** 나이 제한 (무관: 0/0) */
     @Column(name = "age_min")
     private Integer ageMin;
 
@@ -93,7 +110,7 @@ public class StudyRecruitment {
     private StudyType studyType;
 
     /** 본문 */
-    @Column(name = "content_md", nullable = false)
+    @Column(name = "content_md", nullable = false, columnDefinition = "TEXT")
     private String contentMd;
 
     /** 시간 정보 */

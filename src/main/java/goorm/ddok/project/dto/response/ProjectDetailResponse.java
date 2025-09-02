@@ -1,6 +1,6 @@
 package goorm.ddok.project.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.TeamStatus;
@@ -18,7 +18,65 @@ import java.util.List;
 @Builder
 @Schema(
         name = "ProjectDetailResponse",
-        description = "프로젝트 모집글 상세 조회 응답 DTO"
+        description = "프로젝트 모집글 상세 조회 응답 DTO",
+        example = """
+        {
+          "projectId": 2,
+          "title": "구라라지 프로젝트",
+          "isMine": true,
+          "teamStatus": "RECRUITING",
+          "bannerImageUrl": "https://cdn.example.com/images/default.png",
+          "traits": ["정리의 신","실행력 갓","내향인"],
+          "capacity": 6,
+          "applicantCount": 4,
+          "mode": "offline",
+          "location": {
+              "address": "전북 익산시 부송동 망산길 11-17",
+              "region1depthName": "전북",
+              "region2depthName": "익산시",
+              "region3depthName": "부송동",
+              "roadName": "망산길",
+              "mainBuildingNo": "11",
+              "subBuildingNo": "17",
+              "zoneNo": "54547",
+              "latitude": 35.976749396987046,
+              "longitude": 126.99599512792346
+            },
+          "preferredAges": { "ageMin": 20, "ageMax": 30 },
+          "expectedMonth": 3,
+          "startDate": "2025-10-01",
+          "detail": "함께 멋진 웹을 개발할 팀원을 찾습니다.",
+          "positions": [
+            { "position": "PM", "applied": 2, "confirmed": 1, "isApplied": false, "isApproved": false, "isAvailable": true },
+            { "position": "UI/UX", "applied": 1, "confirmed": 0, "isApplied": true, "isApproved": true, "isAvailable": true },
+            { "position": "백엔드", "applied": 1, "confirmed": 1, "isApplied": false, "isApproved": false, "isAvailable": false }
+          ],
+          "leader": {
+            "userId": 10,
+            "nickname": "고라니",
+            "profileImageUrl": "https://cdn.example.com/images/leader.png",
+            "mainPosition": "백엔드",
+            "temperature": 36.5,
+            "decidedPosition": "백엔드",
+            "isMine": true,
+            "chatRoomId": null,
+            "dmRequestPending": false
+          },
+          "participants": [
+            {
+              "userId": 20,
+              "nickname": "프론트왕",
+              "profileImageUrl": "https://cdn.example.com/images/user20.png",
+              "mainPosition": "프론트엔드",
+              "temperature": 37.0,
+              "decidedPosition": "프론트엔드",
+              "isMine": false,
+              "chatRoomId": null,
+              "dmRequestPending": false
+            }
+          ]
+        }
+        """
 )
 public class ProjectDetailResponse {
 
@@ -46,11 +104,17 @@ public class ProjectDetailResponse {
     @Schema(description = "지원자 수", example = "6")
     private Integer applicantCount;
 
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "ONLINE")
+    @Schema(description = "진행 방식 (online / offline)", example = "online")
     private ProjectMode mode;
 
-    @Schema(description = "진행 주소 (ONLINE 일 경우 null, OFFLINE 시/구 주소)", example = "서울 강남구")
-    private String address;
+    @Schema(
+            description = """
+                프로젝트 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
+    private LocationDto location;
 
     @Schema(description = "선호 연령대")
     private PreferredAgesDto preferredAges;
