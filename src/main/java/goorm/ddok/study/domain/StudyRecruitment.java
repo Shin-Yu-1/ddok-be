@@ -53,32 +53,40 @@ public class StudyRecruitment {
     @Column(name = "mode", nullable = false, length = 20)
     private StudyMode mode;
 
-    /** 카카오 road_address/region 필드 */
-    @Column(name = "region1_depth_name", length = 50)
-    private String region1DepthName;
+    /** 프로젝트 진행 장소 (광역시/도) */
+    @Column(length = 50)
+    private String region1depthName;
 
-    @Column(name = "region2_depth_name", length = 50)
-    private String region2DepthName;
+    /** 프로젝트 진행 장소 (시/군/구) */
+    @Column(length = 50)
+    private String region2depthName;
 
-    @Column(name = "region3_depth_name", length = 50)
-    private String region3DepthName;
+    /** 프로젝트 진행 장소 (동/읍/면) */
+    @Column(length = 50)
+    private String region3depthName;
 
-    @Column(name = "road_name", length = 100)
+    /** 프로젝트 진행 장소 (도로명 주소) */
+    @Column(length = 50)
     private String roadName;
 
-    @Column(name = "main_building_no", length = 20)
+    /** 프로젝트 진행 장소 (건물 번호) */
+    @Column(length = 16)
     private String mainBuildingNo;
 
-    @Column(name = "sub_building_no", length = 20)
+    /** 프로젝트 진행 장소 (건물 부번호) */
+    @Column(length = 16)
     private String subBuildingNo;
 
-    @Column(name = "zone_no", length = 20)
+    /** 프로젝트 진행 장소 (우편번호) */
+    @Column(length = 16)
     private String zoneNo;
 
-    @Column(name = "latitude", precision = 14, scale = 10)
+    /** 위도 (소수점 6자리) */
+    @Column(precision = 9, scale = 6)
     private BigDecimal latitude;
 
-    @Column(name = "longitude", precision = 14, scale = 10)
+    /** 경도 (소수점 6자리) */
+    @Column(precision = 9, scale = 6)
     private BigDecimal longitude;
 
     /** 나이 제한 (무관: 0/0) */

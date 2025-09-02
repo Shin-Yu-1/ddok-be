@@ -88,7 +88,7 @@ public class StudyRecruitmentCreateRequest {
     @Schema(description = "모집 정원", example = "6", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer capacity;
 
-    @Schema(description = "모집 성향 리스트", example = "[\"정리의 신\", \"실행력 갓\", \"내향인\"]")
+    @Schema(description = "모집 성향 리스트", example = "['정리의 신', '실행력 갓', '내향인']")
     private List<String> traits;
 
     @NotNull(message = "스터디 유형은 필수 입력값입니다.")

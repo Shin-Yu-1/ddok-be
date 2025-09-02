@@ -81,9 +81,9 @@ public class StudyRecruitmentService {
 
         if (req.getMode() == StudyMode.offline && req.getLocation() != null) {
             LocationDto loc = req.getLocation();
-            b.region1DepthName(loc.getRegion1depthName())
-                    .region2DepthName(loc.getRegion2depthName())
-                    .region3DepthName(loc.getRegion3depthName())
+            b.region1depthName(loc.getRegion1depthName())
+                    .region2depthName(loc.getRegion2depthName())
+                    .region3depthName(loc.getRegion3depthName())
                     .roadName(loc.getRoadName())
                     .mainBuildingNo(loc.getMainBuildingNo())
                     .subBuildingNo(loc.getSubBuildingNo())
@@ -91,7 +91,7 @@ public class StudyRecruitmentService {
                     .latitude(loc.getLatitude())
                     .longitude(loc.getLongitude());
         } else {
-            b.region1DepthName(null).region2DepthName(null).region3DepthName(null)
+            b.region1depthName(null).region2depthName(null).region3depthName(null)
                     .roadName(null).mainBuildingNo(null).subBuildingNo(null).zoneNo(null)
                     .latitude(null).longitude(null);
         }
@@ -123,6 +123,8 @@ public class StudyRecruitmentService {
                 .role(ParticipantRole.LEADER)
                 .build());
 
+        LocationDto location = buildLocationForRead(study);
+
         return StudyRecruitmentCreateResponse.builder()
                 .studyId(study.getId())
                 .userId(user.getId())
@@ -132,19 +134,7 @@ public class StudyRecruitmentService {
                 .expectedStart(study.getStartDate())
                 .expectedMonth(study.getExpectedMonths())
                 .mode(study.getMode())
-                .location((study.getLatitude() != null && study.getLongitude() != null)
-                        ? LocationDto.builder()
-                        .latitude(study.getLatitude())
-                        .longitude(study.getLongitude())
-                        .address(composeFullAddress(study))
-                        .region1depthName(study.getRegion1DepthName())
-                        .region2depthName(study.getRegion2DepthName())
-                        .region3depthName(study.getRegion3DepthName())
-                        .roadName(study.getRoadName())
-                        .mainBuildingNo(study.getMainBuildingNo())
-                        .subBuildingNo(study.getSubBuildingNo())
-                        .zoneNo(study.getZoneNo())
-                        .build() : null)
+                .location(location)
                 .preferredAges(PreferredAgesDto.builder().ageMin(study.getAgeMin()).ageMax(study.getAgeMax()).build())
                 .capacity(study.getCapacity())
                 .bannerImageUrl(study.getBannerImageUrl())
@@ -213,26 +203,37 @@ public class StudyRecruitmentService {
                 });
     }
 
-    /** 주소 합성 (online → null) */
-    private String composeFullAddress(StudyRecruitment s) {
-        if (s.getMode() == StudyMode.online) return null;
+    private LocationDto buildLocationForRead(StudyRecruitment sr) {
+        if (sr.getMode() == StudyMode.online) return null;
+        String full = composeFullAddress(
+                sr.getRegion1depthName(), sr.getRegion2depthName(), sr.getRegion3depthName(),
+                sr.getRoadName(), sr.getMainBuildingNo(), sr.getSubBuildingNo()
+        );
+        return LocationDto.builder()
+                .address(full)
+                .region1depthName(sr.getRegion1depthName())
+                .region2depthName(sr.getRegion2depthName())
+                .region3depthName(sr.getRegion3depthName())
+                .roadName(sr.getRoadName())
+                .mainBuildingNo(sr.getMainBuildingNo())
+                .subBuildingNo(sr.getSubBuildingNo())
+                .zoneNo(sr.getZoneNo())
+                .latitude(sr.getLatitude())
+                .longitude(sr.getLongitude())
+                .build();
+    }
 
-        String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
-        String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");
-        String r3 = Optional.ofNullable(s.getRegion3DepthName()).orElse("");
-        String road = Optional.ofNullable(s.getRoadName()).orElse("");
-        String main = Optional.ofNullable(s.getMainBuildingNo()).orElse("");
-        String sub  = Optional.ofNullable(s.getSubBuildingNo()).orElse("");
-
+    private String composeFullAddress(String r1, String r2, String r3, String road, String main, String sub) {
         StringBuilder sb = new StringBuilder();
-        if (!r1.isBlank()) sb.append(r1).append(" ");
-        if (!r2.isBlank()) sb.append(r2).append(" ");
-        if (!r3.isBlank()) sb.append(r3).append(" ");
-        if (!road.isBlank()) sb.append(road).append(" ");
-        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
-        else if (!main.isBlank()) sb.append(main);
-
-        String addr = sb.toString().trim().replaceAll("\\s+", " ");
-        return addr.isBlank() ? null : addr;
+        if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
+        if (r2 != null && !r2.isBlank()) sb.append(r2).append(" ");
+        if (r3 != null && !r3.isBlank()) sb.append(r3).append(" ");
+        if (road != null && !road.isBlank()) sb.append(road).append(" ");
+        if (main != null && !main.isBlank()) {
+            sb.append(main);
+            if (sub != null && !sub.isBlank()) sb.append("-").append(sub);
+        }
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? null : s;
     }
 }

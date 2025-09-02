@@ -2,6 +2,7 @@ package goorm.ddok.study.service;
 
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -163,6 +164,8 @@ public class StudyRecruitmentEditService {
                 ? null
                 : new PreferredAgesDto(study.getAgeMin(), study.getAgeMax());
 
+        LocationDto location = buildLocationForRead(study);
+
         return StudyRecruitmentDetailResponse.builder()
                 .studyId(study.getId())
                 .title(study.getTitle())
@@ -174,7 +177,7 @@ public class StudyRecruitmentEditService {
                 .capacity(study.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(study.getMode())
-                .address(composeFullAddress(study))
+                .location(location)
                 .preferredAges(ages)
                 .expectedMonth(study.getExpectedMonths())
                 .startDate(study.getStartDate())
@@ -192,9 +195,9 @@ public class StudyRecruitmentEditService {
     /** 오프라인 주소 저장 */
     private StudyRecruitment applyOfflineLocation(StudyRecruitment s, StudyRecruitmentUpdateRequest req) {
         return s.toBuilder()
-                .region1DepthName(req.getLocation().getRegion1depthName())
-                .region2DepthName(req.getLocation().getRegion2depthName())
-                .region3DepthName(req.getLocation().getRegion3depthName())
+                .region1depthName(req.getLocation().getRegion1depthName())
+                .region2depthName(req.getLocation().getRegion2depthName())
+                .region3depthName(req.getLocation().getRegion3depthName())
                 .roadName(req.getLocation().getRoadName())
                 .mainBuildingNo(req.getLocation().getMainBuildingNo())
                 .subBuildingNo(req.getLocation().getSubBuildingNo())
@@ -207,9 +210,9 @@ public class StudyRecruitmentEditService {
     /** 온라인이면 위치 초기화 */
     private StudyRecruitment clearLocation(StudyRecruitment s) {
         return s.toBuilder()
-                .region1DepthName(null)
-                .region2DepthName(null)
-                .region3DepthName(null)
+                .region1depthName(null)
+                .region2depthName(null)
+                .region3depthName(null)
                 .roadName(null)
                 .mainBuildingNo(null)
                 .subBuildingNo(null)
@@ -217,29 +220,6 @@ public class StudyRecruitmentEditService {
                 .latitude(null)
                 .longitude(null)
                 .build();
-    }
-
-    /** 주소 합성 (online → null) */
-    private String composeFullAddress(StudyRecruitment s) {
-        if (s.getMode() == StudyMode.online) return null;
-
-        String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
-        String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");
-        String r3 = Optional.ofNullable(s.getRegion3DepthName()).orElse("");
-        String road = Optional.ofNullable(s.getRoadName()).orElse("");
-        String main = Optional.ofNullable(s.getMainBuildingNo()).orElse("");
-        String sub  = Optional.ofNullable(s.getSubBuildingNo()).orElse("");
-
-        StringBuilder sb = new StringBuilder();
-        if (!r1.isBlank()) sb.append(r1).append(" ");
-        if (!r2.isBlank()) sb.append(r2).append(" ");
-        if (!r3.isBlank()) sb.append(r3).append(" ");
-        if (!road.isBlank()) sb.append(road).append(" ");
-        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
-        else if (!main.isBlank()) sb.append(main);
-
-        String addr = sb.toString().trim().replaceAll("\\s+", " ");
-        return addr.isBlank() ? null : addr;
     }
 
     /** traits 병합 (요청 null → 변경 없음) */
@@ -296,5 +276,38 @@ public class StudyRecruitmentEditService {
                 .chatRoomId(null)
                 .dmRequestPending(false)
                 .build();
+    }
+    private LocationDto buildLocationForRead(StudyRecruitment sr) {
+        if (sr.getMode() == StudyMode.online) return null;
+        String full = composeFullAddress(
+                sr.getRegion1depthName(), sr.getRegion2depthName(), sr.getRegion3depthName(),
+                sr.getRoadName(), sr.getMainBuildingNo(), sr.getSubBuildingNo()
+        );
+        return LocationDto.builder()
+                .address(full)
+                .region1depthName(sr.getRegion1depthName())
+                .region2depthName(sr.getRegion2depthName())
+                .region3depthName(sr.getRegion3depthName())
+                .roadName(sr.getRoadName())
+                .mainBuildingNo(sr.getMainBuildingNo())
+                .subBuildingNo(sr.getSubBuildingNo())
+                .zoneNo(sr.getZoneNo())
+                .latitude(sr.getLatitude())
+                .longitude(sr.getLongitude())
+                .build();
+    }
+
+    private String composeFullAddress(String r1, String r2, String r3, String road, String main, String sub) {
+        StringBuilder sb = new StringBuilder();
+        if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
+        if (r2 != null && !r2.isBlank()) sb.append(r2).append(" ");
+        if (r3 != null && !r3.isBlank()) sb.append(r3).append(" ");
+        if (road != null && !road.isBlank()) sb.append(road).append(" ");
+        if (main != null && !main.isBlank()) {
+            sb.append(main);
+            if (sub != null && !sub.isBlank()) sb.append("-").append(sub);
+        }
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? null : s;
     }
 }

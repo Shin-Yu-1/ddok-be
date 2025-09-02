@@ -71,7 +71,13 @@ public class StudyRecruitmentCreateResponse {
     @Schema(description = "진행 방식 (online / offline)", example = "offline")
     private StudyMode mode;
 
-    @Schema(description = "스터디 진행 장소 (offline일 경우만 존재)")
+    @Schema(
+            description = """
+                스터디 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
     private LocationDto location;
 
     @Schema(description = "선호 연령대 (없을 경우 null)")

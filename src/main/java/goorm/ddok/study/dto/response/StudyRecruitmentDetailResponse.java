@@ -2,6 +2,7 @@ package goorm.ddok.study.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.study.domain.StudyMode;
 import goorm.ddok.study.domain.StudyType;
@@ -103,8 +104,14 @@ public class StudyRecruitmentDetailResponse {
     @Schema(description = "진행 방식", example = "online")
     private StudyMode mode;
 
-    @Schema(description = "주소 (online이면 null)")
-    private String address;
+    @Schema(
+            description = """
+                스터디 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
+    private LocationDto location;
 
     @Schema(description = "선호 연령대 (무관 시 null)")
     private PreferredAgesDto preferredAges;

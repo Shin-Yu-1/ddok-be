@@ -2,6 +2,7 @@ package goorm.ddok.study.service;
 
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -73,7 +74,7 @@ public class StudyRecruitmentQueryService {
                 .toList();
 
         // 6) 주소(online → null), 선호연령(0/0 → null)
-        String address = composeFullAddress(study);
+        LocationDto location = buildLocationForRead(study);
         PreferredAgesDto ages = (isZero(study.getAgeMin()) && isZero(study.getAgeMax()))
                 ? null
                 : new PreferredAgesDto(study.getAgeMin(), study.getAgeMax());
@@ -90,7 +91,7 @@ public class StudyRecruitmentQueryService {
                 .capacity(study.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(study.getMode())
-                .address(address)
+                .location(location)
                 .preferredAges(ages)
                 .expectedMonth(study.getExpectedMonths())
                 .startDate(study.getStartDate())
@@ -105,28 +106,6 @@ public class StudyRecruitmentQueryService {
 
     private boolean isZero(Integer v) { return v == null || v == 0; }
 
-    /** 오프라인: r1 r2 r3 road main-sub, 온라인: null */
-    private String composeFullAddress(StudyRecruitment s) {
-        if (s.getMode() == StudyMode.online) return null;
-
-        String r1 = Optional.ofNullable(s.getRegion1DepthName()).orElse("");
-        String r2 = Optional.ofNullable(s.getRegion2DepthName()).orElse("");
-        String r3 = Optional.ofNullable(s.getRegion3DepthName()).orElse("");
-        String road = Optional.ofNullable(s.getRoadName()).orElse("");
-        String main = Optional.ofNullable(s.getMainBuildingNo()).orElse("");
-        String sub  = Optional.ofNullable(s.getSubBuildingNo()).orElse("");
-
-        StringBuilder sb = new StringBuilder();
-        if (!r1.isBlank()) sb.append(r1).append(" ");
-        if (!r2.isBlank()) sb.append(r2).append(" ");
-        if (!r3.isBlank()) sb.append(r3).append(" ");
-        if (!road.isBlank()) sb.append(road).append(" ");
-        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
-        else if (!main.isBlank()) sb.append(main);
-
-        String addr = sb.toString().trim().replaceAll("\\s+", " ");
-        return addr.isBlank() ? null : addr;
-    }
 
     /** 요약 변환: 온도/뱃지 “없으면 null” */
     private UserSummaryDto toUserSummaryDto(StudyParticipant participant, User me) {
@@ -159,5 +138,39 @@ public class StudyRecruitmentQueryService {
                 .chatRoomId(null)
                 .dmRequestPending(false)
                 .build();
+    }
+
+    private LocationDto buildLocationForRead(StudyRecruitment sr) {
+        if (sr.getMode() == StudyMode.online) return null;
+        String full = composeFullAddress(
+                sr.getRegion1depthName(), sr.getRegion2depthName(), sr.getRegion3depthName(),
+                sr.getRoadName(), sr.getMainBuildingNo(), sr.getSubBuildingNo()
+        );
+        return LocationDto.builder()
+                .address(full)
+                .region1depthName(sr.getRegion1depthName())
+                .region2depthName(sr.getRegion2depthName())
+                .region3depthName(sr.getRegion3depthName())
+                .roadName(sr.getRoadName())
+                .mainBuildingNo(sr.getMainBuildingNo())
+                .subBuildingNo(sr.getSubBuildingNo())
+                .zoneNo(sr.getZoneNo())
+                .latitude(sr.getLatitude())
+                .longitude(sr.getLongitude())
+                .build();
+    }
+
+    private String composeFullAddress(String r1, String r2, String r3, String road, String main, String sub) {
+        StringBuilder sb = new StringBuilder();
+        if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
+        if (r2 != null && !r2.isBlank()) sb.append(r2).append(" ");
+        if (r3 != null && !r3.isBlank()) sb.append(r3).append(" ");
+        if (road != null && !road.isBlank()) sb.append(road).append(" ");
+        if (main != null && !main.isBlank()) {
+            sb.append(main);
+            if (sub != null && !sub.isBlank()) sb.append("-").append(sub);
+        }
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? null : s;
     }
 }
