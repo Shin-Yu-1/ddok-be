@@ -57,7 +57,7 @@ public class StudyDeleteController {
             @ApiResponse(responseCode = "404", description = "스터디 없음/이미 삭제됨",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 404, "message": "스터디를 찾을 수 없습니다.", "data": null }
+                    { "status": 404, "message": "존재하지 않는 스터디입니다.", "data": null }
                     """))),
     })
     @DeleteMapping("/{studyId}")

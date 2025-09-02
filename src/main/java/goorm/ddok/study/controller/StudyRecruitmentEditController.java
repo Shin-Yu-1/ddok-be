@@ -226,7 +226,7 @@ public class StudyRecruitmentEditController {
                             examples = @ExampleObject(name = "성공 예시", value = """
                     {
                       "status": 200,
-                      "message": "스터디 수정이 성공했습니다.",
+                      "message": "스터디 수정을 성공했습니다.",
                       "data": {
                         "studyId": 1,
                         "title": "프리토킹(온라인)",
@@ -301,6 +301,6 @@ public class StudyRecruitmentEditController {
     ) {
         StudyRecruitmentDetailResponse data =
                 Service.updateStudy(studyId, request, null, userDetails);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "스터디 수정이 성공했습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "스터디 수정을 성공했습니다.", data));
     }
 }
