@@ -17,7 +17,12 @@ import java.util.List;
 @Builder(toBuilder = true)
 @Schema(
         name = "ProjectRecruitmentUpdateRequest",
-        description = "프로젝트 수정 요청 DTO",
+        description = """
+      프로젝트 모집글 수정 요청 DTO
+      • mode=offline → location 필수
+      • preferredAges: null이면 무관(0/0)
+      • positions/leaderPosition 검증 및 정원-포지션 개수 제약은 서비스에서 수행
+    """,
         example = """
         {
           "title": "구지라지",
@@ -25,9 +30,16 @@ import java.util.List;
           "expectedMonth": 3,
           "mode": "offline",
           "location": {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
+            "address": "전북 익산시 부송동 망산길 11-17",
+            "region1depthName": "전북",
+            "region2depthName": "익산시",
+            "region3depthName": "부송동",
+            "roadName": "망산길",
+            "mainBuildingNo": "11",
+            "subBuildingNo": "17",
+            "zoneNo": "54547",
+            "latitude": 35.976749396987046,
+            "longitude": 126.99599512792346
           },
           "preferredAges": {
             "ageMin": 20,
