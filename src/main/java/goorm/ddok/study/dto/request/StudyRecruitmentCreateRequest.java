@@ -69,8 +69,7 @@ public class StudyRecruitmentCreateRequest {
     @Schema(description = "스터디 진행 장소 (offline일 경우만 입력)")
     private LocationDto location;
 
-    @NotNull
-    @Schema(description = "선호 연령대 (무관 시 0 입력)")
+    @Schema(description = "선호 연령대 (무관 시 null)")
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")

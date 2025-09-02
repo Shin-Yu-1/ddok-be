@@ -53,25 +53,14 @@ public class StudyRecruitmentService {
             }
         }
 
-        // 연령: 무관(0/0) 또는 10단위
-        int ageMin = 0, ageMax = 0;
-        if (req.getPreferredAges() != null) {
-            ageMin = Optional.ofNullable(req.getPreferredAges().getAgeMin()).orElse(0);
-            ageMax = Optional.ofNullable(req.getPreferredAges().getAgeMax()).orElse(0);
-            if (ageMin > ageMax) throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
-            if (!(ageMin == 0 && ageMax == 0)) {
-                if (ageMin % 10 != 0 || ageMax % 10 != 0) {
-                    throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
-                }
-            }
-        }
+        // 연령대 범위 검증
+        validatePreferredAges(req.getPreferredAges());
 
-        // studyType 검증
-        if (req.getStudyType() == null || !StudyType.isValid(req.getStudyType())) {
-            throw new GlobalException(ErrorCode.INVALID_STUDY_TYPE);
-        }
+        Integer ageMin = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMin() : null;
+        Integer ageMax = (req.getPreferredAges() != null) ? req.getPreferredAges().getAgeMax() : null;
 
-        // 배너 이미지 업로드 or 기본값
+
+      // 배너 이미지 업로드 or 기본값
         String bannerUrl = (bannerImage != null && !bannerImage.isEmpty())
                 ? uploadBannerImage(bannerImage)
                 : bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);
@@ -163,6 +152,29 @@ public class StudyRecruitmentService {
                 .studyType(study.getStudyType())
                 .detail(study.getContentMd())
                 .build();
+    }
+
+    private void validatePreferredAges(PreferredAgesDto preferredAges) {
+        if (preferredAges == null) return; // 연령 무관
+
+        Integer min = preferredAges.getAgeMin();
+        Integer max = preferredAges.getAgeMax();
+
+        // 연령 무관인데 Dto만 있고 값은 null인 경우도 방어
+        if (min == null && max == null) return;
+
+        if (min == null || max == null) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min < 10 || max > 110) { // 100대까지
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min >= max) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min % 10 != 0 || max % 10 != 0) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
     }
 
     private String uploadBannerImage(MultipartFile file) {
