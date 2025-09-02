@@ -1,5 +1,6 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.AbandonBadgeDto;
@@ -70,16 +71,24 @@ public class ProjectRecruitmentQueryService {
                     int appliedCountForPos = projectApplicationRepository.countByPosition(position);
 
                     boolean isApplied = (me != null) &&
-                            projectApplicationRepository.findByUser_IdAndPosition_ProjectRecruitment_Id(
-                                    me.getId(), project.getId()).isPresent();
+                            projectApplicationRepository.existsByUser_IdAndPosition_Id(me.getId(), position.getId());
 
                     boolean isApproved = (me != null) &&
-                            participants.stream().anyMatch(p ->
-                                    p.getRole() == ParticipantRole.MEMBER
-                                            && p.getUser().getId().equals(me.getId())
-                                            && Objects.equals(p.getPosition(), position));
+                            projectParticipantRepository.existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
+                                    me.getId(), position.getId(), ParticipantRole.MEMBER);
 
-                    boolean isAvailable = confirmedCount < project.getCapacity();
+                    boolean alreadyAppliedOtherPos = (me != null) &&
+                            projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_Id(me.getId(), project.getId())
+                            && !isApplied;
+
+                    boolean alreadyMemberAnyPos = (me != null) &&
+                            projectParticipantRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(
+                                    me.getId(), project.getId());
+
+                    boolean isAvailable = (project.getTeamStatus() == TeamStatus.RECRUITING)
+                            && (confirmedCount < project.getCapacity())
+                            && !alreadyMemberAnyPos
+                            && !alreadyAppliedOtherPos;
 
                     return ProjectPositionDto.builder()
                             .position(position.getPositionName())
@@ -109,8 +118,8 @@ public class ProjectRecruitmentQueryService {
                 })
                 .toList();
 
-        // 7) 주소 합치기
-        String address = composeAddress(project);
+        // 7) 위치 객체 구성
+        LocationDto location = buildLocationForRead(project);
 
         // 8) 선호 연령 (0/0이면 null)
         PreferredAgesDto ages = (project.getAgeMin() == 0 && project.getAgeMax() == 0)
@@ -128,7 +137,7 @@ public class ProjectRecruitmentQueryService {
                 .capacity(project.getCapacity())
                 .applicantCount(applicantCount)
                 .mode(project.getProjectMode())
-                .address(address)
+                .location(location)
                 .preferredAges(ages)
                 .expectedMonth(project.getExpectedMonths())
                 .startDate(project.getStartDate())
@@ -144,29 +153,6 @@ public class ProjectRecruitmentQueryService {
         if (pr.getDeletedAt() != null) {
             throw new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND);
         }
-    }
-
-    /** 전체 주소 합치기: "r1 r2 r3 road main-sub" (online null) */
-    private String composeAddress(ProjectRecruitment pr) {
-        if (pr.getProjectMode() == ProjectMode.online) return null;
-
-        String r1 = Optional.ofNullable(pr.getRegion1depthName()).orElse("");
-        String r2 = Optional.ofNullable(pr.getRegion2depthName()).orElse("");
-        String r3 = Optional.ofNullable(pr.getRegion3depthName()).orElse("");
-        String road = Optional.ofNullable(pr.getRoadName()).orElse("");
-        String main = Optional.ofNullable(pr.getMainBuildingNo()).orElse("");
-        String sub  = Optional.ofNullable(pr.getSubBuildingNo()).orElse("");
-
-        StringBuilder sb = new StringBuilder();
-        if (!r1.isBlank()) sb.append(r1).append(" ");
-        if (!r2.isBlank()) sb.append(r2).append(" ");
-        if (!r3.isBlank()) sb.append(r3).append(" ");
-        if (!road.isBlank()) sb.append(road).append(" ");
-        if (!main.isBlank() && !sub.isBlank()) sb.append(main).append("-").append(sub);
-        else if (!main.isBlank()) sb.append(main);
-
-        String s = sb.toString().trim().replaceAll("\\s+", " ");
-        return s.isBlank() ? null : s;
     }
 
     /** UserSummary 변환 (+ 배지/DM/채팅방 기본값: null 폴백) */
@@ -200,6 +186,40 @@ public class ProjectRecruitmentQueryService {
                 .chatRoomId(chatRoomId)
                 .dmRequestPending(dmPending)
                 .build();
+    }
+
+    private LocationDto buildLocationForRead(ProjectRecruitment pr) {
+        if (pr.getProjectMode() == ProjectMode.online) return null;
+        String full = composeFullAddress(
+                pr.getRegion1depthName(), pr.getRegion2depthName(), pr.getRegion3depthName(),
+                pr.getRoadName(), pr.getMainBuildingNo(), pr.getSubBuildingNo()
+        );
+        return LocationDto.builder()
+                .address(full)
+                .region1depthName(pr.getRegion1depthName())
+                .region2depthName(pr.getRegion2depthName())
+                .region3depthName(pr.getRegion3depthName())
+                .roadName(pr.getRoadName())
+                .mainBuildingNo(pr.getMainBuildingNo())
+                .subBuildingNo(pr.getSubBuildingNo())
+                .zoneNo(pr.getZoneNo())
+                .latitude(pr.getLatitude())
+                .longitude(pr.getLongitude())
+                .build();
+    }
+
+    private String composeFullAddress(String r1, String r2, String r3, String road, String main, String sub) {
+        StringBuilder sb = new StringBuilder();
+        if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
+        if (r2 != null && !r2.isBlank()) sb.append(r2).append(" ");
+        if (r3 != null && !r3.isBlank()) sb.append(r3).append(" ");
+        if (road != null && !road.isBlank()) sb.append(road).append(" ");
+        if (main != null && !main.isBlank()) {
+            sb.append(main);
+            if (sub != null && !sub.isBlank()) sb.append("-").append(sub);
+        }
+        String s = sb.toString().trim().replaceAll("\\s+", " ");
+        return s.isBlank() ? null : s;
     }
 
     // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====

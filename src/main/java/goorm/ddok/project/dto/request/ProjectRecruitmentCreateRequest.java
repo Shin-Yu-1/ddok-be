@@ -17,11 +17,13 @@ import java.util.List;
 @Schema(
         name = "ProjectCreateRequest",
         description = """
-            프로젝트 모집글 생성 요청 DTO.
-            - online 모드: location 생략 가능
-            - offline 모드: location 필수 (카카오 road_address 매핑 필드 사용)
-            - preferredAges는 null(무관) 가능
-            """,
+      프로젝트 모집글 생성 요청 DTO
+      • mode: online/offline
+      • mode=offline → location 필수 (카카오 road_address 매핑)
+      • preferredAges: null이면 무관(0/0) 저장
+      • positions: 최소 1개, 공백/중복은 서비스에서 정규화
+      • leaderPosition: positions에 반드시 포함
+    """,
         requiredProperties = {
                 "title", "expectedStart", "expectedMonth",
                 "mode", "capacity", "positions", "leaderPosition", "detail"

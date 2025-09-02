@@ -1,5 +1,6 @@
 package goorm.ddok.project.dto.response;
 
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.TeamStatus;
@@ -48,8 +49,14 @@ public class ProjectEditPageResponse {
     @Schema(description = "진행 방식 (online / offline)", example = "online")
     private ProjectMode mode;
 
-    @Schema(description = "진행 주소 (online이면 \"online\" 또는 null, offline은 전체 주소 문자열)", example = "서울 강남구 테헤란로 123")
-    private String address;
+    @Schema(
+            description = """
+                프로젝트 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
+    private LocationDto location;
 
     @Schema(description = "선호 연령대 (무관이면 null)")
     private PreferredAgesDto preferredAges;
