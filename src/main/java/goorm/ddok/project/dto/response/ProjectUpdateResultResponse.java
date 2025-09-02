@@ -2,7 +2,9 @@ package goorm.ddok.project.dto.response;
 
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
+import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -25,7 +27,15 @@ public class ProjectUpdateResultResponse {
     private Long applicantCount;
 
     private String mode;     // "online" | "online"
-    private String address;  // online: 도로명 / online: "online"
+
+    @Schema(
+            description = """
+                프로젝트 진행 장소 (offline일 때만 존재).
+                Kakao road_address 매핑 필드 사용.
+                """,
+            implementation = LocationDto.class
+    )
+    private LocationDto location;
 
     private PreferredAgesDto preferredAges;
 
