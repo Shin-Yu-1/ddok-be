@@ -43,7 +43,7 @@ public class Cafe {
     @Column(name = "sub_building_no", length = 20)
     private String subBuildingNo;
 
-    /** 우편번호 */
+    /** 우편번호 (출력에는 사용하지 않음) */
     @Column(name = "zone_no", length = 50)
     private String zoneNo;
 
@@ -81,9 +81,9 @@ public class Cafe {
     }
 
     /**
-     * LocationDto 형태의 “전체 도로명 주소”:
-     *   {r1} {r2} {r3} {roadName} {main}-{sub} (zoneNo)
-     *   예) "서울특별시 강남구 테헤란로 123-4 (06234)"
+     * LocationDto 형태의 “전체 도로명 주소” (우편번호 제외):
+     *   {r1} {r2} {r3} {roadName} {main}-{sub}
+     *   예) "서울특별시 강남구 테헤란로 123-4"
      */
     public String composeFullAddress() {
         String r1   = safe(region1depthName);
@@ -99,9 +99,7 @@ public class Cafe {
                 .trim()
                 .replaceAll("\\s+", " ");
 
-        if (base.isEmpty()) return "-";
-        String zone = safe(zoneNo);
-        return zone.isEmpty() ? base : (base + " (" + zone + ")");
+        return base.isEmpty() ? "-" : base;
     }
 
     private static String safe(String s) { return (s == null) ? "" : s.trim(); }
