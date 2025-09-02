@@ -22,31 +22,28 @@ import java.util.List;
         name = "StudyRecruitmentCreateResponse",
         description = "스터디 모집글 생성 응답 DTO",
         example = """
-        {
-          "studyId": 1,
-          "userId": 1,
-          "nickname": "고라니",
-          "teamStatus": "RECRUITING",
-          "title": "구지라지",
-          "expectedStart": "2025-08-16",
-          "expectedMonth": 3,
-          "mode": "offline",
-          "location": {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
-          },
-          "preferredAges": {
-            "ageMin": 20,
-            "ageMax": 30
-          },
-          "capacity": 6,
-          "bannerImageUrl": "https://cdn.example.com/images/default.png",
-          "traits": ["정리의 신", "실행력 갓", "내향인"],
-          "studyType": "JOB_INTERVIEW",
-          "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
-        }
-        """
+    {
+      "studyId": 1,
+      "userId": 1,
+      "nickname": "고라니",
+      "teamStatus": "RECRUITING",
+      "title": "구지라지",
+      "expectedStart": "2025-08-16",
+      "expectedMonth": 3,
+      "mode": "offline",
+      "location": {
+        "latitude": 37.5665,
+        "longitude": 126.9780,
+        "address": "서울특별시 강남구 테헤란로…"
+      },
+      "preferredAges": { "ageMin": 20, "ageMax": 30 },
+      "capacity": 6,
+      "bannerImageUrl": "https://cdn.example.com/images/default.png",
+      "traits": ["정리의 신", "실행력 갓", "내향인"],
+      "studyType": "취업/면접",
+      "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
+    }
+    """
 )
 public class StudyRecruitmentCreateResponse {
 

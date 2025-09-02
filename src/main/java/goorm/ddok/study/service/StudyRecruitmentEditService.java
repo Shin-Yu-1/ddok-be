@@ -103,6 +103,7 @@ public class StudyRecruitmentEditService {
             if (!(ageMin == 0 && ageMax == 0) && ageMin > ageMax) {
                 throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
             }
+            if (ageMin % 10 != 0 || ageMax % 10 != 0) throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
         }
 
         // 위치 반영
