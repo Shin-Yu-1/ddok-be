@@ -238,7 +238,7 @@ public class StudyRecruitmentEditController {
                         "capacity": 4,
                         "applicantCount": 1,
                         "mode": "online",
-                        "address": null,
+                        "location": null,
                         "preferredAges": null,
                         "expectedMonth": 2,
                         "startDate": "2025-10-20",

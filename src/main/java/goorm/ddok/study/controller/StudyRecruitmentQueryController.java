@@ -57,7 +57,18 @@ public class StudyRecruitmentQueryController {
                                             "capacity": 6,
                                             "applicantCount": 0,
                                             "mode": "offline",
-                                            "address": "서울 강남구 역삼동 테헤란로 123-45",
+                                            "location": {
+                                                "address": "서울 강남구 역삼동 테헤란로 123-45",
+                                                "region1depthName": "서울",
+                                                "region2depthName": "강남구",
+                                                "region3depthName": "역삼동",
+                                                "mainBuildingNo": "123",
+                                                "subBuildingNo": "45",
+                                                "roadName": "테헤란로",
+                                                "zoneNo": "06236",
+                                                "latitude": 37.5665,
+                                                "longitude": 126.9780
+                                            },
                                             "preferredAges": {
                                                 "ageMin": 20,
                                                 "ageMax": 30
