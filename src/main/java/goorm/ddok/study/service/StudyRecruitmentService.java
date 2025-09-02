@@ -66,6 +66,12 @@ public class StudyRecruitmentService {
             }
         }
 
+        // studyType 검증
+        if (req.getStudyType() == null || !StudyType.isValid(req.getStudyType())) {
+            throw new GlobalException(ErrorCode.INVALID_STUDY_TYPE);
+        }
+
+        // 배너 이미지 업로드 or 기본값
         String bannerUrl = (bannerImage != null && !bannerImage.isEmpty())
                 ? uploadBannerImage(bannerImage)
                 : bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);

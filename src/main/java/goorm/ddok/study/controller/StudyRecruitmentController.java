@@ -61,7 +61,7 @@ public class StudyRecruitmentController {
                     "capacity": 5,
                     "bannerImageUrl": "https://cdn.example.com/images/study-banner.png",
                     "traits": ["실행력 갑", "성실함"],
-                    "studyType": "ALGORITHM",
+                    "studyType": "자기 개발",
                     "detail": "알고리즘 문제 풀이 및 코드 리뷰 중심 스터디"
                   }
                 }
@@ -85,6 +85,11 @@ public class StudyRecruitmentController {
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
             { "status": 400, "message": "연령대 범위가 올바르지 않습니다.", "data": null }
+            """))),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 - 스터디 유형 오류",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+            { "status": 400, "message": "스터디 유형은 필수이며 올바른 값이어야 합니다.", "data": null }
             """))),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류 - 배너 이미지 업로드 실패",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
