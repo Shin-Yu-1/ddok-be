@@ -67,7 +67,7 @@ public class StudyRecruitmentService {
         }
 
         // studyType 검증
-        if (request.getStudyType() == null || !StudyType.isValid(request.getStudyType())) {
+        if (req.getStudyType() == null || !StudyType.isValid(req.getStudyType())) {
             throw new GlobalException(ErrorCode.INVALID_STUDY_TYPE);
         }
 

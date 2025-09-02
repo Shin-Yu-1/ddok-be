@@ -160,7 +160,7 @@ public class ProjectRecruitment {
 
     /** OFFLINE일 때 응답용 전체 도로명 주소 조립 */
     public String fullRoadAddress() {
-        if (projectMode == ProjectMode.ONLINE) return "ONLINE";
+        if (projectMode == ProjectMode.online) return "online";
         if (roadName == null && region1depthName == null && region2depthName == null) return "-";
 
         StringBuilder sb = new StringBuilder();
