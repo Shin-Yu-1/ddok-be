@@ -38,29 +38,9 @@ public class CafeMapQueryService {
                         new CafeLocationResponse(
                                 c.getActivityLatitude(),
                                 c.getActivityLongitude(),
-                                buildAddress(c)
+                                c.composeFullAddress()
                         )
                 ))
                 .toList();
-    }
-
-    private String buildAddress(Cafe c) {
-        if (c.getRoadName() != null && !c.getRoadName().isBlank()) {
-            if (c.getZoneNo() != null && !c.getZoneNo().isBlank()) {
-                return c.getRoadName() + " (" + c.getZoneNo() + ")";
-            }
-            return c.getRoadName();
-        }
-        String r1 = nullToEmpty(c.getRegion1depthName());
-        String r2 = nullToEmpty(c.getRegion2depthName());
-        String r3 = nullToEmpty(c.getRegion3depthName());
-        String joined = String.join(" ", new String[]{r1, r2, r3})
-                .trim()
-                .replaceAll(" +", " ");
-        return joined.isEmpty() ? "-" : joined;
-    }
-
-    private String nullToEmpty(String s) {
-        return s == null ? "" : s;
     }
 }

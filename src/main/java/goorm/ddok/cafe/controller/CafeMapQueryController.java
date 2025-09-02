@@ -1,4 +1,3 @@
-// goorm/ddok/cafe/controller/CafeMapQueryController.java
 package goorm.ddok.cafe.controller;
 
 import goorm.ddok.cafe.dto.response.CafeMapItemResponse;
