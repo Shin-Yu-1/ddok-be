@@ -227,23 +227,38 @@ public class PlayerProfileController {
     }
 
     @PatchMapping
-    @Operation(summary = "프로필 공개/비공개 설정", description = "프로필 공개 여부를 설정합니다.")
+    @Operation(
+            summary = "프로필 공개/비공개 토글",
+            description = "현재 공개 상태를 반대로 변경합니다. (true → false, false → true)"
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "수정 성공",
+            @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 200, "message": "요청이 성공적으로 처리되었습니다.", "data": { "profile": { /* 생략 */ } } }"""))),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
+                        {
+                          "status": 200,
+                          "message": "프로필 공개 상태가 변경되었습니다.",
+                          "data": {
+                            "userId": 1,
+                            "nickname": "홍길동",
+                            "isPublic": false,
+                            "mainPosition": "백엔드",
+                            "traits": ["성실함", "소통"],
+                            "techStacks": ["Spring Boot", "React"]
+                          }
+                        }
+                        """))),
+            @ApiResponse(responseCode = "401", description = "인증 실패",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 401, "message": "인증이 필요합니다.", "data": null }""")))
+                        { "status": 401, "message": "인증이 필요합니다.", "data": null }
+                        """)))
     })
-    public ResponseEntity<ApiResponseDto<Map<String, Object>>> updateVisibility(
-            @RequestParam(name = "isPublic") boolean isPublic,
+    public ResponseEntity<ApiResponseDto<ProfileDto>> toggleVisibility(
             @AuthenticationPrincipal CustomUserDetails me
     ) {
-        ProfileDto profile = service.updateVisibility(isPublic, me); // 저장 엔티티 미정 → 응답만 포함(null)
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("profile", profile)));
+        ProfileDto profile = service.toggleVisibility(me);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 공개 상태가 변경되었습니다.", profile));
     }
 
     @PatchMapping("/stacks")
