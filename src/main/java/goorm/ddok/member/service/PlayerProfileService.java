@@ -155,11 +155,24 @@ public class PlayerProfileService {
         return buildProfile(user, me);
     }
 
-    /* -------- 자기 소개 (엔티티 미정 → TODO) -------- */
+    /* -------- 자기 소개 생성/수정 -------- */
     public ProfileDto upsertContent(ContentUpdateRequest req, CustomUserDetails me) {
         User user = requireMe(me);
-        // TODO: UserProfileExtra.content 저장(길이 검증 시 별도 에러코드 추가 가능)
-        return buildProfile(user, me);
+
+        User fresh = userRepository.findById(user.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        String newIntroduce = (req.getContent() != null && !req.getContent().isBlank())
+                ? req.getContent().trim()
+                : null;
+
+        fresh = fresh.toBuilder()
+                .introduce(newIntroduce)
+                .build();
+
+        userRepository.save(fresh);
+
+        return buildProfile(fresh, me);
     }
 
     /* -------- 포트폴리오 (엔티티 미정 → TODO) -------- */
@@ -169,12 +182,6 @@ public class PlayerProfileService {
         return buildProfile(user, me);
     }
 
-    /* -------- 공개/비공개 (엔티티 미정 → TODO) -------- */
-    public ProfileDto updateVisibility(boolean isPublic, CustomUserDetails me) {
-        User user = requireMe(me);
-        // TODO: UserProfileExtra.isPublic 저장
-        return buildProfile(user, me);
-    }
 
     /* -------- 기술 스택 수정(전체 치환) -------- */
     public void updateTechStacks(TechStacksUpdateRequest req, CustomUserDetails me) {
@@ -270,18 +277,18 @@ public class PlayerProfileService {
                 .isMine(meId != null && Objects.equals(meId, fresh.getId()))
                 .chatRoomId(null)
                 .dmRequestPending(false)
-                .isPublic(true)                 // TODO: 저장 구현 시 실제 값 매핑
+                .isPublic(fresh.isPublic())                 // TODO: 저장 구현 시 실제 값 매핑
                 .profileImageUrl(fresh.getProfileImageUrl())
                 .nickname(fresh.getNickname())
                 .temperature(temp)              // null 허용
-                .ageGroup(null)                 // TODO: birthDate 기반 계산 시 구현
+                .ageGroup(user.getAgeGroup())
                 .mainPosition(main)
                 .subPositions(subs)
                 .mainBadge(null)                // 요구사항: 없으면 null
                 .abandonBadge(null)             // 요구사항: 없으면 null
                 .activeHours(ah)
                 .traits(traits)
-                .content(null)                  // TODO
+                .content(fresh.getIntroduce())
                 .portfolio(null)                // TODO
                 .location(loc)
                 .techStacks(stacks)
