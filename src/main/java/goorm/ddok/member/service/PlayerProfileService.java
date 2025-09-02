@@ -277,7 +277,7 @@ public class PlayerProfileService {
                 .isMine(meId != null && Objects.equals(meId, fresh.getId()))
                 .chatRoomId(null)
                 .dmRequestPending(false)
-                .isPublic(fresh.isPublic())                 // TODO: 저장 구현 시 실제 값 매핑
+                .isPublic(fresh.isPublic())
                 .profileImageUrl(fresh.getProfileImageUrl())
                 .nickname(fresh.getNickname())
                 .temperature(temp)              // null 허용
