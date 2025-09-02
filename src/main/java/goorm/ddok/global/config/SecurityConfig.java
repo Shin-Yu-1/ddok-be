@@ -7,7 +7,6 @@ import goorm.ddok.global.util.sentry.SentryUserContextFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -45,7 +44,8 @@ public class SecurityConfig {
 
         // 개발/운영 환경별 허용 도메인 설정
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*"     // 개발환경 (모든 포트)
+                "http://localhost:*",     // 개발환경 (모든 포트)
+                "https://api.ddok.site"   // 운영환경
         ));
 
         // 허용할 HTTP 메서드
