@@ -29,30 +29,6 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
            """)
     long countAllByProjectId(@Param("projectId") Long projectId);
 
-    // 포지션별 applied 집계
-    interface PositionCountProjection {
-        String getPositionName();
-        Long getCnt();
-    }
-
-    @Query("""
-           select a.position.positionName as positionName, count(a) as cnt
-           from ProjectApplication a
-           where a.position.projectRecruitment.id = :projectId
-           group by a.position.positionName
-           """)
-    List<PositionCountProjection> countAppliedByPosition(Long projectId);
-
-    // 포지션별 approved 집계
-    @Query("""
-           select a.position.positionName as positionName, count(a) as cnt
-           from ProjectApplication a
-           where a.position.projectRecruitment.id = :projectId
-             and a.status = goorm.ddok.project.domain.ApplicationStatus.APPROVED
-           group by a.position.positionName
-           """)
-    List<PositionCountProjection> countApprovedByPosition(Long projectId);
-
     /** 내가 특정 포지션에 지원했는지 — 포지션 단위 체크 */
     boolean existsByUser_IdAndPosition_Id(Long userId, Long positionId);
 
@@ -63,9 +39,6 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
            
     // 내 지원 여부
     boolean existsByUser_IdAndPosition_ProjectRecruitment_Id(Long userId, Long projectId);
-
-    // 내 승인 여부
-    boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(Long userId, Long projectId, ApplicationStatus status);
 
     // 특정 포지션 참조 지원 수
     int countByPosition_Id(Long positionId);
