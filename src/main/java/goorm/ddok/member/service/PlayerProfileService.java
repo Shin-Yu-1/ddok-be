@@ -202,16 +202,18 @@ public class PlayerProfileService {
     }
     /* -------- 공개/비공개 토글 -------- */
     public ProfileDto toggleVisibility(CustomUserDetails me) {
-        User user = requireMe(me);
+        User meUser = requireMe(me);
 
-        // TODO: UserProfileExtra.isPublic 실제 엔티티 저장 필요
-        // 일단은 User 엔티티나 별도 Profile 테이블에 isPublic 있다고 가정
-        boolean current = Boolean.TRUE.equals(user.getIsPublic()); // 기본값 true 가정
-        user.setIsPublic(!current);
+        // 최신 상태 로드 (영속 엔티티)
+        User fresh = userRepository.findById(meUser.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
 
-        userRepository.save(user);
+        boolean current = fresh.isPublic();
+        fresh.setPublic(!current);
 
-        return buildProfile(user, me);
+        userRepository.save(fresh);
+
+        return buildProfile(fresh, me);
     }
 
     /* -------- 공통: 프로필 빌드 -------- */
