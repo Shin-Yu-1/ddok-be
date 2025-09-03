@@ -15,24 +15,27 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class FileService {
-
     private final AmazonS3 amazonS3;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucket;
 
     public String upload(MultipartFile file) throws IOException {
-        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String fileName = UUID.randomUUID() + "_" +
+                (file.getOriginalFilename() == null ? "file" : file.getOriginalFilename());
+        String key = "Banner/" + fileName;
 
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
-        metadata.setContentType(file.getContentType());
+        metadata.setContentType(
+                file.getContentType() != null ? file.getContentType() : "application/octet-stream"
+        );
 
-        // Banner 폴더 경로 지정
-        String key = "Banner/" + fileName;
+        try (var in = file.getInputStream()) {
+            amazonS3.putObject(new PutObjectRequest(bucket, key, in, metadata));
+        }
 
-        //S3 업로드
-        amazonS3.putObject(new PutObjectRequest(bucket, fileName, file.getInputStream(), metadata));
         return amazonS3.getUrl(bucket, key).toString();
     }
 }
+
