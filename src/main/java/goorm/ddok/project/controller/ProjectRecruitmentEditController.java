@@ -4,7 +4,6 @@ import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.project.dto.request.ProjectRecruitmentUpdateRequest;
 import goorm.ddok.project.dto.response.ProjectDetailResponse;
-import goorm.ddok.project.dto.response.ProjectEditPageResponse;
 import goorm.ddok.project.dto.response.ProjectUpdateResultResponse;
 import goorm.ddok.project.service.ProjectRecruitmentEditService;
 import io.swagger.v3.oas.annotations.Operation;
