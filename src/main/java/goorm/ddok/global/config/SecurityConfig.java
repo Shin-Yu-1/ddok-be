@@ -45,7 +45,7 @@ public class SecurityConfig {
         // 개발/운영 환경별 허용 도메인 설정
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",     // 개발환경 (모든 포트)
-                "https://api.ddok.site"   // 운영환경
+                "https://api.deepdirect.site"   // 운영환경
         ));
 
         // 허용할 HTTP 메서드
