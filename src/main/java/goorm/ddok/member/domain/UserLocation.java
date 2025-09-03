@@ -40,11 +40,14 @@ public class UserLocation {
     @Column(name = "road_name", length = 50)
     private String roadName;
 
+    @Column(length = 16)
+    private String mainBuildingNo;
+
+    @Column(length = 16)
+    private String subBuildingNo;
+
     @Column(name = "zone_no", length = 50)
     private String zoneNo;
-
-    @Column(name = "kakao_place_id", length = 64)
-    private String kakaoPlaceId;
 
     /** 위도/경도: numeric(9,6) */
     @Column(name = "activity_latitude", precision = 9, scale = 6)
