@@ -207,23 +207,52 @@ public class PlayerProfileController {
     }
 
     @PatchMapping("/portfolio")
-    @Operation(summary = "포트폴리오 수정", description = "포트폴리오 링크 목록을 생성/수정합니다.")
+    @Operation(
+            summary = "포트폴리오 생성/수정",
+            description = "사용자의 포트폴리오 링크 목록을 **전체 치환**합니다."
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "수정 성공",
+            @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 200, "message": "요청이 성공적으로 처리되었습니다.", "data": { "profile": { /* 생략 */ } } }"""))),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
+                    {
+                      "status": 200,
+                      "message": "요청이 성공적으로 처리되었습니다.",
+                      "data": {
+                        "userId": 1,
+                        "isMine": true,
+                        "chatRoomId": null,
+                        "dmRequestPending": false,
+                        "isPublic": true,
+                        "profileImageUrl": "",
+                        "nickname": "똑똑한 똑똑이",
+                        "temperature": 36.6,
+                        "ageGroup": "20대",
+                        "mainPosition": "백엔드",
+                        "subPositions": ["프론트엔드", "데브옵스"],
+                        "badges": [],
+                        "abandonBadge": { "isGranted": false, "count": 0 },
+                        "activeHours": { "start": "19", "end": "23" },
+                        "traits": ["정리의 신","실행력 갓","내향인"],
+                        "content": "Hi there, ~",
+                        "portfolio": [
+                          { "linkTitle": "깃헙 링크", "link": "https://github.com/xxx" },
+                          { "linkTitle": "블로그", "link": "https://blog.example.com" }
+                        ],
+                        "location": { "latitude": 37.5665, "longitude": 126.9780, "address": "서울특별시 강남구 테헤란로…" }
+                      }
+                    }"""))),
+            @ApiResponse(responseCode = "400", description = "유효성 오류",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 401, "message": "인증이 필요합니다.", "data": null }""")))
+                    { "status": 400, "message": "포트폴리오 링크 제목은 1~15자여야 합니다.", "data": null }""")))
     })
-    public ResponseEntity<ApiResponseDto<Map<String, Object>>> upsertPortfolio(
+    public ResponseEntity<ApiResponseDto<ProfileDto>> upsertPortfolio(
             @Valid @RequestBody PortfolioUpdateRequest req,
-            @AuthenticationPrincipal CustomUserDetails me
+                                                                         @AuthenticationPrincipal CustomUserDetails me
     ) {
-        ProfileDto profile = service.upsertPortfolio(req, me); // 저장 엔티티 미정 → 응답만 포함(null)
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("profile", profile)));
+        ProfileDto profile = service.upsertPortfolio(req, me);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "포트폴리오 생성(수정)에 성공했습니다.", profile));
     }
 
     @PatchMapping

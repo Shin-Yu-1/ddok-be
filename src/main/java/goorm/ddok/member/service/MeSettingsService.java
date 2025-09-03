@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 public class MeSettingsService {
 
     private final UserRepository userRepository;
+    private final ProfileImageService profileImageService;
 
     private User requireMe(CustomUserDetails me) {
         if (me == null || me.getUser() == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);
@@ -34,32 +35,28 @@ public class MeSettingsService {
         return toSettingsDto(user);
     }
 
-    private SettingsPageResponse toSettingsDto(User user) {
-        return SettingsPageResponse.builder()
-                .userId(user.getId())
-                .profileImageUrl(user.getProfileImageUrl())
-                .username(user.getUsername())
-                .nickname(user.getNickname())
-                .birthDate(user.getBirthDate())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .password("********") // 실제 비밀번호는 절대 반환하지 않음
-                .build();
-    }
-
     /* ---------- 수정 후 개인정보 블록 반환 ---------- */
-    public SettingsPageResponse updateProfileImage(ProfileImageUpdateRequest req, CustomUserDetails me) {
+    public SettingsPageResponse updateProfileImage(ProfileImageUpdateRequest req, CustomUserDetails me) { // [CHANGED] 반환형
         User user = requireMe(me);
-        String url = StringUtils.hasText(req.getProfileImageUrl()) ? req.getProfileImageUrl().trim() : null;
 
-        // (선택) 간단 URL 형식 검증
-        if (url != null && !(url.startsWith("http://") || url.startsWith("https://"))) {
-            throw new GlobalException(ErrorCode.PROFILE_IMAGE_URL_INVALID);
+        // 전달된 URL 정리
+        String url = (req.getProfileImageUrl() != null && !req.getProfileImageUrl().trim().isEmpty())
+                ? req.getProfileImageUrl().trim()
+                : null;
+
+        // 값이 비었으면 닉네임(없으면 username) 기반 기본 이미지 생성
+        if (url == null) { // [NEW]
+            String seed = (user.getNickname() != null && !user.getNickname().isBlank())
+                    ? user.getNickname()
+                    : user.getUsername();
+            url = profileImageService.generateProfileImageUrl(seed, 200); // 200px 고정(필요 시 상수화/옵션화)
         }
 
         user.setProfileImageUrl(url);
         userRepository.save(user);
-        return toSettingsDto(user);
+
+        // 수정 후 최신 정보 반환
+        return toSettingsDto(user); // [NEW]
     }
 
     public SettingsPageResponse updateNickname(NicknameUpdateRequest req, CustomUserDetails me) {
@@ -99,5 +96,18 @@ public class MeSettingsService {
         User user = requireMe(me);
         // 연관관계는 User 엔티티에 Cascade REMOVE가 이미 걸려 있으므로 하드 딜리트 가능
         userRepository.delete(user);
+    }
+
+    private SettingsPageResponse toSettingsDto(User user) {
+        return SettingsPageResponse.builder()
+                .userId(user.getId())
+                .profileImageUrl(user.getProfileImageUrl())
+                .username(user.getUsername())
+                .nickname(user.getNickname())
+                .birthDate(user.getBirthDate())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .password("********") // 실제 비밀번호는 절대 반환하지 않음
+                .build();
     }
 }

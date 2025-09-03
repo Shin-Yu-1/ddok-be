@@ -40,6 +40,10 @@ public enum ErrorCode {
     PHONE_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "휴대폰 번호 형식이 올바르지 않습니다."),
     PROFILE_IMAGE_URL_INVALID(HttpStatus.BAD_REQUEST, "프로필 이미지 URL이 유효하지 않습니다."),
     PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "비밀번호는 이 API에서 변경할 수 없습니다."),
+    PORTFOLIO_TITLE_INVALID(HttpStatus.BAD_REQUEST, "포트폴리오 링크 제목은 1~15자여야 합니다."),
+    PORTFOLIO_URL_REQUIRED(HttpStatus.BAD_REQUEST, "포트폴리오 링크 주소는 필수입니다."),
+    PORTFOLIO_URL_INVALID(HttpStatus.BAD_REQUEST, "유효한 URL 형식이 아닙니다. http/https만 허용합니다."),
+    PORTFOLIO_TOO_MANY(HttpStatus.BAD_REQUEST, "포트폴리오는 최대 20개까지 등록할 수 있습니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

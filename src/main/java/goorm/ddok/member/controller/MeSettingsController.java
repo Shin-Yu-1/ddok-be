@@ -61,32 +61,33 @@ public class MeSettingsController {
      *  프로필 이미지 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
     @PatchMapping("/image")
-    @Operation(summary = "프로필 이미지 수정", description = "프로필 이미지를 변경하고, 변경된 개인정보 블록을 반환합니다.")
+    @Operation(summary = "프로필 이미지 수정",
+            description = "요청 바디에 profileImageUrl이 비어있으면 닉네임 기반 기본 이미지를 생성해 저장합니다.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(name = "성공 예시", value = """
-                            {
-                              "status": 200,
-                              "message": "프로필 이미지 변경에 성공했습니다.",
-                              "data": {
-                                "userId": 1,
-                                "profileImageUrl": "https://cdn.example.com/p/new.png",
-                                "username": "곽두철",
-                                "nickname": "똑똑한 똑똑이",
-                                "birthDate": "1997-10-10",
-                                "email": "User@email.com",
-                                "phoneNumber": "01012345678",
-                                "password": "********"
-                              }
-                            }""")))
+                            examples = @ExampleObject(value = """
+                        {
+                          "status": 200,
+                          "message": "프로필 이미지 수정에 성공했습니다.",
+                          "data": {
+                            "userId": 1,
+                            "profileImageUrl": "data:image/svg+xml;base64,...",
+                            "username": "곽두철",
+                            "nickname": "똑똑한 똑똑이",
+                            "birthDate": "1997-10-10",
+                            "email": "User@email.com",
+                            "phoneNumber": "01012345678",
+                            "password": "********"
+                          }
+                        }""")))
     })
-    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImage(
-            @Valid @RequestBody ProfileImageUpdateRequest req,
-            @AuthenticationPrincipal CustomUserDetails me
+    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImage( // [CHANGED] 반환형
+                                                                             @Valid @RequestBody ProfileImageUpdateRequest req,
+                                                                             @AuthenticationPrincipal CustomUserDetails me
     ) {
-        SettingsPageResponse data = service.updateProfileImage(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 변경에 성공했습니다.", data));
+        SettingsPageResponse updated = service.updateProfileImage(req, me);   // [CHANGED] 업데이트 후 페이지 응답 반환
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated)); // [CHANGED]
     }
 
     /* =========================

@@ -1,5 +1,6 @@
 package goorm.ddok.member.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -29,8 +30,10 @@ public class ProfileDto {
     private ActiveHours activeHours;
     private List<String> traits;
 
-    private String content;         // TODO: 저장 전까지 null
-    private List<PortfolioLink> portfolio; // TODO: 저장 전까지 null
+    private String content;
+
+    @Schema(description = "포트폴리오 링크 목록")
+    private List<PortfolioLink> portfolio;
 
     private LocationBlock location;
 
@@ -55,9 +58,12 @@ public class ProfileDto {
         private String address;
     }
 
-    @Getter @AllArgsConstructor
+    @Getter
+    @AllArgsConstructor
     public static class PortfolioLink {
+        @Schema(example = "깃헙 링크")
         private String linkTitle;
+        @Schema(example = "https://github.com/xxx")
         private String link;
     }
 

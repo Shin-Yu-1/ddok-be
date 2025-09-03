@@ -31,6 +31,7 @@ public class PlayerProfileService {
     private final UserTechStackRepository userTechStackRepository;
     private final TechStackRepository techStackRepository;
     private final UserReputationRepository userReputationRepository;
+    private final UserPortfolioRepository userPortfolioRepository;
 
     /* -------- 포지션 수정 -------- */
     public ProfileDto updatePositions(PositionsUpdateRequest req, CustomUserDetails me) {
@@ -175,12 +176,6 @@ public class PlayerProfileService {
         return buildProfile(fresh, me);
     }
 
-    /* -------- 포트폴리오 (엔티티 미정 → TODO) -------- */
-    public ProfileDto upsertPortfolio(PortfolioUpdateRequest req, CustomUserDetails me) {
-        User user = requireMe(me);
-        // TODO: UserPortfolio 저장(링크 형식 검증 시 별도 에러코드 추가 가능)
-        return buildProfile(user, me);
-    }
 
 
     /* -------- 기술 스택 수정(전체 치환) -------- */
@@ -231,6 +226,56 @@ public class PlayerProfileService {
         // 5) 최신 프로필로 응답
         return buildProfile(user, me);
     }
+
+    /* -------- 포트폴리오 전체 치환 -------- */
+    public ProfileDto upsertPortfolio(PortfolioUpdateRequest req, CustomUserDetails me) { // [CHANGED] 구현
+        User user = requireMe(me);
+        user = userRepository.findById(user.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        // null → 빈 목록
+        List<PortfolioUpdateRequest.Link> incoming = Optional.ofNullable(req.getPortfolio()).orElse(List.of());
+
+        // (선택) 개수 제한: 20개
+        if (incoming.size() > 20) {
+            throw new GlobalException(ErrorCode.PORTFOLIO_TOO_MANY); // [NEW] 에러코드 필요
+        }
+
+        // 유효성 & 정규화
+        List<UserPortfolio> normalized = new ArrayList<>();
+        for (PortfolioUpdateRequest.Link link : incoming) {
+            if (link == null) continue;
+
+            String title = trimToNull(link.getLinkTitle());
+            String url   = trimToNull(link.getLink());
+
+            if (title == null || title.length() > 15) {
+                throw new GlobalException(ErrorCode.PORTFOLIO_TITLE_INVALID); // [NEW]
+            }
+            if (url == null) {
+                throw new GlobalException(ErrorCode.PORTFOLIO_URL_REQUIRED);  // [NEW]
+            }
+            // 아주 간단한 URL 체크 (http/https만 허용)
+            if (!url.matches("(?i)^https?://.+")) {
+                throw new GlobalException(ErrorCode.PORTFOLIO_URL_INVALID);   // [NEW]
+            }
+
+            normalized.add(UserPortfolio.builder()
+                    .user(user)
+                    .linkTitle(title)
+                    .link(url)
+                    .build());
+        }
+
+        // 기존 전부 삭제 후 전체 치환
+        List<UserPortfolio> olds = userPortfolioRepository.findAllByUserId(user.getId());
+        if (!olds.isEmpty()) userPortfolioRepository.deleteAllInBatch(olds);
+        if (!normalized.isEmpty()) userPortfolioRepository.saveAll(normalized);
+
+        // 변경 후 전체 프로필 반환
+        return buildProfile(user, me); // [CHANGED] 프로필 전체 리턴
+    }
+
     /* -------- 공개/비공개 토글 -------- */
     public ProfileDto toggleVisibility(CustomUserDetails me) {
         User meUser = requireMe(me);
@@ -291,6 +336,11 @@ public class PlayerProfileService {
                         .build())
                 .orElse(null);
 
+        List<ProfileDto.PortfolioLink> portfolio =
+                userPortfolioRepository.findAllByUserId(fresh.getId()).stream()
+                        .map(p -> new ProfileDto.PortfolioLink(p.getLinkTitle(), p.getLink()))
+                        .toList();
+
         // tech stacks
         List<String> stacks = fresh.getTechStacks().stream()
                 .map(uts -> uts.getTechStack().getName())
@@ -313,7 +363,7 @@ public class PlayerProfileService {
                 .activeHours(ah)
                 .traits(traits)
                 .content(fresh.getIntroduce())
-                .portfolio(null)                // TODO
+                .portfolio(portfolio)                // TODO
                 .location(loc)
                 .techStacks(stacks)
                 .build();
