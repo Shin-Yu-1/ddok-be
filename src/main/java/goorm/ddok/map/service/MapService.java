@@ -179,7 +179,7 @@ public class MapService {
     }
 
     private String normalizeTeamStatus(TeamStatus status) {
-        if (status == null) return "ONGOING"; // 널 안전
+        if (status == null) return "ONGOING";
         return (status == TeamStatus.CLOSED) ? "ONGOING" : status.name();
     }
 }
