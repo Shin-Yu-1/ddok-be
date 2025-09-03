@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -28,13 +30,13 @@ public class LocationRequest {
             minimum = "-90.0",
             maximum = "90.0",
             type = "number",
-            format = "double",
+            format = "BigDecimal",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull(message = "위도는 필수 입력 값입니다.")
     @DecimalMin(value = "-90.0", message = "위도는 -90.0 이상이어야 합니다.")
     @DecimalMax(value = "90.0", message = "위도는 90.0 이하이어야 합니다.")
-    private Double latitude;
+    private BigDecimal latitude;
 
     @Schema(
             description = "경도",
@@ -42,13 +44,13 @@ public class LocationRequest {
             minimum = "-180.0",
             maximum = "180.0",
             type = "number",
-            format = "double",
+            format = "BigDecimal",
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     @NotNull(message = "경도는 필수 입력 값입니다.")
     @DecimalMin(value = "-180.0", message = "경도는 -180.0 이상이어야 합니다.")
     @DecimalMax(value = "180.0", message = "경도는 180.0 이하이어야 합니다.")
-    private Double longitude;
+    private BigDecimal longitude;
 
     @Schema(
             description = "주소",
