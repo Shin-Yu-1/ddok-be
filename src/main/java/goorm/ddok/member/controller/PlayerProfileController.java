@@ -262,22 +262,43 @@ public class PlayerProfileController {
     }
 
     @PatchMapping("/stacks")
-    @Operation(summary = "기술 스택 수정", description = "보유 기술 스택을 전체 치환합니다.")
+    @Operation(
+            summary = "기술 스택 수정",
+            description = "보유 기술 스택을 전체 치환하고, 갱신된 전체 프로필을 반환합니다."
+    )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 200, "message": "요청이 성공적으로 처리되었습니다.", "data": null }"""))),
+                    {
+                      "status": 200,
+                      "message": "요청이 성공적으로 처리되었습니다.",
+                      "data": {
+                        "userId": 1,
+                        "nickname": "홍길동",
+                        "isPublic": true,
+                        "mainPosition": "백엔드",
+                        "subPositions": ["프론트엔드"],
+                        "traits": ["성실함", "소통"],
+                        "techStacks": ["Java","Spring","JPA"],
+                        "activeHours": { "start": 9, "end": 18 },
+                        "location": { "latitude": 37.56, "longitude": 126.97, "address": "서울 ..." },
+                        "profileImageUrl": "https://...",
+                        "temperature": 36.5
+                      }
+                    }
+                    """))),
             @ApiResponse(responseCode = "401", description = "인증 필요",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 401, "message": "인증이 필요합니다.", "data": null }""")))
+                    { "status": 401, "message": "인증이 필요합니다.", "data": null }
+                    """)))
     })
-    public ResponseEntity<ApiResponseDto<Map<String, Object>>> updateStacks(
+    public ResponseEntity<ApiResponseDto<ProfileDto>> updateStacks(
             @Valid @RequestBody TechStacksUpdateRequest req,
             @AuthenticationPrincipal CustomUserDetails me
     ) {
-        service.updateTechStacks(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("data", null)));
+        ProfileDto profile = service.updateTechStacks(req, me);  // ← 전체 프로필 반환으로 변경
+        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", profile));
     }
 }

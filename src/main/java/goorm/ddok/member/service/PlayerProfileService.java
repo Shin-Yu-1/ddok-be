@@ -184,28 +184,52 @@ public class PlayerProfileService {
 
 
     /* -------- 기술 스택 수정(전체 치환) -------- */
-    public void updateTechStacks(TechStacksUpdateRequest req, CustomUserDetails me) {
-        User user = requireMe(me);
-        user = userRepository.findById(user.getId())
+    @Transactional
+    public ProfileDto updateTechStacks(TechStacksUpdateRequest req, CustomUserDetails me) {
+        User meUser = requireMe(me);
+
+        // 1) 입력 정규화 + 대소문자 무시 중복 제거 + 공백 정리
+        List<String> names = (req.getTechStacks() == null) ? List.of()
+                : req.getTechStacks().stream()
+                .map(this::trimToNull)
+                .filter(Objects::nonNull)
+                .map(s -> s.replaceAll("\\s+", " "))
+                .collect(Collectors.collectingAndThen(
+                        Collectors.toMap(String::toLowerCase, s -> s, (a, b) -> a, LinkedHashMap::new),
+                        m -> new ArrayList<>(m.values())
+                ));
+
+        // 2) 기존 UserTechStack 전부 삭제 (조인 테이블 기준)
+        userTechStackRepository.deleteByUserId(meUser.getId());
+
+        // 3) 영속 사용자 재조회 (PC 클리어 대비)
+        User user = userRepository.findById(meUser.getId())
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
 
-        var olds = new ArrayList<>(user.getTechStacks());
-        user.getTechStacks().clear();
-        userTechStackRepository.deleteAll(olds);
-
-        List<String> names = (req.getTechStacks() == null) ? List.of()
-                : req.getTechStacks().stream().map(this::trimToNull).filter(Objects::nonNull).distinct().toList();
-
-        // (옵션) 유효성 강화가 필요하면 여기서 TECH_STACK_NAME_INVALID 던질 수 있음
-        // if (names.stream().anyMatch(n -> n.length() > 100)) throw new GlobalException(ErrorCode.TECH_STACK_NAME_INVALID);
-
+        // 4) 필요한 TechStack 엔티티 확보 (없으면 생성)
+        //    -> UserTechStack만 추가/재생성 (도메인은 UserTechStack 기준)
         for (String name : names) {
-            TechStack stack = techStackRepository.findByName(name).orElseGet(
-                    () -> techStackRepository.save(TechStack.builder().name(name).build())
-            );
-            user.getTechStacks().add(UserTechStack.builder().user(user).techStack(stack).build());
+            TechStack stack = techStackRepository.findByName(name)
+                    .orElseGet(() -> techStackRepository.save(TechStack.builder().name(name).build()));
+
+            // 이중 추가 방지(이론상 필요 없지만 안전하게)
+            boolean exists = user.getTechStacks().stream()
+                    .anyMatch(uts -> uts.getTechStack() != null &&
+                            Objects.equals(uts.getTechStack().getId(), stack.getId()));
+            if (!exists) {
+                user.getTechStacks().add(
+                        UserTechStack.builder()
+                                .user(user)
+                                .techStack(stack)
+                                .build()
+                );
+            }
         }
+
         userRepository.save(user);
+
+        // 5) 최신 프로필로 응답
+        return buildProfile(user, me);
     }
     /* -------- 공개/비공개 토글 -------- */
     public ProfileDto toggleVisibility(CustomUserDetails me) {
