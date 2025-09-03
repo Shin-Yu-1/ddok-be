@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -63,14 +64,10 @@ public class SocialSignInService {
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, cookie.toString());
 
         // 7) 위치 정보 매핑
-        LocationResponse location = null;
-        if (user.getLocation() != null) {
-            var loc = user.getLocation();
-            var lat = (loc.getActivityLatitude()  != null) ? loc.getActivityLatitude()  : null;
-            var lon = (loc.getActivityLongitude() != null) ? loc.getActivityLongitude() : null;
-            String address = loc.getRoadName();
-            location = new LocationResponse(lat, lon, address);
-        }
+        LocationResponse location =
+                Optional.ofNullable(user.getLocation())
+                        .map(LocationResponse::from)
+                        .orElse(null);
 
         // 8) 사용자 DTO 생성
         boolean isPreferences = false;
