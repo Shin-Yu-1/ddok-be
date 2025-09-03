@@ -28,7 +28,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
 
         BigDecimal getLatitude();
         BigDecimal getLongitude();
-    };
+    }
 
     @Query("""
         select

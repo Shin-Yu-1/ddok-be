@@ -35,7 +35,7 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
 
         BigDecimal getLatitude();
         BigDecimal getLongitude();
-    };
+    }
 
     @Query("""
         select
