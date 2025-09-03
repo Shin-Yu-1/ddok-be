@@ -3,6 +3,7 @@ package goorm.ddok.map.service;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.map.dto.response.AllMapItemResponse;
 import goorm.ddok.map.dto.response.PlayerMapItemResponse;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
 import goorm.ddok.map.dto.response.StudyMapItemResponse;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,6 +27,127 @@ public class MapService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final UserRepository userRepository;
+
+    public List<AllMapItemResponse> getAllInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            Long userId
+    ){
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        List<AllMapItemResponse> result = new ArrayList<>();
+
+        var projectRows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (projectRows != null) {
+            List<AllMapItemResponse> finalResult = result;
+            projectRows.forEach(r -> finalResult.add(AllMapItemResponse.builder()
+                    .category("project")
+                    .projectId(r.getId())
+                    .title(r.getTitle())
+                    .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var studyRows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (studyRows != null) {
+            List<AllMapItemResponse> finalResult1 = result;
+            studyRows.forEach(r -> finalResult1.add(AllMapItemResponse.builder()
+                    .category("study")
+                    .studyId(r.getId())
+                    .title(r.getTitle())
+                    .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var playerRows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+        if (playerRows != null) {
+            List<AllMapItemResponse> finalResult2 = result;
+            playerRows.forEach(r -> finalResult2.add(AllMapItemResponse.builder()
+                    .category("player")
+                    .userId(r.getId())
+                    .nickname(r.getNickname())
+                    .position(r.getPositionName())
+                    .IsMine(userId != null && userId.equals(r.getId()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1DepthName(),
+                                    r.getRegion2DepthName(),
+                                    r.getRegion3DepthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1DepthName())
+                            .region2depthName(r.getRegion2DepthName())
+                            .region3depthName(r.getRegion3DepthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        if (centerLat != null && centerLng != null && !result.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            result = result.stream()
+                    .sorted(Comparator.comparingDouble(item -> {
+                        var loc = item.getLocation();
+                        return haversineKm(
+                                cLat, cLng,
+                                loc.getLatitude().doubleValue(),
+                                loc.getLongitude().doubleValue()
+                        );
+                    }))
+                    .toList();
+        }
+
+        if (result.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        return result;
+    }
+
 
     @Transactional(readOnly = true)
     public List<ProjectMapItemResponse> getProjectsInBounds(
@@ -213,7 +336,6 @@ public class MapService {
                                         r.getRoadName(),
                                         r.getMainBuildingNo(),
                                         r.getSubBuildingNo()))
-                                // LocationDto는 key가 region1depthName(소문자 d)라서 매핑 시 주의
                                 .region1depthName(r.getRegion1DepthName())
                                 .region2depthName(r.getRegion2DepthName())
                                 .region3depthName(r.getRegion3DepthName())
