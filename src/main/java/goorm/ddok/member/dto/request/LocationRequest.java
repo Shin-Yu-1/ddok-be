@@ -60,4 +60,32 @@ public class LocationRequest {
     )
     @NotBlank(message = "주소는 필수 입력 값입니다.")
     private String address;
+
+    @Schema(description = "광역시/도 (region_1depth_name)",
+            example = "전북")
+    private String region1depthName;
+
+    @Schema(description = "시/군/구 (region_2depth_name)",
+            example = "익산시")
+    private String region2depthName;
+
+    @Schema(description = "동/읍/면 (region_3depth_name)",
+            example = "부송동")
+    private String region3depthName;
+
+    @Schema(description = "도로명 (road_name)",
+            example = "망산길")
+    private String roadName;
+
+    @Schema(description = "건물 본번 (main_building_no)",
+            example = "11")
+    private String mainBuildingNo;
+
+    @Schema(description = "건물 부번 (sub_building_no)",
+            example = "17")
+    private String subBuildingNo;
+
+    @Schema(description = "우편번호(필요 시) (zone_no)",
+            example = "54547")
+    private String zoneNo;
 }
