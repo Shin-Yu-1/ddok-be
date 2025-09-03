@@ -35,6 +35,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     interface MapRow {
         Long getId();
         String getNickname();
+        String getProfileImageUrl();
         String getPositionName();
         String getRegion1DepthName();
         String getRegion2DepthName();
@@ -51,6 +52,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
         select distinct
           u.id as id,
           u.nickname as nickname,
+          u.profileImageUrl as profileImageUrl,
           coalesce(pPri.positionName, pSec1.positionName) as positionName,
           l.region1DepthName as region1DepthName,
           l.region2DepthName as region2DepthName,

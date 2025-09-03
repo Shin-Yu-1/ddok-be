@@ -17,7 +17,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
         Long getId();
         String getTitle();
         TeamStatus getTeamStatus();
-
+        String getBannerImageUrl();
         String getRegion1depthName();
         String getRegion2depthName();
         String getRegion3depthName();
@@ -35,6 +35,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
           pr.id as id,
           pr.title as title,
           pr.teamStatus as teamStatus,
+          pr.bannerImageUrl as bannerImageUrl,
           pr.region1depthName as region1depthName,
           pr.region2depthName as region2depthName,
           pr.region3depthName as region3depthName,

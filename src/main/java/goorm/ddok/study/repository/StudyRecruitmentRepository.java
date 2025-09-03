@@ -24,7 +24,7 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
         Long getId();
         String getTitle();
         TeamStatus getTeamStatus();
-
+        String getBannerImageUrl();
         String getRegion1depthName();
         String getRegion2depthName();
         String getRegion3depthName();
@@ -42,6 +42,7 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
           sr.id as id,
           sr.title as title,
           sr.teamStatus as teamStatus,
+          sr.bannerImageUrl as bannerImageUrl,
           sr.region1depthName as region1depthName,
           sr.region2depthName as region2depthName,
           sr.region3depthName as region3depthName,
