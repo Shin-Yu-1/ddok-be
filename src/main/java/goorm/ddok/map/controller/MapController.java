@@ -3,6 +3,7 @@ package goorm.ddok.map.controller;
 import goorm.ddok.cafe.dto.response.CafeMapItemResponse;
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
+import goorm.ddok.map.dto.response.StudyMapItemResponse;
 import goorm.ddok.map.service.MapService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -127,5 +128,29 @@ public class MapController {
     ) {
         List<ProjectMapItemResponse> data = mapService.getProjectsInBounds(swLat, swLng, neLat, neLng, lat, lng);
         return ResponseEntity.ok(ApiResponseDto.of(200, "지도 프로젝트 조회에 성공하였습니다.", data));
+    }
+
+    @GetMapping("/studies")
+    public ResponseEntity<ApiResponseDto<List<StudyMapItemResponse>>> getStudies(
+            @Parameter(description = "남서쪽 위도", example = "37.55")
+            @RequestParam @DecimalMin(value = "-90") @DecimalMax(value = "90") BigDecimal swLat,
+
+            @Parameter(description = "남서쪽 경도", example = "126.97")
+            @RequestParam @DecimalMin(value = "-180") @DecimalMax(value = "180") BigDecimal swLng,
+
+            @Parameter(description = "북동쪽 위도", example = "37.58")
+            @RequestParam @DecimalMin(value = "-90") @DecimalMax(value = "90") BigDecimal neLat,
+
+            @Parameter(description = "북동쪽 경도", example = "127.02")
+            @RequestParam @DecimalMin(value = "-180") @DecimalMax(value = "180") BigDecimal neLng,
+
+            @Parameter(description = "중심 위도(선택)", example = "37.5665")
+            @RequestParam(required = false) BigDecimal lat,
+
+            @Parameter(description = "중심 경도(선택)", example = "126.978")
+            @RequestParam(required = false) BigDecimal lng
+    ) {
+        List<StudyMapItemResponse> data = mapService.getStudiesInBounds(swLat, swLng, neLat, neLng, lat, lng);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "지도 스터디 조회에 성공하였습니다.", data));
     }
 }

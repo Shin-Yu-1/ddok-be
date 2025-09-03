@@ -4,7 +4,9 @@ import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
+import goorm.ddok.map.dto.response.StudyMapItemResponse;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +20,7 @@ import java.util.List;
 public class MapService {
 
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
+    private final StudyRecruitmentRepository studyRecruitmentRepository;
 
     @Transactional(readOnly = true)
     public List<ProjectMapItemResponse> getProjectsInBounds(
@@ -37,6 +40,65 @@ public class MapService {
                 .map(r -> ProjectMapItemResponse.builder()
                         .category("project")
                         .projectId(r.getId())
+                        .title(r.getTitle())
+                        .teamStatus(r.getTeamStatus().name())
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
+                .toList();
+
+        // 중심점이 있으면 거리순 정렬
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
+        }
+
+        return items;
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudyMapItemResponse> getStudiesInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng
+    ) {
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+        if (rows == null || rows.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        var items = rows.stream()
+                .map(r -> StudyMapItemResponse.builder()
+                        .category("study")
+                        .studyId(r.getId())
                         .title(r.getTitle())
                         .teamStatus(r.getTeamStatus().name())
                         .location(LocationDto.builder()
