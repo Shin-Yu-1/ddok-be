@@ -39,24 +39,78 @@ public class ProjectRecruitmentEditController {
                           "status": 200,
                           "message": "수정하기 페이지 조회애 성공했습니다.",
                           "data": {
-                            "title": "구라라지 프로젝트",
-                            "teamStatus": "RECRUITING",
-                            "bannerImageUrl": "https://cdn.example.com/images/default.png",
-                            "traits": ["정리의 신","실행력 갓","내향인"],
-                            "capacity": 4,
-                            "applicantCount": 6,
-                            "mode": "online",
-                            "location": null,
-                            "preferredAges": { "ageMin": 20, "ageMax": 30 },
-                            "expectedMonth": 3,
-                            "startDate": "2025-09-10",
-                            "detail": "저희 정말 멋진 웹을 만들거에요~ 하고 싶죠?",
-                            "leaderPosition": "백엔드",
-                            "positions": [
-                              { "positionName": "PM", "applied": 3, "confirmed": 2 },
-                              { "positionName": "UI/UX", "applied": 3, "confirmed": 2 },
-                              { "positionName": "백엔드", "applied": 3, "confirmed": 2 }
-                            ]
+                            "projectId": 1,
+                                                 "title": "구지라지",
+                                                 "teamStatus": "RECRUITING",
+                                                 "bannerImageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjYwMCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI0ZGREFCOSIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjgwIiBmaWxsPSJibGFjayIgZm9udC13ZWlnaHQ9ImJvbGQiCiAgICAgICAgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkludGVyIj7qtazsp4Drnbzsp4A8L3RleHQ+Cjwvc3ZnPgo=",
+                                                 "traits": [
+                                                     "정리의 신",
+                                                     "실행력 갓",
+                                                     "내향인"
+                                                 ],
+                                                 "capacity": 2,
+                                                 "applicantCount": 0,
+                                                 "mode": "offline",
+                                                 "location": {
+                                                     "address": null,
+                                                     "region1depthName": null,
+                                                     "region2depthName": null,
+                                                     "region3depthName": null,
+                                                     "roadName": null,
+                                                     "mainBuildingNo": null,
+                                                     "subBuildingNo": null,
+                                                     "zoneNo": null,
+                                                     "latitude": 37.566500,
+                                                     "longitude": 126.978000
+                                                 },
+                                                 "preferredAges": {
+                                                     "ageMin": 20,
+                                                     "ageMax": 30
+                                                 },
+                                                 "expectedMonth": 3,
+                                                 "startDate": "2025-09-30",
+                                                 "detail": "저희 정말 멋진 웹을 만들거에요~ 하고 싶죠?",
+                                                 "positions": [
+                                                     {
+                                                         "position": "백엔드",
+                                                         "applied": 0,
+                                                         "confirmed": 0,
+                                                         "isApplied": false,
+                                                         "isApproved": false,
+                                                         "isAvailable": false
+                                                     },
+                                                     {
+                                                         "position": "프론트엔드",
+                                                         "applied": 0,
+                                                         "confirmed": 0,
+                                                         "isApplied": false,
+                                                         "isApproved": false,
+                                                         "isAvailable": false
+                                                     },
+                                                     {
+                                                         "position": "디자이너",
+                                                         "applied": 0,
+                                                         "confirmed": 0,
+                                                         "isApplied": false,
+                                                         "isApproved": false,
+                                                         "isAvailable": false
+                                                     }
+                                                 ],
+                                                 "leader": {
+                                                     "userId": 1,
+                                                     "nickname": "멍한 백엔드",
+                                                     "profileImageUrl": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0OCIgaGVpZ2h0PSI0OCI+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI0Y1Q0JBNyIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTUlIiBmb250LXNpemU9IjE1IiBmaWxsPSJibGFjayIgZm9udC13ZWlnaHQ9ImJvbGQiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJJbnRlciI+66mN67CxPC90ZXh0Pgo8L3N2Zz4K",
+                                                     "mainPosition": "백엔드",
+                                                     "mainBadge": null,
+                                                     "abandonBadge": null,
+                                                     "temperature": null,
+                                                     "decidedPosition": "백엔드",
+                                                     "chatRoomId": null,
+                                                     "dmRequestPending": false,
+                                                     "isMine": true
+                                                 },
+                                                 "participants": [],
+                                                 "isMine": true
                           }
                         }"""))),
             @ApiResponse(responseCode = "401", description = "인증 필요",
