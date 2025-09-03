@@ -138,7 +138,7 @@ public class ProjectRecruitmentEditController {
     @Operation(
             summary = "프로젝트 수정 저장",
             description = """
-            multipart/form-data 요청. 
+            multipart/form-data 요청.
             - `request`: JSON (ProjectRecruitmentUpdateRequest)
             - `bannerImage`: 파일(선택, image/jpeg|png|webp, 최대 5MB)
             파일이 있으면 서버가 업로드 후 응답의 bannerImageUrl에 반영합니다.
