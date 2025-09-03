@@ -67,13 +67,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     );
 
 
-    private static final List<String> GET_PUBLIC_SKIP_PATTERNS = List.of(
-            "/api/projects/*",
-            "/api/studies/*",
-            "/api/players/**",
-            "/api/map/**"
-    );
-
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
@@ -85,19 +78,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
-
         String uri = request.getRequestURI();
         if (WS_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri))) {
             log.debug("🧵 Skip JWT filter for WS path: {}", uri);
             return true;
         }
-        // Swagger/H2/Public API
-        if (PUBLIC_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri))) {
-            return true;
-        }
-
-        return "GET".equalsIgnoreCase(method)
-                && GET_PUBLIC_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri));
+        // Swagger/H2/Public-Auth-only는 계속 스킵
+        return PUBLIC_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri));
     }
 
     @Override
@@ -105,17 +92,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NotNull HttpServletResponse response,
                                     @NotNull FilterChain chain)
             throws ServletException, IOException {
+        String token = null;
         try {
-            final String authHeader = request.getHeader("Authorization");
-            final String masked = (authHeader == null) ? "null"
-                    : (authHeader.length() <= 16 ? "***" : authHeader.substring(0, 16) + "...");
+            token = resolveToken(request);
 
-            log.debug("🔐 JWT 필터 - URI: {}, Authorization(masked): {}, QueryTokenPresent:{}",
-                    request.getRequestURI(),
-                    masked,
-                    request.getParameter("token") != null);
+            if (token == null) {
+                chain.doFilter(request, response);
+                return;
+            }
 
-            String token = resolveToken(request);
             jwtTokenProvider.validateToken(token);
 
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
@@ -123,6 +108,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
+                    .buildDetails(request));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
             chain.doFilter(request, response);
@@ -130,6 +117,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (GlobalException ex) {
             SecurityContextHolder.clearContext();
             writeError(response, ex.getErrorCode().getStatus().value(), ex.getErrorCode().getMessage());
+
         } catch (Exception ex) {
             log.warn("JWT 필터 처리 중 예외", ex);
             SecurityContextHolder.clearContext();
@@ -139,12 +127,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
-
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
 
-        throw new GlobalException(ErrorCode.MISSING_TOKEN);
+        String q = request.getParameter("token");
+        if (q != null && !q.isBlank()) {
+            return q;
+        }
+        // 토큰 없음 → null
+        return null;
     }
 
 
