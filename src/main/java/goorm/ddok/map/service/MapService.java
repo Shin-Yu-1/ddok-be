@@ -5,6 +5,7 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
 import goorm.ddok.map.dto.response.StudyMapItemResponse;
+import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +42,7 @@ public class MapService {
                         .category("project")
                         .projectId(r.getId())
                         .title(r.getTitle())
-                        .teamStatus(r.getTeamStatus().name())
+                        .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
                         .location(LocationDto.builder()
                                 .address(composeRoadAddress(
                                         r.getRegion1depthName(),
@@ -100,7 +101,7 @@ public class MapService {
                         .category("study")
                         .studyId(r.getId())
                         .title(r.getTitle())
-                        .teamStatus(r.getTeamStatus().name())
+                        .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
                         .location(LocationDto.builder()
                                 .address(composeRoadAddress(
                                         r.getRegion1depthName(),
@@ -177,4 +178,8 @@ public class MapService {
         return R * c;
     }
 
+    private String normalizeTeamStatus(TeamStatus status) {
+        if (status == null) return "ONGOING"; // 널 안전
+        return (status == TeamStatus.CLOSED) ? "ONGOING" : status.name();
+    }
 }
