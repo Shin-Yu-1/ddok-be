@@ -12,15 +12,7 @@ import java.math.BigDecimal;
 @Builder
 @Schema(
         name = "LocationRequest",
-        description = "위치 정보 요청 DTO",
-        requiredProperties = {"latitude", "longitude", "address"},
-        example = """
-    {
-      "latitude": 37.5665,
-      "longitude": 126.9780,
-      "address": "서울특별시 강남구 테헤란로 123"
-    }
-    """
+        description = "사용자 위치 정보 요청 DTO"
 )
 public class LocationRequest {
 
