@@ -37,7 +37,7 @@ public class MeSettingsController {
                             examples = @ExampleObject(value = """
                             {
                               "status": 200,
-                              "message": "요청이 성공적으로 처리되었습니다.",
+                              "message": "개인정보변경 페이지 조회에 성공했습니다.",
                               "data": {
                                 "userId": 1,
                                 "profileImageUrl": "",
@@ -54,7 +54,7 @@ public class MeSettingsController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         SettingsPageResponse data = service.getSettings(me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "개인정보변경 페이지 조회에 성공했습니다.", data));
     }
 
     /* =========================
@@ -68,7 +68,7 @@ public class MeSettingsController {
                             examples = @ExampleObject(name = "성공 예시", value = """
                             {
                               "status": 200,
-                              "message": "요청이 성공적으로 처리되었습니다.",
+                              "message": "프로필 이미지 변경에 성공했습니다.",
                               "data": {
                                 "userId": 1,
                                 "profileImageUrl": "https://cdn.example.com/p/new.png",
@@ -86,7 +86,7 @@ public class MeSettingsController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         SettingsPageResponse data = service.updateProfileImage(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 변경에 성공했습니다.", data));
     }
 
     /* =========================
@@ -99,20 +99,20 @@ public class MeSettingsController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         SettingsPageResponse data = service.updateNickname(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "닉네임 변경에 성공했습니다.", data));
     }
 
     /* =========================
      *  전화번호 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
     @PatchMapping("/phone")
-    @Operation(summary = "전화번호 수정", description = "전화번호를 변경하고, 변경된 개인정보 블록을 반환합니다.")
+    @Operation(summary = "전화번호 변경", description = "전화번호를 변경하고, 변경된 개인정보 블록을 반환합니다.")
     public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updatePhone(
             @Valid @RequestBody PhoneUpdateRequest req,
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         SettingsPageResponse data = service.updatePhone(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", data));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "전화번호 변경에 성공했습니다.", data));
     }
 
     /* =========================
@@ -124,6 +124,6 @@ public class MeSettingsController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         service.deleteMe(me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", null));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "회원 탈퇴에 성공했습니다.", null));
     }
 }
