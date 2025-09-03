@@ -52,6 +52,7 @@ public class ProfileQueryService {
                     .temperature(findTemperature(user))
                     .ageGroup(user.getAgeGroup())
                     .badges(toBadgeDto(user))
+                    .abandonBadge(toAbandonBadgeDto(user))
                     .content(user.getIntroduce())
                     .build();
         }
