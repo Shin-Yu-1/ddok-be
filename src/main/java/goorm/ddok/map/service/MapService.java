@@ -3,8 +3,10 @@ package goorm.ddok.map.service;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.map.dto.response.PlayerMapItemResponse;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
 import goorm.ddok.map.dto.response.StudyMapItemResponse;
+import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
@@ -22,6 +24,7 @@ public class MapService {
 
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<ProjectMapItemResponse> getProjectsInBounds(
@@ -181,5 +184,62 @@ public class MapService {
     private String normalizeTeamStatus(TeamStatus status) {
         if (status == null) return "ONGOING";
         return (status == TeamStatus.CLOSED) ? "ONGOING" : status.name();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlayerMapItemResponse> getPlayersInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            Long userId
+    ) {
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+        if (rows == null || rows.isEmpty()) return java.util.Collections.emptyList();
+
+        var items = rows.stream()
+                .map(r -> PlayerMapItemResponse.builder()
+                        .category("player")
+                        .userId(r.getId())
+                        .nickname(r.getNickname())
+                        .position(r.getPositionName()) // PRIMARY -> SECONDARY(1) fallback
+                        .IsMine(userId != null && userId.equals(r.getId()))
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1DepthName(),
+                                        r.getRegion2DepthName(),
+                                        r.getRegion3DepthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                // LocationDto는 key가 region1depthName(소문자 d)라서 매핑 시 주의
+                                .region1depthName(r.getRegion1DepthName())
+                                .region2depthName(r.getRegion2DepthName())
+                                .region3depthName(r.getRegion3DepthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
+                .toList();
+
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
+        }
+
+        return items;
     }
 }
