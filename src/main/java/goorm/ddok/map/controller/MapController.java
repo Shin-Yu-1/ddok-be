@@ -94,6 +94,11 @@ public class MapController {
                             examples = @ExampleObject(name = "경계 오류 예시", value = """
                     { "status": 400, "message": "잘못된 지도 경계값입니다.", "data": null }
                     """))),
+            @ApiResponse(responseCode = "400", description = "필수 파라미터 누락",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(name = "경계 오류 예시", value = """
+                    { "status": 400, "message": "필수 파라미터가 누락되었습니다.", "data": null }
+                    """))),
             @ApiResponse(responseCode = "500", description = "서버 내부 오류",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """

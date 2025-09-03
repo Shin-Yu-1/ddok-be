@@ -1,6 +1,8 @@
 package goorm.ddok.map.service;
 
 import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.ProjectMapItemResponse;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -78,10 +80,10 @@ public class MapService {
 
     private void validateBounds(BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng) {
         if (swLat == null || swLng == null || neLat == null || neLng == null) {
-            throw new IllegalArgumentException("필수 파라미터 누락");
+            throw new GlobalException(ErrorCode.REQUIRED_PARAMETER_MISSING);
         }
         if (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0) {
-            throw new IllegalArgumentException("잘못된 지도 경계값입니다.");
+            throw new GlobalException(ErrorCode.INVALID_MAP_BOUNDS);
         }
     }
 
