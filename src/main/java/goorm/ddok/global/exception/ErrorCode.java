@@ -36,6 +36,10 @@ public enum ErrorCode {
     ACTIVE_HOURS_RANGE_INVALID(HttpStatus.BAD_REQUEST, "활동 종료 시간은 시작 시간보다 빠를 수 없습니다."),
     TECH_STACK_NAME_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 기술 스택 값이 포함되어 있습니다."),
     TRAIT_NAME_INVALID(HttpStatus.BAD_REQUEST, "유효하지 않은 성향 값이 포함되어 있습니다."),
+    NICKNAME_INVALID(HttpStatus.BAD_REQUEST, "닉네임 형식이 올바르지 않습니다."),
+    PHONE_FORMAT_INVALID(HttpStatus.BAD_REQUEST, "휴대폰 번호 형식이 올바르지 않습니다."),
+    PROFILE_IMAGE_URL_INVALID(HttpStatus.BAD_REQUEST, "프로필 이미지 URL이 유효하지 않습니다."),
+    PASSWORD_CHANGE_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "비밀번호는 이 API에서 변경할 수 없습니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -76,6 +80,8 @@ public enum ErrorCode {
     LEADER_NOT_FOUND(HttpStatus.CONFLICT, "리더 정보를 찾을 수 없습니다."),
     ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 해당 프로젝트에 다른 포지션으로 지원하였습니다."),
     CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 채팅방입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+    DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
 
 
     // 500 INTERNAL SERVER ERROR
