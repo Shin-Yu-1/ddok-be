@@ -44,6 +44,7 @@ public interface CafeRepository extends JpaRepository<Cafe, Long> {
         select
           c.id as id,
           c.name as title,
+          c.bannerImageUrl as bannerImageUrl,
           c.region1depthName as region1depthName,
           c.region2depthName as region2depthName,
           c.region3depthName as region3depthName,
