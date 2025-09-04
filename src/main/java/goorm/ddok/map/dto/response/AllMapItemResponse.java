@@ -15,28 +15,29 @@ import lombok.Getter;
         지도 통합 아이템 스키마.
         - category=project: projectId, title, teamStatus, location 포함
         - category=study:   studyId,   title, teamStatus, location 포함
+        - category=cafe:    cafeId,   title,  location 포함
         - category=player:  userId, nickname, position, isMine, location 포함
         """,
         example = """
-    {
-      "category": "project",
-      "projectId": 1,
-      "title": "구지라지 프로젝트",
-      "teamStatus": "RECRUITING",
-      "location": {
-        "address": "부산 해운대구 우동 센텀중앙로 90",
-        "region1depthName": "부산",
-        "region2depthName": "해운대구",
-        "region3depthName": "우동",
-        "roadName": "센텀중앙로",
-        "mainBuildingNo": "90",
-        "subBuildingNo": "",
-        "zoneNo": "48058",
-        "latitude": 35.1702,
-        "longitude": 129.1270
-      }
-    }
-    """
+        {
+          "category": "project",
+          "projectId": 1,
+          "title": "구지라지 프로젝트",
+          "teamStatus": "RECRUITING",
+          "location": {
+            "address": "부산 해운대구 우동 센텀중앙로 90",
+            "region1depthName": "부산",
+            "region2depthName": "해운대구",
+            "region3depthName": "우동",
+            "roadName": "센텀중앙로",
+            "mainBuildingNo": "90",
+            "subBuildingNo": "",
+            "zoneNo": "48058",
+            "latitude": 35.1702,
+            "longitude": 129.1270
+          }
+        }
+        """
 )
 public class AllMapItemResponse {
 
