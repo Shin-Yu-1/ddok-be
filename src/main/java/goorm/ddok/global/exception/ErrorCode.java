@@ -64,12 +64,16 @@ public enum ErrorCode {
     WRONG_PASSWORD(HttpStatus.UNAUTHORIZED, "아이디 혹은 비밀번호가 일치하지 않습니다."),
     SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "카카오 로그인에 실패했습니다"),
     POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "지원 포지션을 선택해야 합니다."),
+    PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
+    REAUTH_REQUIRED(HttpStatus.UNAUTHORIZED, "재인증이 필요합니다."),
+    INVALID_REAUTH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 재인증 토큰입니다."),
 
 
     // 403 FORBIDDEN
     FORBIDDEN(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     NOT_CHAT_MEMBER(HttpStatus.FORBIDDEN, "채팅방에 참여하지 않은 사용자입니다."),
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "리더는 참여 신청을 할 수 없습니다."),
+    REAUTH_USER_MISMATCH(HttpStatus.FORBIDDEN, "재인증 사용자 정보가 일치하지 않습니다."),
 
 
     // 404 NOT FOUND
