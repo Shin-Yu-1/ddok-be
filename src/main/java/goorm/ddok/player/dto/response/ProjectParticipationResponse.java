@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
         example = """
         {
           "projectId": 1,
+          "teamId": 2,
           "title": "구지라지 프로젝트",
           "teamStatus": "CLOSED",
           "location": {
@@ -38,6 +39,9 @@ public class ProjectParticipationResponse {
     @Schema(description = "프로젝트 ID", example = "1")
     private Long projectId;
 
+    @Schema(description = "팀 ID", example = "2")
+    private Long teamId;
+
     @Schema(description = "프로젝트 제목", example = "구지라지 프로젝트")
     private String title;
 
@@ -47,18 +51,19 @@ public class ProjectParticipationResponse {
     @Schema(description = "프로젝트 위치 정보")
     private ProjectLocationResponse location;
 
-    @Schema(description = "모집 기간 (시작일 ~ 종료일)")
-    private ProjectPeriodResponse projectPeriod;
+    @Schema(description = "진행 기간 (시작일 ~ 종료일)")
+    private ProjectPeriodResponse period;
 
-    public static ProjectParticipationResponse from(ProjectParticipant participant) {
+    public static ProjectParticipationResponse from(ProjectParticipant participant, Long teamId) {
         ProjectRecruitment project = participant.getPosition().getProjectRecruitment();
 
         return ProjectParticipationResponse.builder()
                 .projectId(project.getId())
+                .teamId(teamId)
                 .title(project.getTitle())
                 .teamStatus(project.getTeamStatus())
                 .location(ProjectLocationResponse.from(project))
-                .projectPeriod(ProjectPeriodResponse.from(
+                .period(ProjectPeriodResponse.from(
                         project.getStartDate(),
                         project.getExpectedMonths(),
                         project.getTeamStatus()
