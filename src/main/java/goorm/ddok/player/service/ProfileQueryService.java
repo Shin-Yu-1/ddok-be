@@ -52,6 +52,7 @@ public class ProfileQueryService {
                     .temperature(findTemperature(user))
                     .ageGroup(user.getAgeGroup())
                     .badges(toBadgeDto(user))
+                    .abandonBadge(toAbandonBadgeDto(user))
                     .content(user.getIntroduce())
                     .build();
         }
@@ -124,12 +125,7 @@ public class ProfileQueryService {
     }
 
     private LocationResponse toLocation(UserLocation location) {
-        if (location == null) return null;
-        return new LocationResponse(
-                location.getActivityLatitude(),
-                location.getActivityLongitude(),
-                location.getRoadName()
-        );
+        return (location == null) ? null : LocationResponse.from(location);
     }
 
     private List<BadgeDto> toBadgeDto(User user) {

@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,9 +47,16 @@ public class CafeMapQueryController {
                           "cafeId": 1,
                           "title": "구지라지 카페",
                           "location": {
-                            "latitude": 37.5665,
-                            "longitude": 126.978,
-                            "address": "서울특별시 강남구 테헤란로 123"
+                            "address": "부산 해운대구 우동 센텀중앙로 90",
+                            "region1depthName": "부산",
+                            "region2depthName": "해운대구",
+                            "region3depthName": "우동",
+                            "roadName": "센텀중앙로",
+                            "mainBuildingNo": "90",
+                            "subBuildingNo": "",
+                            "zoneNo": "48058",
+                            "latitude": 35.1702,
+                            "longitude": 129.1270
                           }
                         }
                       ]
@@ -66,15 +75,25 @@ public class CafeMapQueryController {
     })
     @GetMapping
     public ResponseEntity<ApiResponseDto<List<CafeMapItemResponse>>> getCafes(
-            @Parameter(description = "남서쪽 위도", example = "37.55") @RequestParam BigDecimal swLat,
-            @Parameter(description = "남서쪽 경도", example = "126.97") @RequestParam BigDecimal swLng,
-            @Parameter(description = "북동쪽 위도", example = "37.58") @RequestParam BigDecimal neLat,
-            @Parameter(description = "북동쪽 경도", example = "127.02") @RequestParam BigDecimal neLng,
-            @Parameter(description = "중심 위도(선택)", example = "37.5665") @RequestParam(required = false) BigDecimal lat,
-            @Parameter(description = "중심 경도(선택)", example = "126.978") @RequestParam(required = false) BigDecimal lng
+            @Parameter(description = "남서쪽 위도", example = "37.55")
+            @RequestParam @DecimalMin(value = "-90") @DecimalMax(value = "90") BigDecimal swLat,
+
+            @Parameter(description = "남서쪽 경도", example = "126.97")
+            @RequestParam @DecimalMin(value = "-180") @DecimalMax(value = "180") BigDecimal swLng,
+
+            @Parameter(description = "북동쪽 위도", example = "37.58")
+            @RequestParam @DecimalMin(value = "-90") @DecimalMax(value = "90") BigDecimal neLat,
+
+            @Parameter(description = "북동쪽 경도", example = "127.02")
+            @RequestParam @DecimalMin(value = "-180") @DecimalMax(value = "180") BigDecimal neLng,
+
+            @Parameter(description = "중심 위도(선택)", example = "37.5665")
+            @RequestParam(required = false) BigDecimal lat,
+
+            @Parameter(description = "중심 경도(선택)", example = "126.978")
+            @RequestParam(required = false) BigDecimal lng
     ) {
         List<CafeMapItemResponse> data = service.getCafesInBounds(swLat, swLng, neLat, neLng, lat, lng);
         return ResponseEntity.ok(ApiResponseDto.of(200, "지도 카페 조회에 성공하였습니다.", data));
-        // 실패 시 GlobalException -> GlobalExceptionHandler 가 ApiResponseDto.error(...)로 래핑
     }
 }
