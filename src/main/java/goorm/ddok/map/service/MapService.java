@@ -268,7 +268,7 @@ public class MapService {
         return items;
     }
 
-    private void validateBounds(BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng) {
+    public void validateBounds(BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng) {
         boolean hasAny = swLat != null || swLng != null || neLat != null || neLng != null;
         boolean hasAll = swLat != null && swLng != null && neLat != null && neLng != null;
         if (hasAny && !hasAll) {
@@ -279,8 +279,8 @@ public class MapService {
         }
     }
 
-    private String composeRoadAddress(String r1, String r2, String r3,
-                                      String road, String mainNo, String subNo) {
+    public String composeRoadAddress(String r1, String r2, String r3,
+                                     String road, String mainNo, String subNo) {
         if (road == null && r1 == null && r2 == null) return "-";
         var sb = new StringBuilder();
         if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
@@ -296,7 +296,7 @@ public class MapService {
         return sb.toString().trim();
     }
 
-    private static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+    public static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
         final double R = 6371.0;
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
