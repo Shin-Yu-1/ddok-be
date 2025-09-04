@@ -52,7 +52,7 @@ public class StudyParticipationResponse {
     @Schema(description = "스터디 제목", example = "면접 스터디")
     private String title;
 
-    @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "CLOSED")
+    @Schema(description = "팀 상태 (ONGOING / CLOSED)", example = "CLOSED")
     private TeamStatus teamStatus;
 
     @Schema(description = "스터디 장소 정보 (offline일 경우만 존재)")
