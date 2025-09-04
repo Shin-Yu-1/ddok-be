@@ -33,6 +33,8 @@ public enum ErrorCode {
     INVALID_STUDY_TYPE(HttpStatus.BAD_REQUEST, "스터디 유형은 필수이며 올바른 값이어야 합니다."),
     INVALID_MAP_BOUNDS(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
     REQUIRED_PARAMETER_MISSING(HttpStatus.BAD_REQUEST, "필수 파라미터가 누락되었습니다."),
+    TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "팀 정보를 찾을 수 없습니다."),
+
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
