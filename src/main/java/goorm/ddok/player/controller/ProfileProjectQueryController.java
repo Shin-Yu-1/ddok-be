@@ -50,6 +50,7 @@ public class ProfileProjectQueryController {
                                         "items": [
                                           {
                                             "projectId": 1,
+                                            "teamId": 2,
                                             "title": "구지라지 프로젝트",
                                             "teamStatus": "CLOSED",
                                             "location": {
@@ -70,7 +71,12 @@ public class ProfileProjectQueryController {
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
                                     { "status": 404, "message": "존재하지 않는 사용자입니다.", "data": null }
-                                    """)))
+                                    """))),
+            @ApiResponse(responseCode = "404", description = "팀 정보 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                                { "status": 404, "message": "팀 정보를 찾을 수 없습니다.", "data": null }
+                                """)))
     })
     @GetMapping("/{userId}/profile/projects")
     public ResponseEntity<ApiResponseDto<?>> getUserProjects(

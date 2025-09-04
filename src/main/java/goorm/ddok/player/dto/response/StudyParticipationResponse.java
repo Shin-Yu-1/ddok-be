@@ -19,13 +19,20 @@ import lombok.NoArgsConstructor;
         example = """
         {
           "studyId": 1,
+          "teamId": 8,
           "title": "면접 스터디",
           "teamStatus": "CLOSED",
-          "role": "MEMBER",
           "location": {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
+              "address": "전북 익산시 부송동 망산길 11-17",
+              "region1depthName": "전북",
+              "region2depthName": "익산시",
+              "region3depthName": "부송동",
+              "roadName": "망산길",
+              "mainBuildingNo": "11",
+              "subBuildingNo": "17",
+              "zoneNo": "54547",
+              "latitude": 35.976749396987046,
+              "longitude": 126.99599512792346
           },
           "period": {
             "start": "2025-08-08",
@@ -39,12 +46,14 @@ public class StudyParticipationResponse {
     @Schema(description = "스터디 ID", example = "1")
     private Long studyId;
 
+    @Schema(description = "팀 ID", example = "2")
+    private Long teamId;
+
     @Schema(description = "스터디 제목", example = "면접 스터디")
     private String title;
 
-    @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "CLOSED")
+    @Schema(description = "팀 상태 (ONGOING / CLOSED)", example = "CLOSED")
     private TeamStatus teamStatus;
-
 
     @Schema(description = "스터디 장소 정보 (offline일 경우만 존재)")
     private StudyLocationResponse location;
@@ -52,12 +61,12 @@ public class StudyParticipationResponse {
     @Schema(description = "진행 기간 (시작일 ~ 종료일)")
     private PeriodResponse period;
 
-    public static StudyParticipationResponse from(StudyParticipant participant) {
-        System.out.println("DEBUG role = " + participant.getRole());
+    public static StudyParticipationResponse from(StudyParticipant participant, Long teamId) {
         StudyRecruitment study = participant.getStudyRecruitment();
 
         return StudyParticipationResponse.builder()
                 .studyId(study.getId())
+                .teamId(teamId)
                 .title(study.getTitle())
                 .teamStatus(study.getTeamStatus())
                 .location(StudyLocationResponse.from(study))

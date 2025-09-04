@@ -7,8 +7,11 @@ import goorm.ddok.project.dto.response.ProjectDetailResponse;
 import goorm.ddok.project.dto.response.ProjectUpdateResultResponse;
 import goorm.ddok.project.service.ProjectRecruitmentEditService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +30,13 @@ public class ProjectRecruitmentEditController {
 
     @Operation(
             summary = "프로젝트 수정 페이지 조회",
-            description = "수정 화면 진입 시 필요한 상세/통계를 반환합니다."
+            description = "수정 화면 진입 시 필요한 상세/통계를 반환합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정하기 페이지 조회가 성공했습니다.",
@@ -143,6 +152,13 @@ public class ProjectRecruitmentEditController {
             - `bannerImage`: 파일(선택, image/jpeg|png|webp, 최대 5MB)
             파일이 있으면 서버가 업로드 후 응답의 bannerImageUrl에 반영합니다.
             """
+    ,
+    security = @SecurityRequirement(name = "Authorization"),
+    parameters = {
+        @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                description = "Bearer {accessToken}",
+                examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+    }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",

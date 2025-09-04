@@ -1,5 +1,6 @@
 package goorm.ddok.member.repository;
 
+import goorm.ddok.member.domain.UserLocation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import goorm.ddok.member.domain.User;
 import org.springframework.data.jpa.repository.Query;
@@ -31,6 +32,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     // 닉네임 키워드로 조회
     List<User> findAllByNicknameContaining(String keyword);
+
+    boolean existsByNicknameAndIdNot(String nickname, Long id); // 닉네임 중복(본인 제외)
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id); // 전화번호 중복(본인 제외)
 
     interface MapRow {
         Long getId();
@@ -83,4 +87,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+
+    @Query("select u from User u where u.id = :userId")
+    Optional<User> findByUserId(@Param("userId") Long userId);
 }

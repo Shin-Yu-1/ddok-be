@@ -6,7 +6,9 @@ import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.study.domain.ParticipantRole;
 import goorm.ddok.study.domain.StudyMode;
 import goorm.ddok.study.domain.StudyParticipant;
@@ -28,6 +30,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.*;
@@ -42,6 +45,8 @@ public class StudyRecruitmentEditService {
     private final StudyParticipantRepository studyParticipantRepository;
     private final StudyApplicationRepository studyApplicationRepository;
     private final UserReputationRepository userReputationRepository;
+    private final BannerImageService bannerImageService;
+    private final FileService fileService;
 
     /* =========================
      * 수정 페이지 조회 (상세 스키마 동일)
@@ -114,6 +119,11 @@ public class StudyRecruitmentEditService {
             study = clearLocation(study);
         }
 
+        String bannerUrl = (bannerImage != null && !bannerImage.isEmpty())
+                ? uploadBannerImage(bannerImage)
+                : bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);
+
+
         // 기본 필드 반영 (배너 업로드는 생략: 요청값 없으면 기존 유지)
         study = study.toBuilder()
                 .title(Optional.ofNullable(req.getTitle()).orElse(study.getTitle()))
@@ -121,7 +131,7 @@ public class StudyRecruitmentEditService {
                 .startDate(Optional.ofNullable(req.getExpectedStart()).orElse(study.getStartDate()))
                 .expectedMonths(Optional.ofNullable(req.getExpectedMonth()).orElse(study.getExpectedMonths()))
                 .mode(Optional.ofNullable(req.getMode()).orElse(study.getMode()))
-                .bannerImageUrl(Optional.ofNullable(req.getBannerImageUrl()).orElse(study.getBannerImageUrl()))
+                .bannerImageUrl(bannerUrl)
                 .studyType(Optional.ofNullable(req.getStudyType()).orElse(study.getStudyType()))
                 .contentMd(Optional.ofNullable(req.getDetail()).orElse(study.getContentMd()))
                 .capacity(Optional.ofNullable(req.getCapacity()).orElse(study.getCapacity()))
@@ -309,5 +319,13 @@ public class StudyRecruitmentEditService {
         }
         String s = sb.toString().trim().replaceAll("\\s+", " ");
         return s.isBlank() ? null : s;
+    }
+
+    private String uploadBannerImage(MultipartFile file) {
+        try {
+            return fileService.upload(file);
+        } catch (IOException e) {
+            throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
+        }
     }
 }

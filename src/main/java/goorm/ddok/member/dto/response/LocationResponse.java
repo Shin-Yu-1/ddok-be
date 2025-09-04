@@ -2,6 +2,7 @@ package goorm.ddok.member.dto.response;
 
 import goorm.ddok.member.domain.UserLocation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import java.util.Optional;
         name = "LocationResponse",
         description = "사용자 위치 정보 응답 DTO"
 )
+@Builder
 public record LocationResponse(
         @Schema(description = "위도", example = "37.5665", minimum = "-90.0", maximum = "90.0",
                 type = "number", format = "BigDecimal", accessMode = Schema.AccessMode.READ_ONLY)

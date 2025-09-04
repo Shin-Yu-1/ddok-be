@@ -43,7 +43,11 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
     List<ProjectParticipant> findByPosition_ProjectRecruitment(ProjectRecruitment recruitment);
 
     /**
-     * 특정 사용자(userId)가 참여한 프로젝트 목록 조회 (Soft Delete 제외)
+     * 특정 사용자(userId)가 참여한 프로젝트 목록 조회 (Soft Delete 제외, 모집중(RECRUITING) 제외)
      */
-    Page<ProjectParticipant> findByUser_IdAndDeletedAtIsNull(Long userId, Pageable pageable);
+    Page<ProjectParticipant> findByUser_IdAndDeletedAtIsNullAndPosition_ProjectRecruitment_TeamStatusNot(
+            Long userId,
+            goorm.ddok.project.domain.TeamStatus status,
+            Pageable pageable
+    );
 }

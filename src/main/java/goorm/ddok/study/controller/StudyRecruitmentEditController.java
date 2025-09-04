@@ -6,11 +6,14 @@ import goorm.ddok.study.dto.request.StudyRecruitmentUpdateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentDetailResponse;
 import goorm.ddok.study.service.StudyRecruitmentEditService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -22,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/studies")
 @RequiredArgsConstructor
-@Tag(name = "Study", description = "스터디 API)")
+@Tag(name = "Study", description = "스터디 API")
 public class StudyRecruitmentEditController {
 
     private final StudyRecruitmentEditService Service;
@@ -34,7 +37,13 @@ public class StudyRecruitmentEditController {
                 
                 - 리더가 아닌 사용자가 접근 시 403
                 - 삭제된 스터디거나 존재하지 않으면 404
-                """
+                """,
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "조회 성공",
@@ -121,7 +130,13 @@ public class StudyRecruitmentEditController {
                 
                 - 파일과 JSON을 함께 전송할 때 사용하세요.
                 - 파일 없이 JSON만 전송하려면 아래 `application/json` 엔드포인트를 사용하세요.
-                """
+                """,
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",

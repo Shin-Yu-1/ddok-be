@@ -6,11 +6,14 @@ import goorm.ddok.study.dto.request.StudyRecruitmentCreateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentCreateResponse;
 import goorm.ddok.study.service.StudyRecruitmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +29,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/studies")
 @RequiredArgsConstructor
-@Tag(name = "Study", description = "스터디 API)")
+@Tag(name = "Study", description = "스터디 API")
 public class StudyRecruitmentController {
 
     private final StudyRecruitmentService studyRecruitmentService;
@@ -34,13 +37,19 @@ public class StudyRecruitmentController {
     @Operation(
             summary = "스터디 모집글 생성",
             description = """
-                새로운 스터디 모집글을 생성합니다. 요청은 Multipart/Form-Data 형식으로 전송해야 하며, 
-                request 필드에는 JSON 요청 본문을, bannerImage 필드에는 배너 이미지를 포함할 수 있습니다. 
+                새로운 스터디 모집글을 생성합니다. 요청은 Multipart/Form-Data 형식으로 전송해야 하며,
+                request 필드에는 JSON 요청 본문을, bannerImage 필드에는 배너 이미지를 포함할 수 있습니다.
                 배너 이미지를 null로 보낼경우 기본 이미지가 자동 생성 됩니다.
                 
                 - online 모드 -> 위치 정보 불필요
                 - offline 모드 -> 위치 정보 필수
-                """
+                """,
+    security = @SecurityRequirement(name = "Authorization"),
+    parameters = {
+        @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                description = "Bearer {accessToken}",
+                examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+    }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "스터디 생성 성공",
@@ -136,7 +145,13 @@ public class StudyRecruitmentController {
 
     @Operation(
             summary = "스터디 참여 신청/취소",
-            description = "스터디 참여 희망 의사를 신청하거나 취소합니다."
+            description = "스터디 참여 희망 의사를 신청하거나 취소합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "신청/취소 성공",
