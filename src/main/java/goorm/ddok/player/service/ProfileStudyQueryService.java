@@ -33,7 +33,7 @@ public class ProfileStudyQueryService {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<StudyParticipant> participations =
-                studyParticipantRepository.findByUserId(userId, pageable);
+                studyParticipantRepository.findByUserIdAndNotRecruiting(userId, pageable);
 
         return participations.map(p -> {
             StudyRecruitment study = p.getStudyRecruitment();
