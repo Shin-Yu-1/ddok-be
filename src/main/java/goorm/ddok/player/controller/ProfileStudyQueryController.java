@@ -50,12 +50,20 @@ public class ProfileStudyQueryController {
                                         "items": [
                                           {
                                             "studyId": 1,
+                                            "teamId": 8,
                                             "title": "면접 스터디",
                                             "teamStatus": "CLOSED",
                                             "location": {
-                                              "latitude": 37.5665,
-                                              "longitude": 126.9780,
-                                              "address": "서울특별시 강남구 테헤란로…"
+                                              "address": "전북 익산시 부송동 망산길 11-17",
+                                              "region1depthName": "전북",
+                                              "region2depthName": "익산시",
+                                              "region3depthName": "부송동",
+                                              "roadName": "망산길",
+                                              "mainBuildingNo": "11",
+                                              "subBuildingNo": "17",
+                                              "zoneNo": "54547",
+                                              "latitude": 35.976749396987046,
+                                              "longitude": 126.99599512792346
                                             },
                                             "period": {
                                               "start": "2025-08-08",
@@ -70,7 +78,12 @@ public class ProfileStudyQueryController {
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
                                     { "status": 404, "message": "존재하지 않는 사용자입니다.", "data": null }
-                                    """)))
+                                    """))),
+            @ApiResponse(responseCode = "404", description = "팀 정보 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                                { "status": 404, "message": "팀 정보를 찾을 수 없습니다.", "data": null }
+                                """)))
     })
     @GetMapping("/{userId}/profile/studies")
     public ResponseEntity<ApiResponseDto<?>> getUserStudies(
