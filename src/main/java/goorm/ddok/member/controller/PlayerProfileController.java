@@ -8,6 +8,7 @@ import goorm.ddok.member.service.PlayerProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/players/profile")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Profile Settings", description = "프로필 정보변경 API")
 public class PlayerProfileController {
 
     private final PlayerProfileService service;
