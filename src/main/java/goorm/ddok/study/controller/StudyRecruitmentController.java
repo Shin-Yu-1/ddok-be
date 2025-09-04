@@ -6,11 +6,14 @@ import goorm.ddok.study.dto.request.StudyRecruitmentCreateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentCreateResponse;
 import goorm.ddok.study.service.StudyRecruitmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +29,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/studies")
 @RequiredArgsConstructor
-@Tag(name = "Study", description = "스터디 API)")
+@Tag(name = "Study", description = "스터디 API")
 public class StudyRecruitmentController {
 
     private final StudyRecruitmentService studyRecruitmentService;
@@ -40,7 +43,13 @@ public class StudyRecruitmentController {
                 
                 - online 모드 -> 위치 정보 불필요
                 - offline 모드 -> 위치 정보 필수
-                """
+                """,
+    security = @SecurityRequirement(name = "Authorization"),
+    parameters = {
+        @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                description = "Bearer {accessToken}",
+                examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+    }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "스터디 생성 성공",
@@ -136,7 +145,13 @@ public class StudyRecruitmentController {
 
     @Operation(
             summary = "스터디 참여 신청/취소",
-            description = "스터디 참여 희망 의사를 신청하거나 취소합니다."
+            description = "스터디 참여 희망 의사를 신청하거나 취소합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "신청/취소 성공",
