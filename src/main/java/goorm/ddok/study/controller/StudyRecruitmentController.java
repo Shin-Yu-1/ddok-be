@@ -37,8 +37,8 @@ public class StudyRecruitmentController {
     @Operation(
             summary = "스터디 모집글 생성",
             description = """
-                새로운 스터디 모집글을 생성합니다. 요청은 Multipart/Form-Data 형식으로 전송해야 하며, 
-                request 필드에는 JSON 요청 본문을, bannerImage 필드에는 배너 이미지를 포함할 수 있습니다. 
+                새로운 스터디 모집글을 생성합니다. 요청은 Multipart/Form-Data 형식으로 전송해야 하며,
+                request 필드에는 JSON 요청 본문을, bannerImage 필드에는 배너 이미지를 포함할 수 있습니다.
                 배너 이미지를 null로 보낼경우 기본 이미지가 자동 생성 됩니다.
                 
                 - online 모드 -> 위치 정보 불필요
