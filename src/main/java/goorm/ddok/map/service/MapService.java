@@ -1,5 +1,6 @@
 package goorm.ddok.map.service;
 
+import goorm.ddok.cafe.repository.CafeRepository;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PageResponse;
 import goorm.ddok.global.exception.ErrorCode;
@@ -26,6 +27,7 @@ public class MapService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final UserRepository userRepository;
+    private final CafeRepository cafeRepository;
 
     private static final Double DEFAULT_TEMPERATURE = 36.5;
 
@@ -117,6 +119,34 @@ public class MapService {
                             .region1depthName(r.getRegion1DepthName())
                             .region2depthName(r.getRegion2DepthName())
                             .region3depthName(r.getRegion3DepthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var cafeRows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (cafeRows != null) {
+            List<AllMapItemResponse> finalResult3 = result;
+            cafeRows.forEach(r -> finalResult3.add(AllMapItemResponse.builder()
+                    .category("cafe")
+                    .cafeId(r.getId())
+                    .title(r.getTitle())
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
                             .roadName(r.getRoadName())
                             .mainBuildingNo(r.getMainBuildingNo())
                             .subBuildingNo(r.getSubBuildingNo())
