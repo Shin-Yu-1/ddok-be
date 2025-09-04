@@ -54,6 +54,9 @@ public class AllMapItemResponse {
     @Schema(description = "스터디 ID (category='study'일 때만 존재)", example = "1", nullable = true)
     private final Long studyId;
 
+    @Schema(description = "카페 ID (category='cafe'일 때만 존재)", example = "1", nullable = true)
+    private final Long cafeId;
+
     @Schema(description = "플레이어 사용자 ID (category='player'일 때만 존재)", example = "1", nullable = true)
     private final Long userId;
 
