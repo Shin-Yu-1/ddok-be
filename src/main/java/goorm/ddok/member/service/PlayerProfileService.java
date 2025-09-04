@@ -325,10 +325,10 @@ public class PlayerProfileService {
 
         return ProfileDto.builder()
                 .userId(fresh.getId())
-                .isMine(meId != null && Objects.equals(meId, fresh.getId()))
+                .IsMine(meId != null && Objects.equals(meId, fresh.getId()))
                 .chatRoomId(null)
                 .dmRequestPending(false)
-                .isPublic(fresh.isPublic())
+                .IsPublic(fresh.isPublic())
                 .profileImageUrl(fresh.getProfileImageUrl())
                 .nickname(fresh.getNickname())
                 .temperature(temp)              // null 허용

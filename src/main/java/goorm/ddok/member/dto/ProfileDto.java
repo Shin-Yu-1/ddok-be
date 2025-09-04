@@ -10,10 +10,10 @@ import java.util.List;
 @Builder
 public class ProfileDto {
     private Long userId;
-    private boolean isMine;
+    private boolean IsMine;
     private Long chatRoomId;
     private boolean dmRequestPending;
-    private Boolean isPublic;
+    private boolean IsPublic;
 
     private String profileImageUrl;
     private String nickname;
