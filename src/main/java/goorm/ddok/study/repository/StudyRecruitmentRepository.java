@@ -65,4 +65,39 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+    @Query("""
+    select distinct
+      sr.id               as id,
+      sr.title            as title,
+      sr.teamStatus       as teamStatus,
+      sr.bannerImageUrl   as bannerImageUrl,
+      sr.region1depthName as region1depthName,
+      sr.region2depthName as region2depthName,
+      sr.region3depthName as region3depthName,
+      sr.roadName         as roadName,
+      sr.mainBuildingNo   as mainBuildingNo,
+      sr.subBuildingNo    as subBuildingNo,
+      sr.zoneNo           as zoneNo,
+      sr.latitude         as latitude,
+      sr.longitude        as longitude
+    from StudyParticipant sp
+      join sp.studyRecruitment sr
+    where sp.deletedAt is null
+      and sr.deletedAt is null
+      and sp.user.id = :userId
+      and sr.teamStatus in (goorm.ddok.study.domain.TeamStatus.ONGOING,
+                            goorm.ddok.study.domain.TeamStatus.CLOSED)
+      and sr.latitude  is not null
+      and sr.longitude is not null
+      and sr.latitude  between :swLat and :neLat
+      and sr.longitude between :swLng and :neLng
+""")
+    List<MapRow> findAllInBoundsForProfile(
+            @Param("userId") Long userId,
+            @Param("swLat") BigDecimal swLat,
+            @Param("neLat") BigDecimal neLat,
+            @Param("swLng") BigDecimal swLng,
+            @Param("neLng") BigDecimal neLng
+    );
 }
