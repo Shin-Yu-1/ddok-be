@@ -4,14 +4,17 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.global.security.token.CustomReauthTokenService;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.dto.request.NicknameUpdateRequest;
+import goorm.ddok.member.dto.request.PasswordVerifyRequest;
 import goorm.ddok.member.dto.request.PhoneUpdateRequest;
 import goorm.ddok.member.dto.request.ProfileImageUpdateRequest;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -26,8 +29,20 @@ public class MeSettingsService {
 
     private final UserRepository userRepository;
     private final ProfileImageService profileImageService;
-    private final FileService fileService;            // ★ 추가
+    private final FileService fileService;
     private final ProfileImageService imageService;
+    private final PasswordEncoder passwordEncoder;
+    private final CustomReauthTokenService customReauthTokenService;
+
+    public String verifyPasswordAndIssueReauthToken(PasswordVerifyRequest req, CustomUserDetails me) {
+        var user = userRepository.findById(me.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        if (!passwordEncoder.matches(req.getPassword(), user.getPassword())) {
+            throw new GlobalException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        return customReauthTokenService.issue(user.getId());
+    }
 
     private User requireMe(CustomUserDetails me) {
         if (me == null || me.getUser() == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);

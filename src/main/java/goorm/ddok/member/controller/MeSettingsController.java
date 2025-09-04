@@ -2,10 +2,9 @@ package goorm.ddok.member.controller;
 
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.security.auth.CustomUserDetails;
-import goorm.ddok.member.dto.request.NicknameUpdateRequest;
-import goorm.ddok.member.dto.request.PhoneUpdateRequest;
-import goorm.ddok.member.dto.request.ProfileImageUpdateRequest;
-import goorm.ddok.member.dto.request.ProfileImageUploadForm;
+import goorm.ddok.global.security.token.ReauthRequired;
+import goorm.ddok.member.dto.request.*;
+import goorm.ddok.member.dto.response.PasswordVerifyResponse;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.service.MeSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,6 +24,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import static goorm.ddok.global.security.token.ReauthRequiredInterceptor.HEADER;
+
 @RestController
 @RequestMapping("/api/me/settings")
 @RequiredArgsConstructor
@@ -33,16 +34,58 @@ public class MeSettingsController {
 
     private final MeSettingsService service;
 
-    /* =========================
-     *  개인정보변경 페이지 조회
-     * ========================= */
-    @GetMapping
-    @Operation(summary = "개인정보변경 페이지 조회",
+    @Operation(
+            summary = "비밀번호 검증 및 reauthToken 발급",
+            description = "민감 작업 전에 본인 인증을 수행하고, 단기 reauthToken을 발급합니다.",
             security = @SecurityRequirement(name = "Authorization"),
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    content = @Content(schema = @Schema(implementation = PasswordVerifyRequest.class),
+                            examples = @ExampleObject(value = """
+                            {
+                              "password": "Test1324!"
+                            }"""))
+            ),
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
                             description = "Bearer {accessToken}",
                             examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "본인 인증 성공 및 reauthToken 발급",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                            {
+                              "status": 200,
+                              "message": "본인 인증에 성공했습니다.",
+                              "data": { "reauthToken": "REAUTHTOKEN_VALUE" }
+                            }"""))),
+            @ApiResponse(responseCode = "401", description = "비밀번호 불일치 / 인증 실패")
+    })
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<ApiResponseDto<PasswordVerifyResponse>> verifyPassword(
+            @Valid @RequestBody PasswordVerifyRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails
+    ) {
+        String token = service.verifyPasswordAndIssueReauthToken(request, userDetails);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "본인 인증에 성공했습니다.", new PasswordVerifyResponse(token)));
+    }
+
+    /* =========================
+     *  개인정보변경 페이지 조회
+     * ========================= */
+    @ReauthRequired
+    @GetMapping
+    @Operation(summary = "개인정보변경 페이지 조회",
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
             })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
@@ -73,13 +116,17 @@ public class MeSettingsController {
     /* =========================
      *  프로필 이미지 수정 (JSON: URL)
      * ========================= */
+    @ReauthRequired
     @PatchMapping(value = "/image", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "프로필 이미지 수정 (URL)",
-            security = @SecurityRequirement(name = "Authorization"),
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
                             description = "Bearer {accessToken}",
-                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
             })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
@@ -111,6 +158,7 @@ public class MeSettingsController {
     /* =========================
      *  프로필 이미지 수정 (파일 업로드)
      * ========================= */
+    @ReauthRequired
     @PatchMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "프로필 이미지 수정 (업로드)",
@@ -147,13 +195,17 @@ public class MeSettingsController {
     /* =========================
      *  닉네임 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
+    @ReauthRequired
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 수정", description = "닉네임을 변경하고, 변경된 개인정보 블록을 반환합니다.",
-            security = @SecurityRequirement(name = "Authorization"),
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
                             description = "Bearer {accessToken}",
-                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
             })
     public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateNickname(
             @Valid @RequestBody NicknameUpdateRequest req,
@@ -166,13 +218,17 @@ public class MeSettingsController {
     /* =========================
      *  전화번호 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
+    @ReauthRequired
     @PatchMapping("/phone")
     @Operation(summary = "전화번호 변경", description = "전화번호를 변경하고, 변경된 개인정보 블록을 반환합니다.",
-            security = @SecurityRequirement(name = "Authorization"),
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
                             description = "Bearer {accessToken}",
-                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
             })
     public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updatePhone(
             @Valid @RequestBody PhoneUpdateRequest req,
@@ -185,13 +241,17 @@ public class MeSettingsController {
     /* =========================
      *  회원 탈퇴 (data=null 유지)
      * ========================= */
+    @ReauthRequired
     @DeleteMapping
     @Operation(summary = "회원 탈퇴",
-            security = @SecurityRequirement(name = "Authorization"),
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
                             description = "Bearer {accessToken}",
-                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
             })
     public ResponseEntity<ApiResponseDto<Void>> deleteMe(
             @AuthenticationPrincipal CustomUserDetails me

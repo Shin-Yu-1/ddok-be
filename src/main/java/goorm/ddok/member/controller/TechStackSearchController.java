@@ -35,7 +35,12 @@ public class TechStackSearchController {
     @Operation(
             summary = "기술 스택 검색",
             description = "키워드로 기술 스택을 검색합니다. (as-you-type + 오타 허용)",
-            security = @SecurityRequirement(name = "Authorization")
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses(value = {
             @ApiResponse(
