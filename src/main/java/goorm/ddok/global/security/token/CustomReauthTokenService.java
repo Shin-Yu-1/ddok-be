@@ -15,7 +15,7 @@ public class CustomReauthTokenService {
 
     private static final String KEY_PREFIX = "reauth:";
     private final StringRedisTemplate redis;
-    private final Duration ttl = Duration.ofMinutes(10);
+    private final Duration ttl = Duration.ofMinutes(30);
 
     public String issue(Long userId) {
         String token = "reauth_" + UUID.randomUUID().toString().replace("-", "");
