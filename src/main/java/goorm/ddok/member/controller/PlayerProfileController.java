@@ -6,8 +6,11 @@ import goorm.ddok.member.dto.ProfileDto;
 import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.service.PlayerProfileService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,13 @@ public class PlayerProfileController {
                 - mainPosition은 필수
                 - subPositions는 최대 2개, mainPosition과 중복 불가
                 """
+            ,
+    security = @SecurityRequirement(name = "Authorization"),
+    parameters = {
+        @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                description = "Bearer {accessToken}",
+                examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+    }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
@@ -95,7 +105,13 @@ public class PlayerProfileController {
     }
 
     @PatchMapping("/traits")
-    @Operation(summary = "나의 성향 수정", description = "나의 성향(traits)을 전체 치환합니다.")
+    @Operation(summary = "나의 성향 수정", description = "나의 성향(traits)을 전체 치환합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
@@ -121,7 +137,13 @@ public class PlayerProfileController {
     @PatchMapping("/hours")
     @Operation(
             summary = "주 활동 시간 수정",
-            description = "하루 기준 활동 시작/종료 시간을 0~24 범위의 정수로 설정합니다. 종료시간은 시작시간 이상이어야 합니다."
+            description = "하루 기준 활동 시작/종료 시간을 0~24 범위의 정수로 설정합니다. 종료시간은 시작시간 이상이어야 합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
@@ -156,7 +178,13 @@ public class PlayerProfileController {
 
 
     @PatchMapping("/content")
-    @Operation(summary = "자기 소개 수정", description = "자기소개 문구를 생성/수정합니다.")
+    @Operation(summary = "자기 소개 수정", description = "자기소개 문구를 생성/수정합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
@@ -178,7 +206,13 @@ public class PlayerProfileController {
     @PatchMapping("/portfolio")
     @Operation(
             summary = "포트폴리오 생성/수정",
-            description = "사용자의 포트폴리오 링크 목록을 **전체 치환**합니다."
+            description = "사용자의 포트폴리오 링크 목록을 **전체 치환**합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
@@ -227,7 +261,13 @@ public class PlayerProfileController {
     @PatchMapping
     @Operation(
             summary = "프로필 공개/비공개 토글",
-            description = "현재 공개 상태를 반대로 변경합니다. (true → false, false → true)"
+            description = "현재 공개 상태를 반대로 변경합니다. (true → false, false → true)",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
@@ -262,7 +302,13 @@ public class PlayerProfileController {
     @PatchMapping("/stacks")
     @Operation(
             summary = "기술 스택 수정",
-            description = "보유 기술 스택을 전체 치환하고, 갱신된 전체 프로필을 반환합니다."
+            description = "보유 기술 스택을 전체 치환하고, 갱신된 전체 프로필을 반환합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "수정 성공",

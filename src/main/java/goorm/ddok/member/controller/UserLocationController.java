@@ -6,11 +6,14 @@ import goorm.ddok.member.dto.request.LocationUpdateRequest;
 import goorm.ddok.member.dto.response.LocationResponse;
 import goorm.ddok.member.service.UserLocationService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +33,13 @@ public class UserLocationController {
      *  주 활동 지역 수정
      * ========================= */
     @PatchMapping("/location")
-    @Operation(summary = "주 활동 지역 수정", description = "사용자의 주 활동 지역 정보를 수정합니다.")
+    @Operation(summary = "주 활동 지역 수정", description = "사용자의 주 활동 지역 정보를 수정합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
