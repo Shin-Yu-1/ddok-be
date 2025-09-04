@@ -18,9 +18,16 @@ public class SwaggerConfig {
     private OpenAPI base() {
         return new OpenAPI()
                 .info(new Info().title("DDOK API").description("DDOK 프로젝트 REST API 문서").version("v1"))
-                .components(new Components().addSecuritySchemes(
-                        SECURITY_SCHEME_NAME, new SecurityScheme().name(SECURITY_SCHEME_NAME)
-                                .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")))
+                .components(new Components()
+                        .addSecuritySchemes("Authorization",
+                                new SecurityScheme().name("Authorization")
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT"))
+                        .addSecuritySchemes("Reauth",
+                                new SecurityScheme().name("X-Reauth-Token")
+                                        .in(SecurityScheme.In.HEADER)
+                                        .type(SecurityScheme.Type.APIKEY)))
                 .addSecurityItem(new SecurityRequirement().addList(SECURITY_SCHEME_NAME));
     }
 
