@@ -33,6 +33,7 @@ public enum ErrorCode {
     INVALID_STUDY_TYPE(HttpStatus.BAD_REQUEST, "스터디 유형은 필수이며 올바른 값이어야 합니다."),
     INVALID_MAP_BOUNDS(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
     REQUIRED_PARAMETER_MISSING(HttpStatus.BAD_REQUEST, "필수 파라미터가 누락되었습니다."),
+    TEAM_NOT_FOUND(HttpStatus.NOT_FOUND, "팀 정보를 찾을 수 없습니다."),
     PROFILE_MAIN_POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "메인 포지션은 필수입니다."),
     PROFILE_SECONDARY_POSITION_TOO_MANY(HttpStatus.BAD_REQUEST, "서브 포지션은 최대 2개까지 설정할 수 있습니다."),
     PROFILE_POSITION_DUPLICATED(HttpStatus.BAD_REQUEST, "메인/서브 포지션에 중복 값이 포함되어 있습니다."),
