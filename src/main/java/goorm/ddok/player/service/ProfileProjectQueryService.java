@@ -6,6 +6,7 @@ import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.player.dto.response.ProjectParticipationResponse;
 import goorm.ddok.project.domain.ProjectParticipant;
 import goorm.ddok.project.domain.ProjectRecruitment;
+import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamType;
@@ -34,9 +35,10 @@ public class ProfileProjectQueryService {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<ProjectParticipant> participations =
-                projectParticipantRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable);
+                projectParticipantRepository.findByUser_IdAndDeletedAtIsNullAndPosition_ProjectRecruitment_TeamStatusNot(userId, TeamStatus.RECRUITING, pageable);
 
-        return participations.map(p -> {
+        return participations
+                .map(p -> {
             ProjectRecruitment recruitment = p.getPosition().getProjectRecruitment();
 
             Long teamId = teamRepository
