@@ -9,11 +9,14 @@ import goorm.ddok.member.dto.request.ProfileImageUploadForm;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.service.MeSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +38,13 @@ public class MeSettingsController {
      *  개인정보변경 페이지 조회
      * ========================= */
     @GetMapping
-    @Operation(summary = "개인정보변경 페이지 조회")
+    @Operation(summary = "개인정보변경 페이지 조회",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
@@ -66,7 +75,13 @@ public class MeSettingsController {
      *  프로필 이미지 수정 (JSON: URL)
      * ========================= */
     @PatchMapping(value = "/image", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "프로필 이미지 수정 (URL)")
+    @Operation(summary = "프로필 이미지 수정 (URL)",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
@@ -121,20 +136,26 @@ public class MeSettingsController {
         return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
     }
 
-    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImageByUpload(
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestPart(value = "forcePlaceholder", required = false) Boolean forcePlaceholder,
-            @AuthenticationPrincipal CustomUserDetails me
-    ) {
-        SettingsPageResponse updated = service.updateProfileImageByUpload(file, Boolean.TRUE.equals(forcePlaceholder), me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
-    }
+//    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImageByUpload(
+//            @RequestPart(value = "file", required = false) MultipartFile file,
+//            @RequestPart(value = "forcePlaceholder", required = false) Boolean forcePlaceholder,
+//            @AuthenticationPrincipal CustomUserDetails me
+//    ) {
+//        SettingsPageResponse updated = service.updateProfileImageByUpload(file, Boolean.TRUE.equals(forcePlaceholder), me);
+//        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
+//    }
 
     /* =========================
      *  닉네임 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
     @PatchMapping("/nickname")
-    @Operation(summary = "닉네임 수정", description = "닉네임을 변경하고, 변경된 개인정보 블록을 반환합니다.")
+    @Operation(summary = "닉네임 수정", description = "닉네임을 변경하고, 변경된 개인정보 블록을 반환합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateNickname(
             @Valid @RequestBody NicknameUpdateRequest req,
             @AuthenticationPrincipal CustomUserDetails me
@@ -147,7 +168,13 @@ public class MeSettingsController {
      *  전화번호 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
     @PatchMapping("/phone")
-    @Operation(summary = "전화번호 변경", description = "전화번호를 변경하고, 변경된 개인정보 블록을 반환합니다.")
+    @Operation(summary = "전화번호 변경", description = "전화번호를 변경하고, 변경된 개인정보 블록을 반환합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updatePhone(
             @Valid @RequestBody PhoneUpdateRequest req,
             @AuthenticationPrincipal CustomUserDetails me
@@ -160,7 +187,13 @@ public class MeSettingsController {
      *  회원 탈퇴 (data=null 유지)
      * ========================= */
     @DeleteMapping
-    @Operation(summary = "회원 탈퇴")
+    @Operation(summary = "회원 탈퇴",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            })
     public ResponseEntity<ApiResponseDto<Void>> deleteMe(
             @AuthenticationPrincipal CustomUserDetails me
     ) {
