@@ -44,6 +44,10 @@ public enum ErrorCode {
     PORTFOLIO_URL_REQUIRED(HttpStatus.BAD_REQUEST, "포트폴리오 링크 주소는 필수입니다."),
     PORTFOLIO_URL_INVALID(HttpStatus.BAD_REQUEST, "유효한 URL 형식이 아닙니다. http/https만 허용합니다."),
     PORTFOLIO_TOO_MANY(HttpStatus.BAD_REQUEST, "포트폴리오는 최대 20개까지 등록할 수 있습니다."),
+    INVALID_FILE_TYPE(HttpStatus.BAD_REQUEST, "부적절한 파일 타입입니다."),
+    INVALID_FILE(HttpStatus.BAD_REQUEST, "부적절한 파일입니다."),
+    FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 5MB를 넘을 수 없습니다."),
+    FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),

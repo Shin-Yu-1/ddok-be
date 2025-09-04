@@ -5,6 +5,7 @@ import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.dto.request.NicknameUpdateRequest;
 import goorm.ddok.member.dto.request.PhoneUpdateRequest;
 import goorm.ddok.member.dto.request.ProfileImageUpdateRequest;
+import goorm.ddok.member.dto.request.ProfileImageUploadForm;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.service.MeSettingsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,9 +16,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/me/settings")
@@ -58,36 +61,71 @@ public class MeSettingsController {
     }
 
     /* =========================
-     *  프로필 이미지 수정 (수정 후 개인정보 블록 반환)
+     *  프로필 이미지 수정 (JSON: URL)
      * ========================= */
-    @PatchMapping("/image")
-    @Operation(summary = "프로필 이미지 수정",
-            description = "요청 바디에 profileImageUrl이 비어있으면 닉네임 기반 기본 이미지를 생성해 저장합니다.")
+    @PatchMapping(value = "/image", consumes = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "프로필 이미지 수정 (URL)")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                        {
-                          "status": 200,
-                          "message": "프로필 이미지 수정에 성공했습니다.",
-                          "data": {
-                            "userId": 1,
-                            "profileImageUrl": "data:image/svg+xml;base64,...",
-                            "username": "곽두철",
-                            "nickname": "똑똑한 똑똑이",
-                            "birthDate": "1997-10-10",
-                            "email": "User@email.com",
-                            "phoneNumber": "01012345678",
-                            "password": "********"
-                          }
-                        }""")))
+                            {
+                              "status": 200,
+                              "message": "프로필 이미지 수정에 성공했습니다.",
+                              "data": {
+                                "userId": 1,
+                                "profileImageUrl": "https://cdn.../me.png",
+                                "username": "곽두철",
+                                "nickname": "똑똑한 똑똑이",
+                                "birthDate": "1997-10-10",
+                                "email": "User@email.com",
+                                "phoneNumber": "01012345678",
+                                "password": "********"
+                              }
+                            }""")))
     })
-    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImage( // [CHANGED] 반환형
-                                                                             @Valid @RequestBody ProfileImageUpdateRequest req,
-                                                                             @AuthenticationPrincipal CustomUserDetails me
+    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImageByUrl(
+            @Valid @RequestBody ProfileImageUpdateRequest req,
+            @AuthenticationPrincipal CustomUserDetails me
     ) {
-        SettingsPageResponse updated = service.updateProfileImage(req, me);   // [CHANGED] 업데이트 후 페이지 응답 반환
-        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated)); // [CHANGED]
+        SettingsPageResponse updated = service.updateProfileImageByUrl(req, me);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
+    }
+
+    /* =========================
+     *  프로필 이미지 수정 (파일 업로드)
+     * ========================= */
+    @PatchMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "프로필 이미지 수정 (업로드)",
+            description = "multipart/form-data 로 이미지를 업로드해서 프로필 이미지를 교체합니다.",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = false,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+                            schema = @Schema(implementation = ProfileImageUploadForm.class)
+                    )
+            )
+    )
+    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImageByUpload(
+            @ModelAttribute ProfileImageUploadForm form,                 // ← 폼 객체로 받기
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        SettingsPageResponse updated = service.updateProfileImageByUpload(
+                form.getFile(),
+                Boolean.TRUE.equals(form.getForcePlaceholder()),
+                me
+        );
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
+    }
+
+    public ResponseEntity<ApiResponseDto<SettingsPageResponse>> updateImageByUpload(
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @RequestPart(value = "forcePlaceholder", required = false) Boolean forcePlaceholder,
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        SettingsPageResponse updated = service.updateProfileImageByUpload(file, Boolean.TRUE.equals(forcePlaceholder), me);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 이미지 수정에 성공했습니다.", updated));
     }
 
     /* =========================

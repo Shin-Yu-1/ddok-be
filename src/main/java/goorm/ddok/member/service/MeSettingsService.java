@@ -2,6 +2,7 @@ package goorm.ddok.member.service;
 
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.dto.request.NicknameUpdateRequest;
@@ -10,9 +11,13 @@ import goorm.ddok.member.dto.request.ProfileImageUpdateRequest;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,8 @@ public class MeSettingsService {
 
     private final UserRepository userRepository;
     private final ProfileImageService profileImageService;
+    private final FileService fileService;            // ★ 추가
+    private final ProfileImageService imageService;
 
     private User requireMe(CustomUserDetails me) {
         if (me == null || me.getUser() == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);
@@ -109,5 +116,67 @@ public class MeSettingsService {
                 .phoneNumber(user.getPhoneNumber())
                 .password("********") // 실제 비밀번호는 절대 반환하지 않음
                 .build();
+    }
+
+    /* -------- URL 방식 -------- */
+    public SettingsPageResponse updateProfileImageByUrl(ProfileImageUpdateRequest req, CustomUserDetails me) {
+        User user = requireMe(me);
+        String url = StringUtils.hasText(req.getProfileImageUrl()) ? req.getProfileImageUrl().trim() : null;
+
+        if (!StringUtils.hasText(url)) {
+            // URL이 비었으면 닉네임 기반 Placeholder로 재생성(옵션)
+            url = imageService.generateProfileImageUrl(
+                    StringUtils.hasText(user.getNickname()) ? user.getNickname() : "NN", 48
+            );
+        }
+
+        user.setProfileImageUrl(url);
+        userRepository.save(user);
+        return toSettingsDto(user);
+    }
+
+    /* -------- 업로드 방식 -------- */
+    public SettingsPageResponse updateProfileImageByUpload(MultipartFile file, boolean forcePlaceholder, CustomUserDetails me) {
+        User user = requireMe(me);
+
+        String finalUrl;
+
+        if (forcePlaceholder) {
+            finalUrl = imageService.generateProfileImageUrl(
+                    StringUtils.hasText(user.getNickname()) ? user.getNickname() : "NN", 48
+            );
+        } else {
+            if (file == null || file.isEmpty()) {
+                throw new GlobalException(ErrorCode.INVALID_FILE); // 적절한 에러코드 사용/추가
+            }
+            validateImage(file);
+            try {
+                finalUrl = fileService.upload(file); // 업로더에 맞춰 URL 반환
+            } catch (Exception e) {
+                throw new GlobalException(ErrorCode.FILE_UPLOAD_FAILED);
+            }
+        }
+
+        user.setProfileImageUrl(finalUrl);
+        userRepository.save(user);
+        return toSettingsDto(user);
+    }
+
+    private void validateImage(MultipartFile file) {
+        // 컨텐츠 타입 화이트리스트
+        Set<String> allowed = Set.of(
+                MediaType.IMAGE_JPEG_VALUE,
+                MediaType.IMAGE_PNG_VALUE,
+                "image/webp"
+        );
+        String ct = file.getContentType();
+        if (ct == null || !allowed.contains(ct)) {
+            throw new GlobalException(ErrorCode.INVALID_FILE_TYPE);
+        }
+        // 사이즈 제한 (예: 5MB)
+        long max = 5L * 1024 * 1024;
+        if (file.getSize() > max) {
+            throw new GlobalException(ErrorCode.FILE_TOO_LARGE);
+        }
     }
 }
