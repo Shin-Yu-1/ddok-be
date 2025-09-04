@@ -451,6 +451,11 @@ public class AuthController {
             summary = "개인화 설정 생성",
             description = "대표/관심 포지션, 기술스택, 위치, 특성, 생년월일, 활동시간을 등록합니다.",
             security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            },
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     required = true,
                     content = @Content(
