@@ -53,7 +53,7 @@ public interface CafeRepository extends JpaRepository<Cafe, Long> {
           c.subBuildingNo as subBuildingNo,
           c.zoneNo as zoneNo,
           c.activityLatitude as latitude,
-          c.activityLatitude as longitude
+          c.activityLongitude as longitude
         from Cafe c
         where c.deletedAt is null
           and c.activityLatitude is not null
