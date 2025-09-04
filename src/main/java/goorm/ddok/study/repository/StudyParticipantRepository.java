@@ -35,6 +35,7 @@ public interface StudyParticipantRepository extends JpaRepository<StudyParticipa
              from StudyParticipant p
             where p.user.id = :userId
               and p.deletedAt is null
+              and p.studyRecruitment.teamStatus <> goorm.ddok.study.domain.TeamStatus.RECRUITING
            """)
-    Page<StudyParticipant> findByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<StudyParticipant> findByUserIdAndNotRecruiting(@Param("userId") Long userId, Pageable pageable);
 }
