@@ -1,24 +1,23 @@
 package goorm.ddok.map.service;
 
 import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.dto.PageResponse;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
-import goorm.ddok.map.dto.response.AllMapItemResponse;
-import goorm.ddok.map.dto.response.PlayerMapItemResponse;
-import goorm.ddok.map.dto.response.ProjectMapItemResponse;
-import goorm.ddok.map.dto.response.StudyMapItemResponse;
+import goorm.ddok.map.dto.response.*;
 import goorm.ddok.member.repository.UserRepository;
-import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +26,8 @@ public class MapService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final UserRepository userRepository;
+
+    private static final Double DEFAULT_TEMPERATURE = 36.5;
 
     public List<AllMapItemResponse> getAllInBounds(
             BigDecimal swLat, BigDecimal swLng,
@@ -45,7 +46,7 @@ public class MapService {
                     .category("project")
                     .projectId(r.getId())
                     .title(r.getTitle())
-                    .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                    .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
                     .location(LocationDto.builder()
                             .address(composeRoadAddress(
                                     r.getRegion1depthName(),
@@ -74,7 +75,7 @@ public class MapService {
                     .category("study")
                     .studyId(r.getId())
                     .title(r.getTitle())
-                    .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                    .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
                     .location(LocationDto.builder()
                             .address(composeRoadAddress(
                                     r.getRegion1depthName(),
@@ -168,7 +169,7 @@ public class MapService {
                         .category("project")
                         .projectId(r.getId())
                         .title(r.getTitle())
-                        .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                        .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
                         .location(LocationDto.builder()
                                 .address(composeRoadAddress(
                                         r.getRegion1depthName(),
@@ -227,7 +228,7 @@ public class MapService {
                         .category("study")
                         .studyId(r.getId())
                         .title(r.getTitle())
-                        .teamStatus(normalizeTeamStatus(r.getTeamStatus()))
+                        .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
                         .location(LocationDto.builder()
                                 .address(composeRoadAddress(
                                         r.getRegion1depthName(),
@@ -268,10 +269,12 @@ public class MapService {
     }
 
     private void validateBounds(BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng) {
-        if (swLat == null || swLng == null || neLat == null || neLng == null) {
+        boolean hasAny = swLat != null || swLng != null || neLat != null || neLng != null;
+        boolean hasAll = swLat != null && swLng != null && neLat != null && neLng != null;
+        if (hasAny && !hasAll) {
             throw new GlobalException(ErrorCode.REQUIRED_PARAMETER_MISSING);
         }
-        if (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0) {
+        if (hasAll && (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0)) {
             throw new GlobalException(ErrorCode.INVALID_MAP_BOUNDS);
         }
     }
@@ -304,9 +307,14 @@ public class MapService {
         return R * c;
     }
 
-    private String normalizeTeamStatus(TeamStatus status) {
+    private String normalizeProjectTeamStatus(goorm.ddok.project.domain.TeamStatus status) {
         if (status == null) return "ONGOING";
-        return (status == TeamStatus.CLOSED) ? "ONGOING" : status.name();
+        return (status == goorm.ddok.project.domain.TeamStatus.CLOSED) ? "ONGOING" : status.name();
+    }
+
+    private String normalizeStudyTeamStatus(goorm.ddok.study.domain.TeamStatus status) {
+        if (status == null) return "ONGOING";
+        return (status == goorm.ddok.study.domain.TeamStatus.CLOSED) ? "ONGOING" : status.name();
     }
 
     @Transactional(readOnly = true)
@@ -363,5 +371,213 @@ public class MapService {
         }
 
         return items;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AllMapItemSearchResponse> search(
+            String keyword,
+            BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            String categoryCsv,
+            Long userId,
+            int page, int size,
+            String filterCsv
+    ) {
+        // 1) 검증
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        // 2) 파싱
+        Set<String> categories = parseCategories(categoryCsv);
+        // 기본: project,study,player
+        Set<goorm.ddok.project.domain.TeamStatus> projectStatusFilter = parseProjectTeamStatusFilter(filterCsv);
+        Set<goorm.ddok.study.domain.TeamStatus> studyStatusFilter = parseStudyTeamStatusFilter(filterCsv);
+
+        // 3) 페이지 파라미터+페치상한
+        page = Math.max(0, page);
+        size = (size <= 0) ? 20 : size;
+
+        final List<AllMapItemSearchResponse> items = new ArrayList<>();
+
+        if (categories.contains("project")) {
+            var rows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.stream()
+                        .filter(r -> projectStatusFilter.isEmpty() || projectStatusFilter.contains(r.getTeamStatus()))
+                        .forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                                .category("project")
+                                .projectId(r.getId())
+                                .title(r.getTitle())
+                                .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
+                                .bannerImageUrl(r.getBannerImageUrl())
+                                .location(LocationDto.builder()
+                                        .address(composeRoadAddress(
+                                                r.getRegion1depthName(),
+                                                r.getRegion2depthName(),
+                                                r.getRegion3depthName(),
+                                                r.getRoadName(),
+                                                r.getMainBuildingNo(),
+                                                r.getSubBuildingNo()))
+                                        .region1depthName(r.getRegion1depthName())
+                                        .region2depthName(r.getRegion2depthName())
+                                        .region3depthName(r.getRegion3depthName())
+                                        .roadName(r.getRoadName())
+                                        .mainBuildingNo(r.getMainBuildingNo())
+                                        .subBuildingNo(r.getSubBuildingNo())
+                                        .zoneNo(r.getZoneNo())
+                                        .latitude(r.getLatitude())
+                                        .longitude(r.getLongitude())
+                                        .build())
+                                .build()));
+            }
+        }
+
+        if (categories.contains("study")) {
+            var rows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.stream()
+                        .filter(r -> studyStatusFilter.isEmpty() || studyStatusFilter.contains(r.getTeamStatus()))
+                        .forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                                .category("study")
+                                .studyId(r.getId())
+                                .title(r.getTitle())
+                                .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
+                                .bannerImageUrl(r.getBannerImageUrl())
+                                .location(LocationDto.builder()
+                                        .address(composeRoadAddress(
+                                                r.getRegion1depthName(),
+                                                r.getRegion2depthName(),
+                                                r.getRegion3depthName(),
+                                                r.getRoadName(),
+                                                r.getMainBuildingNo(),
+                                                r.getSubBuildingNo()))
+                                        .region1depthName(r.getRegion1depthName())
+                                        .region2depthName(r.getRegion2depthName())
+                                        .region3depthName(r.getRegion3depthName())
+                                        .roadName(r.getRoadName())
+                                        .mainBuildingNo(r.getMainBuildingNo())
+                                        .subBuildingNo(r.getSubBuildingNo())
+                                        .zoneNo(r.getZoneNo())
+                                        .latitude(r.getLatitude())
+                                        .longitude(r.getLongitude())
+                                        .build())
+                                .build()));
+            }
+        }
+
+        if (categories.contains("player")) {
+            var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                        .category("player")
+                        .userId(r.getId())
+                        .nickname(r.getNickname())
+                        .IsMine(userId != null && userId.equals(r.getId()))
+                        .profileImageUrl(r.getProfileImageUrl())
+                        .temperature(DEFAULT_TEMPERATURE)
+                        .mainBadge(AllMapItemSearchResponse.MainBadge.builder()
+                                .type("login")
+                                .tier("bronze")
+                                .build())
+                        .abandonBadge(AllMapItemSearchResponse.AbandonBadge.builder()
+                                .isGranted(true)
+                                .count(5)
+                                .build())
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1DepthName(),
+                                        r.getRegion2DepthName(),
+                                        r.getRegion3DepthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1DepthName())
+                                .region2depthName(r.getRegion2DepthName())
+                                .region3depthName(r.getRegion3DepthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build()));
+            }
+        }
+
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            items.sort(Comparator.comparingDouble(it -> {
+                var loc = it.getLocation();
+                if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+                    return Double.MAX_VALUE;
+                }
+                return haversineKm(cLat, cLng, loc.getLatitude().doubleValue(), loc.getLongitude().doubleValue());
+            }));
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return PageResponse.of(new PageImpl<>(
+                items.stream()
+                        .filter(it -> keyword == null || keyword.isBlank()
+                                || (it.getTitle() != null && it.getTitle().toLowerCase().contains(keyword.toLowerCase()))
+                                || (it.getNickname() != null && it.getNickname().toLowerCase().contains(keyword.toLowerCase()))
+                        )
+                        .skip((long) pageable.getPageNumber() * pageable.getPageSize())
+                        .limit(pageable.getPageSize())
+                        .toList(),
+                pageable,
+                items.size()
+        ));
+    }
+
+    private Set<String> parseCategories(String categoryCsv) {
+        if (categoryCsv == null || categoryCsv.isBlank()) {
+            return Set.of("project", "study", "player");
+        }
+        return Arrays.stream(categoryCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    private Set<goorm.ddok.project.domain.TeamStatus> parseProjectTeamStatusFilter(String filterCsv) {
+        if (filterCsv == null || filterCsv.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(filterCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    try {
+                        return goorm.ddok.project.domain.TeamStatus.valueOf(s.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<goorm.ddok.study.domain.TeamStatus> parseStudyTeamStatusFilter(String filterCsv) {
+        if (filterCsv == null || filterCsv.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(filterCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    try {
+                        return goorm.ddok.study.domain.TeamStatus.valueOf(s.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
     }
 }
