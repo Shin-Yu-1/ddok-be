@@ -18,7 +18,13 @@ import java.util.List;
 @Builder
 @Schema(
         name = "StudyRecruitmentCreateRequest",
-        description = "스터디 모집글 생성 요청 DTO",
+        description = """
+        스터디 모집글 생성 요청 DTO
+        
+        • mode: online/offline
+        • mode=offline → location 필수 (카카오 road_address 매핑)
+        • preferredAges: null이면 무관(0/0)로 저장
+        """,
         requiredProperties = {
                 "title", "expectedStart", "expectedMonth",
                 "mode", "capacity", "studyType", "detail"
@@ -28,19 +34,23 @@ import java.util.List;
           "title": "구지라지",
           "expectedStart": "2025-08-16",
           "expectedMonth": 3,
-          "mode": "OFFLINE",
+          "mode": "offline",
           "location": {
+            "address": "서울 강남구 역삼동 테헤란로 123-45",
+            "region1depthName": "서울",
+            "region2depthName": "강남구",
+            "region3depthName": "역삼동",
+            "mainBuildingNo": "123",
+            "subBuildingNo": "45",
+            "roadName": "테헤란로",
+            "zoneNo": "06236",
             "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
-          },
-          "preferredAges": {
-            "ageMin": 20,
-            "ageMax": 30
-          },
+            "longitude": 126.9780
+            },
+          "preferredAges": { "ageMin": 20, "ageMax": 30 },
           "capacity": 6,
           "traits": ["정리의 신", "실행력 갓", "내향인"],
-          "studyType": "JOB_INTERVIEW",
+          "studyType": "취업/면접",
           "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?"
         }
         """
@@ -63,32 +73,30 @@ public class StudyRecruitmentCreateRequest {
     private Integer expectedMonth;
 
     @NotNull(message = "스터디 진행 방식은 필수 입력값입니다.")
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "OFFLINE", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "진행 방식 (online / offline)", example = "offline", requiredMode = Schema.RequiredMode.REQUIRED)
     private StudyMode mode;
 
-    @Schema(description = "스터디 진행 장소 (OFFLINE일 경우만 입력)")
+    @Schema(description = "스터디 진행 장소 (mode=offline일 경우 필수). 카카오 road_address 매핑 DTO")
     private LocationDto location;
 
-    @NotNull
-    @Schema(description = "선호 연령대 (무관 시 0 입력)")
+    @Schema(description = "선호 연령대 (무관 시 null)")
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")
-    @Min(value = 2, message = "모집 정원은 최소 2명 이상이어야 합니다.")
-    @Max(value = 8, message = "모집 정원은 최대 8명 이하이어야 합니다.")
+    @Min(value = 1, message = "모집 정원은 최소 1명 이상이어야 합니다.")
+    @Max(value = 7, message = "모집 정원은 최대 7명 이하이어야 합니다.")
     @Schema(description = "모집 정원", example = "6", requiredMode = Schema.RequiredMode.REQUIRED)
     private Integer capacity;
 
-    @Schema(description = "모집 성향 리스트", example = "[\"정리의 신\", \"실행력 갓\", \"내향인\"]")
+    @Schema(description = "모집 성향 리스트", example = "['정리의 신', '실행력 갓', '내향인']")
     private List<String> traits;
 
     @NotNull(message = "스터디 유형은 필수 입력값입니다.")
-    @Schema(description = "스터디 유형 (ENUM)", example = "JOB_INTERVIEW", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "스터디 유형 (한글 라벨)", example = "취업/면접", requiredMode = Schema.RequiredMode.REQUIRED)
     private StudyType studyType;
 
     @NotBlank(message = "상세 설명은 필수 입력값입니다.")
     @Size(min = 10, max = 2000, message = "상세 설명은 10자 이상 2000자 이하여야 합니다.")
     @Schema(description = "상세 설명 (Markdown)", example = "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?", requiredMode = Schema.RequiredMode.REQUIRED)
     private String detail;
-
 }

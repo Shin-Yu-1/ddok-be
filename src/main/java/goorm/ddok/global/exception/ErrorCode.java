@@ -24,11 +24,15 @@ public enum ErrorCode {
     INVALID_LOCATION(HttpStatus.BAD_REQUEST, "위치 정보가 올바르지 않습니다."),
     INVALID_START_DATE(HttpStatus.BAD_REQUEST, "시작일은 오늘 이후여야 합니다."),
     INVALID_BOUNDING_BOX(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
+    USER_POSITION_NOT_FOUND(HttpStatus.BAD_REQUEST, "사용자의 메인 포지션이 설정되지 않았습니다."),
     INVALID_CONFIRM_TEXT(HttpStatus.BAD_REQUEST, "확인 문구가 올바르지 않습니다."),
     INVALID_POSITIONS(HttpStatus.BAD_REQUEST,"모집 포지션은 최소 1개 이상이어야 합니다."),
     INVALID_AGE_BUCKET(HttpStatus.BAD_REQUEST, "연령은 10단위(예: 20, 30, 40)만 허용합니다."),
     INVALID_CAPACITY_POSITIONS(HttpStatus.BAD_REQUEST,"포지션의 개수는 모집인원을 넘을 수 없습니다."),
     POSITION_IN_USE(HttpStatus.BAD_REQUEST, "참여자/지원 이력 때문에 삭제할 수 없는 포지션입니다."),
+    INVALID_STUDY_TYPE(HttpStatus.BAD_REQUEST, "스터디 유형은 필수이며 올바른 값이어야 합니다."),
+    INVALID_MAP_BOUNDS(HttpStatus.BAD_REQUEST, "잘못된 지도 경계값입니다."),
+    REQUIRED_PARAMETER_MISSING(HttpStatus.BAD_REQUEST, "필수 파라미터가 누락되었습니다."),
     PROFILE_MAIN_POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "메인 포지션은 필수입니다."),
     PROFILE_SECONDARY_POSITION_TOO_MANY(HttpStatus.BAD_REQUEST, "서브 포지션은 최대 2개까지 설정할 수 있습니다."),
     PROFILE_POSITION_DUPLICATED(HttpStatus.BAD_REQUEST, "메인/서브 포지션에 중복 값이 포함되어 있습니다."),
@@ -57,7 +61,7 @@ public enum ErrorCode {
     EMAIL_NOT_VERIFIED_CODE_RESENT(HttpStatus.UNAUTHORIZED, "인증 코드가 만료되어 새로운 인증 이메일을 발송했습니다."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "유효하지 않은 리프레시 토큰입니다."),
     WRONG_PASSWORD(HttpStatus.UNAUTHORIZED, "아이디 혹은 비밀번호가 일치하지 않습니다."),
-    KAKAO_INVALID_CODE(HttpStatus.UNAUTHORIZED, "카카오 로그인에 실패했습니다. (유효하지 않은 코드)"),
+    SOCIAL_LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "카카오 로그인에 실패했습니다"),
     POSITION_REQUIRED(HttpStatus.BAD_REQUEST, "지원 포지션을 선택해야 합니다."),
 
 
@@ -91,6 +95,9 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
 
+
+    // 429 TOO MANY REQUESTS
+    KAKAO_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "카카오 토큰 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),
 
     // 500 INTERNAL SERVER ERROR
     SMS_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "SMS 발송 실패"),

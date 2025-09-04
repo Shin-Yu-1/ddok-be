@@ -19,6 +19,13 @@ spring:
         jdbc:
           time_zone: UTC
 
+  flyway:
+    enabled: false
+#    locations: classpath:db/migration
+#    baseline-on-migrate: true
+#    out-of-order: false
+#    clean-disabled: true
+
   data:
     redis:
       host: ${SPRING_REDIS_HOST}

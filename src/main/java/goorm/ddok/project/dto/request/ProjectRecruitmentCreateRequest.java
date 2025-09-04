@@ -1,6 +1,5 @@
 package goorm.ddok.project.dto.request;
 
-
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.project.domain.ProjectMode;
@@ -8,7 +7,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -18,7 +16,14 @@ import java.util.List;
 @Builder(toBuilder = true)
 @Schema(
         name = "ProjectCreateRequest",
-        description = "프로젝트 모집글 생성 요청 DTO",
+        description = """
+      프로젝트 모집글 생성 요청 DTO
+      • mode: online/offline
+      • mode=offline → location 필수 (카카오 road_address 매핑)
+      • preferredAges: null이면 무관(0/0) 저장
+      • positions: 최소 1개, 공백/중복은 서비스에서 정규화
+      • leaderPosition: positions에 반드시 포함
+    """,
         requiredProperties = {
                 "title", "expectedStart", "expectedMonth",
                 "mode", "capacity", "positions", "leaderPosition", "detail"
@@ -26,13 +31,20 @@ import java.util.List;
         example = """
         {
           "title": "구지라지",
-          "expectedStart": "2025-08-16",
+          "expectedStart": "2025-09-16",
           "expectedMonth": 3,
-          "mode": "OFFLINE",
+          "mode": "offline",
           "location": {
-            "latitude": 37.5665,
-            "longitude": 126.9780,
-            "address": "서울특별시 강남구 테헤란로…"
+            "address": "전북 익산시 부송동 망산길 11-17",
+            "region1depthName": "전북",
+            "region2depthName": "익산시",
+            "region3depthName": "부송동",
+            "roadName": "망산길",
+            "mainBuildingNo": "11",
+            "subBuildingNo": "17",
+            "zoneNo": "54547",
+            "latitude": 35.976749396987046,
+            "longitude": 126.99599512792346
           },
           "preferredAges": {
             "ageMin": 20,
@@ -54,7 +66,7 @@ public class ProjectRecruitmentCreateRequest {
     private String title;
 
     @NotNull(message = "예상 시작일은 필수 입력값입니다.")
-    @Schema(description = "프로젝트 시작 예정일", example = "2025-08-16", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "프로젝트 시작 예정일(오늘 이후)", example = "2025-09-16", requiredMode = Schema.RequiredMode.REQUIRED)
     private LocalDate expectedStart;
 
     @NotNull(message = "예상 진행 개월 수는 필수 입력값입니다.")
@@ -64,13 +76,31 @@ public class ProjectRecruitmentCreateRequest {
     private Integer expectedMonth;
 
     @NotNull(message = "프로젝트 진행 방식은 필수 입력값입니다.")
-    @Schema(description = "진행 방식 (ONLINE / OFFLINE)", example = "offline", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "진행 방식 (online / offline)", example = "offline", requiredMode = Schema.RequiredMode.REQUIRED)
     private ProjectMode mode;
 
-    @Schema(description = "프로젝트 진행 장소 (OFFLINE일 경우만 입력)")
+    @Schema(description = """
+            프로젝트 진행 장소.
+            - offline 때만 필요 (Kakao road_address 매핑)
+            - online 때는 null 또는 생략
+            """,
+            example = """
+            {
+              "address": "전북 익산시 부송동 망산길 11-17",
+              "region1depthName": "전북",
+              "region2depthName": "익산시",
+              "region3depthName": "부송동",
+              "roadName": "망산길",
+              "mainBuildingNo": "11",
+              "subBuildingNo": "17",
+              "zoneNo": "54547",
+              "latitude": 35.976749396987046,
+              "longitude": 126.99599512792346
+            }
+            """)
     private LocationDto location;
 
-    @Schema(description = "선호 연령대 (무관 시 0 입력)")
+    @Schema(description = "선호 연령대 (무관 시 null). 서비스에서 10단위(…0)만 허용.", example = "{\"ageMin\":20, \"ageMax\":30}")
     private PreferredAgesDto preferredAges;
 
     @NotNull(message = "모집 정원은 필수 입력값입니다.")
@@ -83,16 +113,15 @@ public class ProjectRecruitmentCreateRequest {
     private List<String> traits;
 
     @NotEmpty(message = "모집 포지션은 최소 1개 이상이어야 합니다.")
-    @Schema(description = "모집 포지션 리스트", example = "[\"백엔드\", \"프론트엔드\", \"디자이너\"]", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "모집 포지션 리스트(중복/공백은 서비스에서 정규화)", example = "[\"백엔드\", \"프론트엔드\", \"디자이너\"]", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<String> positions;
 
     @NotBlank(message = "리더 포지션은 필수 입력값입니다.")
-    @Schema(description = "리더 포지션", example = "백엔드", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "리더 포지션(positions에 포함되어야 함)", example = "백엔드", requiredMode = Schema.RequiredMode.REQUIRED)
     private String leaderPosition;
 
     @NotBlank(message = "상세 설명은 필수 입력값입니다.")
     @Size(min = 10, max = 2000)
     @Schema(description = "상세 설명 (Markdown)", example = "저희 정말 멋진 웹을 만들거에요~ 하고 싶죠?", requiredMode = Schema.RequiredMode.REQUIRED)
     private String detail;
-
 }

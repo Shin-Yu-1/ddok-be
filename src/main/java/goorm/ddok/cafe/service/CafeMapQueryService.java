@@ -1,16 +1,15 @@
 package goorm.ddok.cafe.service;
 
-import goorm.ddok.cafe.domain.Cafe;
-import goorm.ddok.cafe.dto.response.CafeLocationResponse;
 import goorm.ddok.cafe.dto.response.CafeMapItemResponse;
 import goorm.ddok.cafe.repository.CafeRepository;
-import goorm.ddok.global.exception.ErrorCode;
-import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.map.service.MapService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -18,49 +17,61 @@ import java.util.List;
 public class CafeMapQueryService {
 
     private final CafeRepository cafeRepository;
+    private final MapService mapService;
 
     @Transactional(readOnly = true)
     public List<CafeMapItemResponse> getCafesInBounds(
             BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng,
             BigDecimal centerLat, BigDecimal centerLng
     ) {
-        if (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0) {
-            throw new GlobalException(ErrorCode.INVALID_BOUNDING_BOX);
+        mapService.validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+        if (rows == null || rows.isEmpty()) {
+            return java.util.Collections.emptyList();
         }
 
-        List<Cafe> cafes = cafeRepository.findActiveWithinBounds(swLat, swLng, neLat, neLng);
-
-        return cafes.stream()
-                .map(c -> new CafeMapItemResponse(
-                        "cafe",
-                        c.getId(),
-                        c.getName(),
-                        new CafeLocationResponse(
-                                c.getActivityLatitude(),
-                                c.getActivityLongitude(),
-                                buildAddress(c)
-                        )
-                ))
+        var items = rows.stream()
+                .map(r -> CafeMapItemResponse.builder()
+                        .category("cafe")
+                        .cafeId(r.getId())
+                        .title(r.getTitle())
+                        .location(LocationDto.builder()
+                                .address(mapService.composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
                 .toList();
-    }
 
-    private String buildAddress(Cafe c) {
-        if (c.getRoadName() != null && !c.getRoadName().isBlank()) {
-            if (c.getZoneNo() != null && !c.getZoneNo().isBlank()) {
-                return c.getRoadName() + " (" + c.getZoneNo() + ")";
-            }
-            return c.getRoadName();
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            MapService.haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
         }
-        String r1 = nullToEmpty(c.getRegion1depthName());
-        String r2 = nullToEmpty(c.getRegion2depthName());
-        String r3 = nullToEmpty(c.getRegion3depthName());
-        String joined = String.join(" ", new String[]{r1, r2, r3})
-                .trim()
-                .replaceAll(" +", " ");
-        return joined.isEmpty() ? "-" : joined;
-    }
 
-    private String nullToEmpty(String s) {
-        return s == null ? "" : s;
+        return items;
     }
 }

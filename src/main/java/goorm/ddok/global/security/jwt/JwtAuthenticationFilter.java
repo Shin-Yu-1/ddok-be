@@ -40,20 +40,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/**/iframe.html"
     );
     private static final List<String> PUBLIC_SKIP_PATTERNS = List.of(
+            // Swagger & springdoc
+            "/swagger-ui.html",
             "/swagger-ui/**",
+            "/v3/api-docs",
+            "/v3/api-docs.yaml",
             "/v3/api-docs/**",
             "/swagger-resources/**",
             "/webjars/**",
+            // H2 (개발용)
             "/h2-console/**",
-            "/api/map/**",
+            // Public API
+            "/api/auth/signin",
             "/api/auth/signup",
-            "/api/auth/signin/**",
-            "/api/auth/email/**",
-            "/api/auth/phone/**",
-            "/api/auth/password/**",
+            "/api/auth/signin/kakao",
+            "/api/auth/signin/kakao/callback",
+            "/api/auth/signin/kakao/token",
             "/api/auth/token",
-            "/api/auth/stacks"
+            "/api/auth/email/find",
+            "/api/auth/email/check",
+            "/api/auth/email/send-code",
+            "/api/auth/phone/send-code",
+            "/api/auth/phone/verify-code",
+            "/api/auth/password/verify-user",
+            "/api/auth/password/reset"
     );
+
 
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, UserDetailsService userDetailsService) {
         this.jwtTokenProvider = jwtTokenProvider;
@@ -62,94 +74,76 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+        final String method = request.getMethod();
+        if ("OPTIONS".equalsIgnoreCase(method)) {
             return true;
         }
-
         String uri = request.getRequestURI();
-        boolean skip = WS_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri));
-        if (skip) {
-            log.debug("🧵 Skip JWT filter for WS/SockJS path: {}", uri);
-        }
-
-        if (PUBLIC_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri))) {
+        if (WS_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri))) {
+            log.debug("🧵 Skip JWT filter for WS path: {}", uri);
             return true;
         }
-
-        return skip;
+        // Swagger/H2/Public-Auth-only는 계속 스킵
+        return PUBLIC_SKIP_PATTERNS.stream().anyMatch(p -> PATH_MATCHER.match(p, uri));
     }
 
     @Override
-    protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain chain)
+    protected void doFilterInternal(@NotNull HttpServletRequest request,
+                                    @NotNull HttpServletResponse response,
+                                    @NotNull FilterChain chain)
             throws ServletException, IOException {
-
+        String token = null;
         try {
-            log.debug("🧪 JWT 필터 실행 - URI: {}, Authorization: {}, QueryToken: {}",
-                    request.getRequestURI(),
-                    request.getHeader("Authorization"),
-                    request.getParameter("token"));
+            token = resolveToken(request);
 
-            String uri = request.getRequestURI();
-
-            if (
-                    uri.startsWith("/swagger-ui") ||
-                    uri.startsWith("/v3/api-docs") ||
-                    uri.startsWith("/swagger-resources") ||
-                    uri.startsWith("/webjars") ||
-                    uri.startsWith("/h2-console") ||
-                    uri.startsWith("/api/map/")||
-                    // 정확하게 허용할 /api/auth 경로만 명시
-                    uri.equals("/api/auth/signin") ||
-                    uri.equals("/api/auth/signin/kakao") ||
-                    uri.equals("/api/auth/signup") ||
-                    uri.equals("/api/auth/email/find") ||
-                    uri.equals("/api/auth/email/check") ||
-                    uri.equals("/api/auth/password/verify-user") ||
-                    uri.equals("/api/auth/password/reset") ||
-                    uri.equals("/api/auth/token") ||
-                    uri.equals("/api/auth/phone/send-code") ||
-                    uri.equals("/api/auth/phone/verify-code") ||
-                    uri.equals("/api/auth/email/send-code") ||
-                    uri.equals("/api/auth/email/verify") ||
-                    uri.equals("/api/auth/signin/kakao/callback") ||
-                    uri.equals("/api/auth/signin/kakao/token")
-
-            ) {
+            if (token == null) {
                 chain.doFilter(request, response);
                 return;
             }
 
-            String token = resolveToken(request); // MISSING_TOKEN 발생 가능
-            jwtTokenProvider.validateToken(token); // INVALID_TOKEN 발생 가능
+            jwtTokenProvider.validateToken(token);
 
             Long userId = jwtTokenProvider.getUserIdFromToken(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
+
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            authentication.setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
+                    .buildDetails(request));
 
+            SecurityContextHolder.getContext().setAuthentication(authentication);
             chain.doFilter(request, response);
 
         } catch (GlobalException ex) {
-            response.setStatus(ex.getErrorCode().getStatus().value());
-            response.setContentType("application/json;charset=UTF-8");
+            SecurityContextHolder.clearContext();
+            writeError(response, ex.getErrorCode().getStatus().value(), ex.getErrorCode().getMessage());
 
-            ApiResponseDto<?> errorResponse = ApiResponseDto.error(
-                    ex.getErrorCode().getStatus().value(),
-                    ex.getErrorCode().getMessage()
-            );
-
-            new ObjectMapper().writeValue(response.getWriter(), errorResponse);
+        } catch (Exception ex) {
+            log.warn("JWT 필터 처리 중 예외", ex);
+            SecurityContextHolder.clearContext();
+            writeError(response, ErrorCode.INVALID_TOKEN.getStatus().value(), ErrorCode.INVALID_TOKEN.getMessage());
         }
     }
 
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
-
         if (bearer != null && bearer.startsWith("Bearer ")) {
             return bearer.substring(7);
         }
 
-        throw new GlobalException(ErrorCode.MISSING_TOKEN);
+        String q = request.getParameter("token");
+        if (q != null && !q.isBlank()) {
+            return q;
+        }
+        // 토큰 없음 → null
+        return null;
+    }
+
+
+    private void writeError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        ApiResponseDto<?> payload = ApiResponseDto.error(status, message);
+        new ObjectMapper().writeValue(response.getWriter(), payload);
     }
 }

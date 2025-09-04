@@ -7,12 +7,11 @@ import goorm.ddok.global.util.sentry.SentryUserContextFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authorization.AuthorizationDecision;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -45,7 +44,8 @@ public class SecurityConfig {
 
         // 개발/운영 환경별 허용 도메인 설정
         configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*"     // 개발환경 (모든 포트)
+                "http://localhost:*",     // 개발환경 (모든 포트)
+                "https://api.deepdirect.site"   // 운영환경
         ));
 
         // 허용할 HTTP 메서드
@@ -77,27 +77,36 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+        final String[] SWAGGER_WHITELIST = {
+                "/swagger-ui.html",
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/v3/api-docs.yaml",
+                "/swagger-resources/**",
+                "/webjars/**"
+        };
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
                 .formLogin(AbstractHttpConfigurer::disable)
-
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/preferences")).authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/projects/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/studies/*").permitAll()
+                        .requestMatchers(HttpMethod.GET , "/api/players/**").permitAll()
+                        .requestMatchers(HttpMethod.GET , "/api/map/**").permitAll()
+                        .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .requestMatchers(
-                                new AntPathRequestMatcher("/swagger-ui/**"),
-                                new AntPathRequestMatcher("/v3/api-docs/**"),
-                                new AntPathRequestMatcher("/swagger-resources/**"),
-                                new AntPathRequestMatcher("/webjars/**"),
                                 new AntPathRequestMatcher("/h2-console/**"),
                                 new AntPathRequestMatcher("/api/auth/**"),
-                                new AntPathRequestMatcher("/api/map/**"),
-
                                 new AntPathRequestMatcher("/ws/**"),
-                                new AntPathRequestMatcher("/ws/chats/**"), // 명시적으로 추가
+                                new AntPathRequestMatcher("/ws/chats/**"),
                                 new AntPathRequestMatcher("/**/info"),
                                 new AntPathRequestMatcher("/**/websocket"),
                                 new AntPathRequestMatcher("/**/xhr_streaming"),
@@ -108,7 +117,7 @@ public class SecurityConfig {
                         .requestMatchers("/oauth/kakao", "/oauth/kakao/callback", "/api/auth/signin/kakao").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(AbstractHttpConfigurer::disable)
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService),
                         UsernamePasswordAuthenticationFilter.class

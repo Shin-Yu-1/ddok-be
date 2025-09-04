@@ -17,13 +17,16 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/projects")
 @RequiredArgsConstructor
-@Tag(name = "ProjectRecruitment-Delete", description = "프로젝트 소프트 삭제 API")
+@Tag(name = "Project", description = "프로젝트 API")
 public class ProjectSoftDeleteController {
 
     private final ProjectRecruitmentSoftDeleteService service;
 
     @Operation(summary = "프로젝트 삭제(Soft Delete)",
-            description = "프로젝트를 실제로 삭제하지 않고 deletedAt을 채워 비활성화합니다. 리더만 수행 가능.")
+            description = """
+                프로젝트를 실제로 삭제하지 않고 deletedAt을 채워 비활성화합니다.
+                리더만 수행 가능하며, 요청 본문의 confirmText는 정확히 '삭제합니다.' 이어야 합니다.
+                """)
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "프로젝트 삭제가 성공했습니다.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

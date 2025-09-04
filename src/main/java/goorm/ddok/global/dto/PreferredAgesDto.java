@@ -8,13 +8,12 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(name = "PreferredAgesDto", description = "선호 연령대")
+@Schema(name = "PreferredAgesDto", description = "선호 연령대 (무관 시 null)")
 public class PreferredAgesDto {
-    @NotNull(message = "최소 연령은 필수 입력값입니다.")
-    @Schema(description = "최소 연령", example = "20")
+
+    @Schema(description = "최소 연령 (무관 시 null)", example = "20")
     private Integer ageMin;
 
-    @NotNull(message = "최대 연령은 필수 입력값입니다.")
-    @Schema(description = "최대 연령", example = "30")
+    @Schema(description = "최대 연령 (무관 시 null)", example = "30")
     private Integer ageMax;
 }

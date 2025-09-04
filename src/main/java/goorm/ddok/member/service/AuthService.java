@@ -19,7 +19,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 @Service
@@ -146,16 +149,10 @@ public class AuthService {
 
         boolean isPreferences = checkIfUserHasPreferences(user);
 
-        LocationResponse location = null;
-        if (user.getLocation() != null) {
-            var loc = user.getLocation();
-            Double lat = (loc.getActivityLatitude()  != null) ? loc.getActivityLatitude().doubleValue()  : null;
-            Double lon = (loc.getActivityLongitude() != null) ? loc.getActivityLongitude().doubleValue() : null;
-
-            String address = loc.getRoadName();
-            location = new LocationResponse(lat, lon, address);
-        }
-
+        LocationResponse location =
+                Optional.ofNullable(user.getLocation())
+                        .map(LocationResponse::from)
+                        .orElse(null);
 
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
         return new SignInResponse(accessToken, userDto);
@@ -371,19 +368,33 @@ public class AuthService {
         }
     }
 
-    private UserLocation saveUserLocation(User user, LocationRequest locationRequest) {
+    private UserLocation saveUserLocation(User user, LocationRequest req) {
         UserLocation userLocation = userLocationRepository.findByUserId(user.getId())
                 .orElse(UserLocation.builder().user(user).build());
 
         userLocation = userLocation.toBuilder()
-                .roadName(locationRequest.getAddress())
-                .activityLatitude(locationRequest.getLatitude() == null ? null
-                        : new java.math.BigDecimal(String.format(java.util.Locale.US, "%.6f", locationRequest.getLatitude())))
-                .activityLongitude(locationRequest.getLongitude() == null ? null
-                        : new java.math.BigDecimal(String.format(java.util.Locale.US, "%.6f", locationRequest.getLongitude())))
+                .region1DepthName(trimToNull(req.getRegion1depthName()))
+                .region2DepthName(trimToNull(req.getRegion2depthName()))
+                .region3DepthName(trimToNull(req.getRegion3depthName()))
+                .roadName(trimToNull(req.getRoadName()))
+                .mainBuildingNo(trimToNull(req.getMainBuildingNo()))
+                .subBuildingNo(trimToNull(req.getSubBuildingNo()))
+                .zoneNo(trimToNull(req.getZoneNo()))
+                .activityLatitude(setScale6(req.getLatitude()))
+                .activityLongitude(setScale6(req.getLongitude()))
                 .build();
 
         return userLocationRepository.save(userLocation);
+    }
+
+    private static BigDecimal setScale6(BigDecimal v) {
+        return (v == null) ? null : v.setScale(6, RoundingMode.HALF_UP);
+    }
+
+    private static String trimToNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        return t.isEmpty() ? null : t;
     }
 
     private void saveUserTraits(User user, List<String> traits) {
@@ -416,14 +427,8 @@ public class AuthService {
     }
 
     private PreferenceResponse buildPreferenceResponse(User user, UserLocation userLocation, PreferenceRequest request) {
-        LocationResponse locationResponse = null;
-        if (userLocation != null) {
-            Double lat = (userLocation.getActivityLatitude() != null)
-                    ? userLocation.getActivityLatitude().doubleValue() : null;
-            Double lon = (userLocation.getActivityLongitude() != null)
-                    ? userLocation.getActivityLongitude().doubleValue() : null;
-            locationResponse = new LocationResponse(lat, lon, userLocation.getRoadName());
-        }
+        LocationResponse locationResponse =
+                (userLocation != null) ? LocationResponse.from(userLocation) : null;
 
         ActiveHoursResponse activeHoursResponse = ActiveHoursResponse.builder()
                 .start(request.getActiveHours().getStart())
