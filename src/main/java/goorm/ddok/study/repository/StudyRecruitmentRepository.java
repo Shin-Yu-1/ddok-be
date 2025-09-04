@@ -1,6 +1,6 @@
 package goorm.ddok.study.repository;
 
-import goorm.ddok.project.domain.TeamStatus;
+import goorm.ddok.study.domain.TeamStatus;
 import goorm.ddok.study.domain.StudyRecruitment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
