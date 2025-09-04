@@ -132,29 +132,6 @@ public class PlayerProfileService {
     }
 
 
-    /* -------- 활동 지역 수정 -------- */
-    public ProfileDto updateLocation(LocationUpdateRequest req, CustomUserDetails me) {
-        User user = requireMe(me);
-        user = userRepository.findById(user.getId())
-                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
-
-        var loc = req.getLocation();
-        if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
-            throw new GlobalException(ErrorCode.INVALID_LOCATION);
-        }
-
-        UserLocation ul = userLocationRepository.findByUserId(user.getId())
-                .orElse(UserLocation.builder().user(user).build());
-
-        ul = ul.toBuilder()
-                .roadName(StringUtils.hasText(loc.getAddress()) ? loc.getAddress().trim() : null)
-                .activityLatitude(BigDecimal.valueOf(loc.getLatitude()))
-                .activityLongitude(BigDecimal.valueOf(loc.getLongitude()))
-                .build();
-
-        userLocationRepository.save(ul);
-        return buildProfile(user, me);
-    }
 
     /* -------- 자기 소개 생성/수정 -------- */
     public ProfileDto upsertContent(ContentUpdateRequest req, CustomUserDetails me) {

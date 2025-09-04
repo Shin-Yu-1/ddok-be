@@ -151,40 +151,7 @@ public class PlayerProfileController {
         return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("profile", profile)));
     }
 
-    @PatchMapping("/location")
-    @Operation(
-            summary = "주 활동 지역 수정",
-            description = """
-                위/경도와 주소를 저장합니다.
-                - latitude/longitude 필수
-                - address는 선택
-                """
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "수정 성공",
-                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(value = """
-                    { "status": 200, "message": "요청이 성공적으로 처리되었습니다.", "data": { "profile": { /* 생략 */ } } }"""))),
-            @ApiResponse(responseCode = "400", description = "위치 정보 누락",
-                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(value = """
-                    { "status": 400, "message": "위치 정보가 올바르지 않습니다.", "data": null }"""))),
-            @ApiResponse(responseCode = "401", description = "인증 필요",
-                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(value = """
-                    { "status": 401, "message": "인증이 필요합니다.", "data": null }"""))),
-            @ApiResponse(responseCode = "404", description = "사용자 없음",
-                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(value = """
-                    { "status": 404, "message": "사용자를 찾을 수 없습니다.", "data": null }""")))
-    })
-    public ResponseEntity<ApiResponseDto<Map<String, Object>>> updateLocation(
-            @Valid @RequestBody LocationUpdateRequest req,
-            @AuthenticationPrincipal CustomUserDetails me
-    ) {
-        ProfileDto profile = service.updateLocation(req, me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("profile", profile)));
-    }
+
 
     @PatchMapping("/content")
     @Operation(summary = "자기 소개 수정", description = "자기소개 문구를 생성/수정합니다.")
@@ -192,7 +159,7 @@ public class PlayerProfileController {
             @ApiResponse(responseCode = "200", description = "수정 성공",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                    { "status": 200, "message": "요청이 성공적으로 처리되었습니다.", "data": { "profile": { /* 생략 */ } } }"""))),
+                    { "status": 200, "message": "자기소개 수정에 성공했습니다.", "data": { "profile": { /* 생략 */ } } }"""))),
             @ApiResponse(responseCode = "401", description = "인증 필요",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
@@ -203,7 +170,7 @@ public class PlayerProfileController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         ProfileDto profile = service.upsertContent(req, me); // 저장 엔티티 미정 → 응답만 포함(null)
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", Map.of("profile", profile)));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "자기소개 수정에 성공했습니다.", Map.of("profile", profile)));
     }
 
     @PatchMapping("/portfolio")
@@ -287,7 +254,7 @@ public class PlayerProfileController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         ProfileDto profile = service.toggleVisibility(me);
-        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 공개 상태가 변경되었습니다.", profile));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로필 공개 여부 상태가 변경되었습니다.", profile));
     }
 
     @PatchMapping("/stacks")
@@ -328,6 +295,6 @@ public class PlayerProfileController {
             @AuthenticationPrincipal CustomUserDetails me
     ) {
         ProfileDto profile = service.updateTechStacks(req, me);  // ← 전체 프로필 반환으로 변경
-        return ResponseEntity.ok(ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", profile));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "기술스택 수정에 성공했습니다.", profile));
     }
 }
