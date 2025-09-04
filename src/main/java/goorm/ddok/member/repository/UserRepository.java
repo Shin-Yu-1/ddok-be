@@ -1,5 +1,6 @@
 package goorm.ddok.member.repository;
 
+import goorm.ddok.member.domain.UserLocation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import goorm.ddok.member.domain.User;
 import org.springframework.data.jpa.repository.Query;
@@ -83,4 +84,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+
+    @Query("select u from User u where u.id = :userId")
+    Optional<User> findByUserId(@Param("userId") Long userId);
 }
