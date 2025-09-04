@@ -5,8 +5,11 @@ import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.project.dto.request.ProjectDeleteRequest;
 import goorm.ddok.project.service.ProjectRecruitmentSoftDeleteService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.*;
 import io.swagger.v3.oas.annotations.responses.*;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +29,13 @@ public class ProjectSoftDeleteController {
             description = """
                 프로젝트를 실제로 삭제하지 않고 deletedAt을 채워 비활성화합니다.
                 리더만 수행 가능하며, 요청 본문의 confirmText는 정확히 '삭제합니다.' 이어야 합니다.
-                """)
+                """,
+    security = @SecurityRequirement(name = "Authorization"),
+    parameters = {
+        @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                description = "Bearer {accessToken}",
+                examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+    })
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "프로젝트 삭제가 성공했습니다.",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,

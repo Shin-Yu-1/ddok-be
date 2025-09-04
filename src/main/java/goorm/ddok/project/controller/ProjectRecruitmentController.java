@@ -6,11 +6,14 @@ import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
 import goorm.ddok.project.dto.response.ProjectRecruitmentResponse;
 import goorm.ddok.project.service.ProjectRecruitmentService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,13 @@ public class ProjectRecruitmentController {
         online 모드 -> location 생략
         offline 모드 -> location 필수 (region1/2/3, roadName, main/subBuildingNo, zoneNo, latitude(y), longitude(x))
         """
+        ,
+        security = @SecurityRequirement(name = "Authorization"),
+        parameters = {
+                @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                        description = "Bearer {accessToken}",
+                        examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+        }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "프로젝트 생성 성공",
@@ -127,6 +137,13 @@ public class ProjectRecruitmentController {
                   - 다른 포지션 → 에러 발생
                 - 리더 본인은 신청 불가
                 """
+            ,
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi..."))
+            }
     )
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "신청/취소 성공",
