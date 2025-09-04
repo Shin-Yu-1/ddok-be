@@ -1,0 +1,645 @@
+package goorm.ddok.map.service;
+
+import goorm.ddok.cafe.repository.CafeRepository;
+import goorm.ddok.global.dto.LocationDto;
+import goorm.ddok.global.dto.PageResponse;
+import goorm.ddok.global.exception.ErrorCode;
+import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.map.dto.response.*;
+import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+import goorm.ddok.study.repository.StudyRecruitmentRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.*;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class MapService {
+
+    private final ProjectRecruitmentRepository projectRecruitmentRepository;
+    private final StudyRecruitmentRepository studyRecruitmentRepository;
+    private final UserRepository userRepository;
+    private final CafeRepository cafeRepository;
+
+    private static final Double DEFAULT_TEMPERATURE = 36.5;
+
+    public List<AllMapItemResponse> getAllInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            Long userId
+    ){
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        List<AllMapItemResponse> result = new ArrayList<>();
+
+        var projectRows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (projectRows != null) {
+            List<AllMapItemResponse> finalResult = result;
+            projectRows.forEach(r -> finalResult.add(AllMapItemResponse.builder()
+                    .category("project")
+                    .projectId(r.getId())
+                    .title(r.getTitle())
+                    .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var studyRows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (studyRows != null) {
+            List<AllMapItemResponse> finalResult1 = result;
+            studyRows.forEach(r -> finalResult1.add(AllMapItemResponse.builder()
+                    .category("study")
+                    .studyId(r.getId())
+                    .title(r.getTitle())
+                    .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var playerRows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+        if (playerRows != null) {
+            List<AllMapItemResponse> finalResult2 = result;
+            playerRows.forEach(r -> finalResult2.add(AllMapItemResponse.builder()
+                    .category("player")
+                    .userId(r.getId())
+                    .nickname(r.getNickname())
+                    .position(r.getPositionName())
+                    .IsMine(userId != null && userId.equals(r.getId()))
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1DepthName(),
+                                    r.getRegion2DepthName(),
+                                    r.getRegion3DepthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1DepthName())
+                            .region2depthName(r.getRegion2DepthName())
+                            .region3depthName(r.getRegion3DepthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        var cafeRows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+        if (cafeRows != null) {
+            List<AllMapItemResponse> finalResult3 = result;
+            cafeRows.forEach(r -> finalResult3.add(AllMapItemResponse.builder()
+                    .category("cafe")
+                    .cafeId(r.getId())
+                    .title(r.getTitle())
+                    .location(LocationDto.builder()
+                            .address(composeRoadAddress(
+                                    r.getRegion1depthName(),
+                                    r.getRegion2depthName(),
+                                    r.getRegion3depthName(),
+                                    r.getRoadName(),
+                                    r.getMainBuildingNo(),
+                                    r.getSubBuildingNo()))
+                            .region1depthName(r.getRegion1depthName())
+                            .region2depthName(r.getRegion2depthName())
+                            .region3depthName(r.getRegion3depthName())
+                            .roadName(r.getRoadName())
+                            .mainBuildingNo(r.getMainBuildingNo())
+                            .subBuildingNo(r.getSubBuildingNo())
+                            .zoneNo(r.getZoneNo())
+                            .latitude(r.getLatitude())
+                            .longitude(r.getLongitude())
+                            .build())
+                    .build()));
+        }
+
+        if (centerLat != null && centerLng != null && !result.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            result = result.stream()
+                    .sorted(Comparator.comparingDouble(item -> {
+                        var loc = item.getLocation();
+                        return haversineKm(
+                                cLat, cLng,
+                                loc.getLatitude().doubleValue(),
+                                loc.getLongitude().doubleValue()
+                        );
+                    }))
+                    .toList();
+        }
+
+        if (result.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        return result;
+    }
+
+
+    @Transactional(readOnly = true)
+    public List<ProjectMapItemResponse> getProjectsInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng
+    ) {
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+        if (rows == null || rows.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        var items = rows.stream()
+                .map(r -> ProjectMapItemResponse.builder()
+                        .category("project")
+                        .projectId(r.getId())
+                        .title(r.getTitle())
+                        .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
+                .toList();
+
+        // 중심점이 있으면 거리순 정렬
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
+        }
+
+        return items;
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudyMapItemResponse> getStudiesInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng
+    ) {
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+        if (rows == null || rows.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+
+        var items = rows.stream()
+                .map(r -> StudyMapItemResponse.builder()
+                        .category("study")
+                        .studyId(r.getId())
+                        .title(r.getTitle())
+                        .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
+                .toList();
+
+        // 중심점이 있으면 거리순 정렬
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
+        }
+
+        return items;
+    }
+
+    public void validateBounds(BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng) {
+        boolean hasAny = swLat != null || swLng != null || neLat != null || neLng != null;
+        boolean hasAll = swLat != null && swLng != null && neLat != null && neLng != null;
+        if (hasAny && !hasAll) {
+            throw new GlobalException(ErrorCode.REQUIRED_PARAMETER_MISSING);
+        }
+        if (hasAll && (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0)) {
+            throw new GlobalException(ErrorCode.INVALID_MAP_BOUNDS);
+        }
+    }
+
+    public String composeRoadAddress(String r1, String r2, String r3,
+                                     String road, String mainNo, String subNo) {
+        if (road == null && r1 == null && r2 == null) return "-";
+        var sb = new StringBuilder();
+        if (r1 != null && !r1.isBlank()) sb.append(r1).append(" ");
+        if (r2 != null && !r2.isBlank()) sb.append(r2).append(" ");
+        if (r3 != null && !r3.isBlank()) sb.append(r3).append(" ");
+        if (road != null && !road.isBlank()) sb.append(road).append(" ");
+
+        String main = mainNo == null ? "" : mainNo.trim();
+        String sub  = subNo == null ? "" : subNo.trim();
+        if (!main.isEmpty() && !sub.isEmpty()) sb.append(main).append("-").append(sub);
+        else if (!main.isEmpty()) sb.append(main);
+
+        return sb.toString().trim();
+    }
+
+    public static double haversineKm(double lat1, double lon1, double lat2, double lon2) {
+        final double R = 6371.0;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2.0 * Math.atan2(Math.sqrt(a), Math.sqrt(1.0 - a));
+        return R * c;
+    }
+
+    private String normalizeProjectTeamStatus(goorm.ddok.project.domain.TeamStatus status) {
+        if (status == null) return "ONGOING";
+        return (status == goorm.ddok.project.domain.TeamStatus.CLOSED) ? "ONGOING" : status.name();
+    }
+
+    private String normalizeStudyTeamStatus(goorm.ddok.study.domain.TeamStatus status) {
+        if (status == null) return "ONGOING";
+        return (status == goorm.ddok.study.domain.TeamStatus.CLOSED) ? "ONGOING" : status.name();
+    }
+
+    @Transactional(readOnly = true)
+    public List<PlayerMapItemResponse> getPlayersInBounds(
+            BigDecimal swLat, BigDecimal swLng,
+            BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            Long userId
+    ) {
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+        if (rows == null || rows.isEmpty()) return java.util.Collections.emptyList();
+
+        var items = rows.stream()
+                .map(r -> PlayerMapItemResponse.builder()
+                        .category("player")
+                        .userId(r.getId())
+                        .nickname(r.getNickname())
+                        .position(r.getPositionName()) // PRIMARY -> SECONDARY(1) fallback
+                        .IsMine(userId != null && userId.equals(r.getId()))
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1DepthName(),
+                                        r.getRegion2DepthName(),
+                                        r.getRegion3DepthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1DepthName())
+                                .region2depthName(r.getRegion2DepthName())
+                                .region3depthName(r.getRegion3DepthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build())
+                .toList();
+
+        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            items = items.stream()
+                    .sorted(Comparator.comparingDouble(p ->
+                            haversineKm(
+                                    cLat, cLng,
+                                    p.getLocation().getLatitude().doubleValue(),
+                                    p.getLocation().getLongitude().doubleValue()
+                            )))
+                    .toList();
+        }
+
+        return items;
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AllMapItemSearchResponse> search(
+            String keyword,
+            BigDecimal swLat, BigDecimal swLng, BigDecimal neLat, BigDecimal neLng,
+            BigDecimal centerLat, BigDecimal centerLng,
+            String categoryCsv,
+            Long userId,
+            int page, int size,
+            String filterCsv
+    ) {
+        // 1) 검증
+        validateBounds(swLat, swLng, neLat, neLng);
+
+        // 2) 파싱
+        Set<String> categories = parseCategories(categoryCsv);
+        // 기본: project,study,player
+        Set<goorm.ddok.project.domain.TeamStatus> projectStatusFilter = parseProjectTeamStatusFilter(filterCsv);
+        Set<goorm.ddok.study.domain.TeamStatus> studyStatusFilter = parseStudyTeamStatusFilter(filterCsv);
+
+        // 3) 페이지 파라미터+페치상한
+        page = Math.max(0, page);
+        size = (size <= 0) ? 20 : size;
+
+        final List<AllMapItemSearchResponse> items = new ArrayList<>();
+
+        if (categories.contains("project")) {
+            var rows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.stream()
+                        .filter(r -> projectStatusFilter.isEmpty() || projectStatusFilter.contains(r.getTeamStatus()))
+                        .forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                                .category("project")
+                                .projectId(r.getId())
+                                .title(r.getTitle())
+                                .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
+                                .bannerImageUrl(r.getBannerImageUrl())
+                                .location(LocationDto.builder()
+                                        .address(composeRoadAddress(
+                                                r.getRegion1depthName(),
+                                                r.getRegion2depthName(),
+                                                r.getRegion3depthName(),
+                                                r.getRoadName(),
+                                                r.getMainBuildingNo(),
+                                                r.getSubBuildingNo()))
+                                        .region1depthName(r.getRegion1depthName())
+                                        .region2depthName(r.getRegion2depthName())
+                                        .region3depthName(r.getRegion3depthName())
+                                        .roadName(r.getRoadName())
+                                        .mainBuildingNo(r.getMainBuildingNo())
+                                        .subBuildingNo(r.getSubBuildingNo())
+                                        .zoneNo(r.getZoneNo())
+                                        .latitude(r.getLatitude())
+                                        .longitude(r.getLongitude())
+                                        .build())
+                                .build()));
+            }
+        }
+
+        if (categories.contains("study")) {
+            var rows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.stream()
+                        .filter(r -> studyStatusFilter.isEmpty() || studyStatusFilter.contains(r.getTeamStatus()))
+                        .forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                                .category("study")
+                                .studyId(r.getId())
+                                .title(r.getTitle())
+                                .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
+                                .bannerImageUrl(r.getBannerImageUrl())
+                                .location(LocationDto.builder()
+                                        .address(composeRoadAddress(
+                                                r.getRegion1depthName(),
+                                                r.getRegion2depthName(),
+                                                r.getRegion3depthName(),
+                                                r.getRoadName(),
+                                                r.getMainBuildingNo(),
+                                                r.getSubBuildingNo()))
+                                        .region1depthName(r.getRegion1depthName())
+                                        .region2depthName(r.getRegion2depthName())
+                                        .region3depthName(r.getRegion3depthName())
+                                        .roadName(r.getRoadName())
+                                        .mainBuildingNo(r.getMainBuildingNo())
+                                        .subBuildingNo(r.getSubBuildingNo())
+                                        .zoneNo(r.getZoneNo())
+                                        .latitude(r.getLatitude())
+                                        .longitude(r.getLongitude())
+                                        .build())
+                                .build()));
+            }
+        }
+
+        if (categories.contains("player")) {
+            var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                        .category("player")
+                        .userId(r.getId())
+                        .nickname(r.getNickname())
+                        .IsMine(userId != null && userId.equals(r.getId()))
+                        .profileImageUrl(r.getProfileImageUrl())
+                        .temperature(DEFAULT_TEMPERATURE)
+                        .mainBadge(AllMapItemSearchResponse.MainBadge.builder()
+                                .type("login")
+                                .tier("bronze")
+                                .build())
+                        .abandonBadge(AllMapItemSearchResponse.AbandonBadge.builder()
+                                .isGranted(true)
+                                .count(5)
+                                .build())
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1DepthName(),
+                                        r.getRegion2DepthName(),
+                                        r.getRegion3DepthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1DepthName())
+                                .region2depthName(r.getRegion2DepthName())
+                                .region3depthName(r.getRegion3DepthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build()));
+            }
+        }
+
+        if (categories.contains("cafe")) {
+            var rows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                        .category("cafe")
+                        .cafeId(r.getId())
+                        .title(r.getTitle())
+                        .bannerImageUrl(r.getBannerImageUrl())
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build()));
+            }
+
+        }
+
+            if (centerLat != null && centerLng != null && !items.isEmpty()) {
+            final double cLat = centerLat.doubleValue();
+            final double cLng = centerLng.doubleValue();
+            items.sort(Comparator.comparingDouble(it -> {
+                var loc = it.getLocation();
+                if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+                    return Double.MAX_VALUE;
+                }
+                return haversineKm(cLat, cLng, loc.getLatitude().doubleValue(), loc.getLongitude().doubleValue());
+            }));
+        }
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return PageResponse.of(new PageImpl<>(
+                items.stream()
+                        .filter(it -> keyword == null || keyword.isBlank()
+                                || (it.getTitle() != null && it.getTitle().toLowerCase().contains(keyword.toLowerCase()))
+                                || (it.getNickname() != null && it.getNickname().toLowerCase().contains(keyword.toLowerCase()))
+                        )
+                        .skip((long) pageable.getPageNumber() * pageable.getPageSize())
+                        .limit(pageable.getPageSize())
+                        .toList(),
+                pageable,
+                items.size()
+        ));
+    }
+
+    private Set<String> parseCategories(String categoryCsv) {
+        if (categoryCsv == null || categoryCsv.isBlank()) {
+            return Set.of("project", "study", "player");
+        }
+        return Arrays.stream(categoryCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toSet());
+    }
+
+    private Set<goorm.ddok.project.domain.TeamStatus> parseProjectTeamStatusFilter(String filterCsv) {
+        if (filterCsv == null || filterCsv.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(filterCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    try {
+                        return goorm.ddok.project.domain.TeamStatus.valueOf(s.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<goorm.ddok.study.domain.TeamStatus> parseStudyTeamStatusFilter(String filterCsv) {
+        if (filterCsv == null || filterCsv.isBlank()) {
+            return Collections.emptySet();
+        }
+        return Arrays.stream(filterCsv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(s -> {
+                    try {
+                        return goorm.ddok.study.domain.TeamStatus.valueOf(s.toUpperCase());
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+    }
+}
