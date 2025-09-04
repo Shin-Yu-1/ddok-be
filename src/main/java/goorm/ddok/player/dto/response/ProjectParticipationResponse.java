@@ -45,7 +45,7 @@ public class ProjectParticipationResponse {
     @Schema(description = "프로젝트 제목", example = "구지라지 프로젝트")
     private String title;
 
-    @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "CLOSED")
+    @Schema(description = "팀 상태 (ONGOING / CLOSED)", example = "CLOSED")
     private TeamStatus teamStatus;
 
     @Schema(description = "프로젝트 위치 정보")
