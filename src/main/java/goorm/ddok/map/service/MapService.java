@@ -537,7 +537,39 @@ public class MapService {
             }
         }
 
-        if (centerLat != null && centerLng != null && !items.isEmpty()) {
+        if (categories.contains("cafe")) {
+            var rows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
+
+            if (rows != null) {
+                rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
+                        .category("cafe")
+                        .cafeId(r.getId())
+                        .title(r.getTitle())
+                        .bannerImageUrl(r.getBannerImageUrl())
+                        .location(LocationDto.builder()
+                                .address(composeRoadAddress(
+                                        r.getRegion1depthName(),
+                                        r.getRegion2depthName(),
+                                        r.getRegion3depthName(),
+                                        r.getRoadName(),
+                                        r.getMainBuildingNo(),
+                                        r.getSubBuildingNo()))
+                                .region1depthName(r.getRegion1depthName())
+                                .region2depthName(r.getRegion2depthName())
+                                .region3depthName(r.getRegion3depthName())
+                                .roadName(r.getRoadName())
+                                .mainBuildingNo(r.getMainBuildingNo())
+                                .subBuildingNo(r.getSubBuildingNo())
+                                .zoneNo(r.getZoneNo())
+                                .latitude(r.getLatitude())
+                                .longitude(r.getLongitude())
+                                .build())
+                        .build()));
+            }
+
+        }
+
+            if (centerLat != null && centerLng != null && !items.isEmpty()) {
             final double cLat = centerLat.doubleValue();
             final double cLng = centerLng.doubleValue();
             items.sort(Comparator.comparingDouble(it -> {
