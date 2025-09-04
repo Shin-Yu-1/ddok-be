@@ -26,14 +26,18 @@ public class AllMapItemSearchResponse {
     @Schema(description = "스터디 ID (category='study'일 때만 존재)", example = "1", nullable = true)
     private final Long studyId;
 
-    // Common fields for project and study
-    @Schema(description = "제목 (project/study)", example = "구지라지 프로젝트", nullable = true)
+    // Cafe fields
+    @Schema(description = "카페 ID (category='cafe'일 때만 존재)", example = "1", nullable = true)
+    private final Long cafeId;
+
+    // Common fields for project, study and cafe
+    @Schema(description = "제목 (project/study/cafe)", example = "구지라지 프로젝트", nullable = true)
     private final String title;
 
     @Schema(description = "팀 상태 (project/study)", example = "RECRUITING", nullable = true)
     private final String teamStatus;
 
-    @Schema(description = "배너 이미지 URL (project/study)", example = "/banner.jpg", nullable = true)
+    @Schema(description = "배너 이미지 URL (project/study/cafe)", example = "/banner.jpg", nullable = true)
     private final String bannerImageUrl;
 
     // Player fields
