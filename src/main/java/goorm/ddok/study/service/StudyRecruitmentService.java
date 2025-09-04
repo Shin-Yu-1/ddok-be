@@ -14,6 +14,8 @@ import goorm.ddok.study.dto.response.StudyRecruitmentCreateResponse;
 import goorm.ddok.study.repository.StudyApplicationRepository;
 import goorm.ddok.study.repository.StudyParticipantRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
+import goorm.ddok.team.domain.TeamType;
+import goorm.ddok.team.service.TeamCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,7 @@ public class StudyRecruitmentService {
     private final StudyApplicationRepository studyApplicationRepository;
     private final BannerImageService bannerImageService;
     private final FileService fileService;
+    private final TeamCommandService teamCommandService;
 
     public StudyRecruitmentCreateResponse createStudy(StudyRecruitmentCreateRequest req,
                                                       MultipartFile bannerImage,
@@ -116,6 +119,21 @@ public class StudyRecruitmentService {
         } catch (Exception e) {
             throw new GlobalException(ErrorCode.STUDY_SAVE_FAILED);
         }
+
+        /**
+         * 팀 자동 생성
+         * - 모집글이 생성되면 동시에 팀 엔티티를 생성한다.
+         * - type: STUDY
+         * - title: 모집글 제목
+         * - leader: 모집글 작성자
+         * - 생성과 동시에 리더를 TeamMember(LEADER)로 자동 추가한다.
+         */
+        teamCommandService.createTeamForRecruitment(
+                study.getId(),
+                TeamType.STUDY,
+                study.getTitle(),
+                user
+        );
 
         participantRepository.save(StudyParticipant.builder()
                 .studyRecruitment(study)

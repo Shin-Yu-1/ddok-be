@@ -15,6 +15,8 @@ import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentPositionRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+import goorm.ddok.team.domain.TeamType;
+import goorm.ddok.team.service.TeamCommandService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,7 @@ public class ProjectRecruitmentService {
     private final ProjectRecruitmentPositionRepository projectRecruitmentPositionRepository;
     private final BannerImageService bannerImageService;
     private final FileService fileService;
+    private final TeamCommandService teamCommandService;
 
     public ProjectRecruitmentResponse createProject(
             ProjectRecruitmentCreateRequest request,
@@ -176,7 +179,22 @@ public class ProjectRecruitmentService {
             throw new GlobalException(ErrorCode.PROJECT_SAVE_FAILED);
         }
 
-        // 9) 리더 참가자 등록 (정규화된 이름으로 검색)
+        /**
+         * 9) 팀 자동 생성
+         * - 모집글이 생성되면 동시에 팀 엔티티를 생성한다.
+         * - type: PROJECT (스터디일 경우 STUDY)
+         * - title: 모집글 제목
+         * - leader: 모집글 작성자
+         * - 생성과 동시에 리더를 TeamMember(LEADER)로 자동 추가한다.
+         */
+        teamCommandService.createTeamForRecruitment(
+                recruitment.getId(),
+                TeamType.PROJECT,
+                recruitment.getTitle(),
+                user
+        );
+
+        // 10) 리더 참가자 등록 (정규화된 이름으로 검색)
         ProjectRecruitmentPosition leaderPos = recruitment.getPositions().stream()
                 .filter(p -> p.getPositionName().equals(leaderPosName))
                 .findFirst()
