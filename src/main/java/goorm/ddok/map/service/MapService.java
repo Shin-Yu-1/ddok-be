@@ -599,7 +599,7 @@ public class MapService {
 
     private Set<String> parseCategories(String categoryCsv) {
         if (categoryCsv == null || categoryCsv.isBlank()) {
-            return Set.of("project", "study", "player");
+            return Set.of("project", "study", "player", "cafe");
         }
         return Arrays.stream(categoryCsv.split(","))
                 .map(String::trim)
