@@ -26,27 +26,4 @@ public class TeamApplicantResponse {
     private boolean IsMine;
     private TeamApplicantUserResponse user;
 
-    // StudyApplication -> DTO
-    public static TeamApplicantResponse fromStudy(StudyApplication entity, Long currentUserId) {
-        return TeamApplicantResponse.builder()
-                .applicantId(entity.getId())
-                .appliedPosition(null) // Study는 appliedPosition 없음
-                .status(ApplicantStatus.from(entity.getApplicationStatus()))
-                .appliedAt(entity.getCreatedAt())
-                .IsMine(entity.getUser().getId().equals(currentUserId))
-                .user(TeamApplicantUserResponse.from(entity.getUser()))
-                .build();
-    }
-
-    // ProjectApplication -> DTO
-    public static TeamApplicantResponse fromProject(ProjectApplication entity, Long currentUserId) {
-        return TeamApplicantResponse.builder()
-                .applicantId(entity.getId())
-                .appliedPosition(entity.getPosition().getPositionName())
-                .status(ApplicantStatus.from(entity.getStatus()))
-                .appliedAt(entity.getCreatedAt())
-                .IsMine(entity.getUser().getId().equals(currentUserId))
-                .user(TeamApplicantUserResponse.from(entity.getUser()))
-                .build();
-    }
 }
