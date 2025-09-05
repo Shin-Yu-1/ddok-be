@@ -100,4 +100,38 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+    interface StudyOverlayRow {
+        Long getId();
+        String getTitle();
+        goorm.ddok.study.domain.TeamStatus getTeamStatus();
+        String getBannerImageUrl();
+        goorm.ddok.study.domain.StudyType getStudyType();
+        Integer getCapacity();
+        goorm.ddok.study.domain.StudyMode getMode();
+        String getAddress();
+        Integer getAgeMin();
+        Integer getAgeMax();
+        Integer getExpectedMonth();
+        java.time.LocalDate getStartDate();
+    }
+
+    @Query(value = """
+        SELECT
+            s.id,
+            s.title,
+            s.team_status                          AS teamStatus,
+            s.banner_image_url                     AS bannerImageUrl,
+            s.study_type                           AS studyType,
+            s.mode                                  AS mode,
+            TRIM(BOTH ' ' FROM COALESCE(s.region1depth_name, '') || ' ' || COALESCE(s.region2depth_name, '')) AS address,
+            s.age_min                              AS ageMin,
+            s.age_max                              AS ageMax,
+            s.expected_months                AS expectedMonth,
+            s.start_date                           AS startDate
+        FROM study_recruitment s
+        WHERE s.deleted_at IS NULL
+          AND s.id = :id
+        """, nativeQuery = true)
+    Optional<StudyOverlayRow> findOverlayById(@Param("id") Long id);
 }

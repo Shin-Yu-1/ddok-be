@@ -653,7 +653,7 @@ public class MapService {
         }
         switch (category.trim().toLowerCase()) {
             case "project": return getProjectOverlay(id);
-            // case "study": ...
+            case "study": return getStudyOverlay(id);
             // case "cafe": ...
             // case "player": ...
             default:
@@ -676,7 +676,30 @@ public class MapService {
                 .teamStatus(normalizeProjectTeamStatus(row.getTeamStatus()))
                 .positions(positions)
                 .capacity(row.getCapacity())
-                .mode(row.getMode())
+                .mode(row.getMode().toString())
+                .address(row.getAddress())
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(row.getAgeMin())
+                        .ageMax(row.getAgeMax())
+                        .build())
+                .expectedMonth(row.getExpectedMonth())
+                .startDate(row.getStartDate())
+                .build();
+    }
+
+    private PinOverlayResponse getStudyOverlay(Long id) {
+        var row = studyRecruitmentRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        return PinOverlayResponse.builder()
+                .category("study")
+                .studyId(row.getId())
+                .title(row.getTitle())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .teamStatus(normalizeStudyTeamStatus(row.getTeamStatus()))
+                .studyType(row.getStudyType())
+                .capacity(row.getCapacity())
+                .mode(row.getMode().toString())
                 .address(row.getAddress())
                 .preferredAges(PreferredAgesDto.builder()
                         .ageMin(row.getAgeMin())
