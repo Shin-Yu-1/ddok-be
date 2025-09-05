@@ -39,7 +39,6 @@ public class ProjectListController {
                 - createdAt DESC 정렬
                 - 주소는 오프라인: "{region1} {region2}", 온라인: "online"
                 """)
-
     @ApiResponse(responseCode = "200", description = "프로젝트 리스트 조회 성공",
             content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                     examples = @ExampleObject(name="성공 예시", value = """
