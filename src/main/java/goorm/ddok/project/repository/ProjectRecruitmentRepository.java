@@ -5,6 +5,7 @@ import goorm.ddok.project.domain.ProjectRecruitment;
 import goorm.ddok.project.domain.TeamStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -139,5 +140,8 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
 
     @EntityGraph(attributePaths = "positions")
     Page<ProjectRecruitment> findByDeletedAtIsNull(Pageable pageable);
+
+    @EntityGraph(attributePaths = "positions")
+    Page<ProjectRecruitment> findAll(Specification<ProjectRecruitment> spec, Pageable pageable);
 }
 
