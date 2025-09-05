@@ -106,7 +106,7 @@ public class PinOverlayResponse {
     private BigDecimal temperature;
 
     @Schema(description = "내 프로필 여부 (category='player'일 때)", example = "true", nullable = true)
-    private boolean IsMine;
+    private final Boolean isMine;
 
     @Schema(description = "메인 뱃지 (category='player'일 때)", nullable = true)
     private final MainBadge mainBadge;

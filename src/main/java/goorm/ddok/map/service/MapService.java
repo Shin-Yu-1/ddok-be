@@ -654,8 +654,8 @@ public class MapService {
         switch (category.trim().toLowerCase()) {
             case "project": return getProjectOverlay(id);
             case "study": return getStudyOverlay(id);
-            case "cafe":    return getCafeOverlay(id);
-            // case "player": ...
+            case "cafe": return getCafeOverlay(id);
+            case "player": return getPlayerOverlay(id, currentUserId);
             default:
                 throw new GlobalException(ErrorCode.NOT_SUPPORT_CATEGORY);
         }
@@ -721,6 +721,45 @@ public class MapService {
                 .rating(row.getRating() == null ? java.math.BigDecimal.ZERO : row.getRating())
                 .reviewCount(row.getReviewCount() == null ? 0L : row.getReviewCount())
                 .address(row.getAddress())
+                .build();
+    }
+
+    private PinOverlayResponse getPlayerOverlay(Long id, Long currentUserId) {
+        var row = userRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        boolean mine = (currentUserId != null && currentUserId.equals(row.getId()));
+
+        String profile = row.getProfileImageUrl();
+
+        String latestProjectStatus = null;
+        if (row.getLatestProjectTeamStatus() != null) {
+            latestProjectStatus = normalizeProjectTeamStatus(row.getLatestProjectTeamStatus());
+        }
+        String latestStudyStatus = null;
+        if (row.getLatestStudyTeamStatus() != null) {
+            latestStudyStatus = normalizeStudyTeamStatus(row.getLatestStudyTeamStatus());
+        }
+
+        return PinOverlayResponse.builder()
+                .category("player")
+                .userId(row.getId())
+                .nickname(row.getNickname())
+                .profileImageUrl(profile)
+                .mainBadge(PinOverlayResponse.MainBadge.builder()
+                        .type("login")
+                        .tier("bronze")
+                        .build())
+                .abandonBadge(PinOverlayResponse.AbandonBadge.builder()
+                        .isGranted(true)
+                        .count(5)
+                        .build())
+                .mainPosition(row.getMainPosition())
+                .address(row.getAddress())
+                .latestProject(toMini(row.getLatestProjectId(), row.getLatestProjectTitle(), latestProjectStatus))
+                .latestStudy(toMini(row.getLatestStudyId(), row.getLatestStudyTitle(), latestStudyStatus))
+                .temperature(BigDecimal.valueOf(36.5))
+                .isMine(mine)
                 .build();
     }
 
