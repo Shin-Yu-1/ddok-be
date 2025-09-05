@@ -2,8 +2,6 @@ package goorm.ddok.map.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import goorm.ddok.global.dto.PreferredAgesDto;
-import goorm.ddok.project.domain.ProjectMode;
-import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.study.domain.StudyType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -59,7 +57,7 @@ public class PinOverlayResponse {
     private Integer capacity;
 
     @Schema(description = "진행 방식", example = "offline")
-    private ProjectMode mode;
+    private String mode;
 
     @Schema(description = "선호 연령대 (무관이면 null)", nullable = true)
     private PreferredAgesDto preferredAges;
