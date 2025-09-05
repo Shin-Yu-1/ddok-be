@@ -98,7 +98,7 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/signout")).authenticated()
                         .requestMatchers(new AntPathRequestMatcher("/api/auth/preferences")).authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/projects", "/api/projects/*").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/studies/", "/api/studies/*").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/studies", "/api/studies/*").permitAll()
                         .requestMatchers(HttpMethod.GET , "/api/players/**").permitAll()
                         .requestMatchers(HttpMethod.GET , "/api/map/**").permitAll()
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
