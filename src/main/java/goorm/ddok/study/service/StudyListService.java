@@ -7,6 +7,7 @@ import goorm.ddok.study.domain.StudyRecruitment;
 import goorm.ddok.study.domain.StudyType;
 import goorm.ddok.study.dto.response.StudyListResponse;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -82,12 +83,37 @@ public class StudyListService {
             spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("capacity"), capacity));
         }
 
-        // 연령 필터 (단순 비교: 모집 최소/최대와 비교)
-        if (ageMin != null) {
-            spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("ageMin"), ageMin));
-        }
-        if (ageMax != null) {
-            spec = spec.and((root, q, cb) -> cb.lessThanOrEqualTo(root.get("ageMax"), ageMax));
+        // 연령 필터
+        if (ageMin != null || ageMax != null) {
+            spec = spec.and((root, q, cb) -> {
+                Expression<Integer> sMin = root.get("ageMin");
+                Expression<Integer> sMax = root.get("ageMax");
+
+                Integer reqMin = ageMin;
+                Integer reqMax = ageMax;
+                if (reqMin != null && reqMax != null && reqMin > reqMax) {
+                    int tmp = reqMin; reqMin = reqMax; reqMax = tmp;
+                }
+
+                Predicate openMin = cb.or(cb.isNull(sMin), cb.equal(sMin, 0));
+                Predicate openMax = cb.or(cb.isNull(sMax), cb.equal(sMax, 0));
+
+                List<Predicate> ands = new ArrayList<>();
+
+                if (reqMin != null && reqMax != null) {
+                    Predicate coversLower = cb.or(openMin, cb.lessThanOrEqualTo(sMin, reqMin));
+                    Predicate coversUpper = cb.or(openMax, cb.greaterThanOrEqualTo(sMax, reqMax));
+                    ands.add(cb.and(coversLower, coversUpper));
+                } else if (reqMin != null) {
+                    Predicate covers = cb.or(openMax, cb.greaterThanOrEqualTo(sMax, reqMin));
+                    ands.add(covers);
+                } else {
+                    Predicate covers = cb.or(openMin, cb.lessThanOrEqualTo(sMin, reqMax));
+                    ands.add(covers);
+                }
+
+                return cb.and(ands.toArray(new Predicate[0]));
+            });
         }
 
         // 예상 개월 수(정확히 일치)
