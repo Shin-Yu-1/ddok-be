@@ -2,6 +2,8 @@ package goorm.ddok.study.repository;
 
 import goorm.ddok.study.domain.TeamStatus;
 import goorm.ddok.study.domain.StudyRecruitment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -134,4 +136,7 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
           AND s.id = :id
         """, nativeQuery = true)
     Optional<StudyOverlayRow> findOverlayById(@Param("id") Long id);
+
+    Page<StudyRecruitment> findByDeletedAtIsNull(Pageable pageable);
+
 }
