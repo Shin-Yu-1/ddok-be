@@ -3,10 +3,13 @@ package goorm.ddok.map.service;
 import goorm.ddok.cafe.repository.CafeRepository;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PageResponse;
+import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.*;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.project.domain.ProjectRecruitmentPosition;
+import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -641,5 +644,60 @@ public class MapService {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    @Transactional(readOnly = true)
+    public PinOverlayResponse getOverlay(String category, Long id, Long currentUserId) {
+        if (category == null || id == null) {
+            throw new GlobalException(ErrorCode.REQUIRED_PARAMETER_MISSING);
+        }
+        switch (category.trim().toLowerCase()) {
+            case "project": return getProjectOverlay(id);
+            // case "study": ...
+            // case "cafe": ...
+            // case "player": ...
+            default:
+                throw new GlobalException(ErrorCode.NOT_SUPPORT_CATEGORY);
+        }
+    }
+
+    private PinOverlayResponse getProjectOverlay(Long id) {
+        var row = projectRecruitmentRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        // 포지션 CSV → 리스트
+        List<String> positions = splitCsv(row.getPositionsCsv());
+
+        return PinOverlayResponse.builder()
+                .category("project")
+                .projectId(row.getId())
+                .title(row.getTitle())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .teamStatus(normalizeProjectTeamStatus(row.getTeamStatus()))
+                .positions(positions)
+                .capacity(row.getCapacity())
+                .mode(row.getMode())
+                .address(row.getAddress())
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(row.getAgeMin())
+                        .ageMax(row.getAgeMax())
+                        .build())
+                .expectedMonth(row.getExpectedMonth())
+                .startDate(row.getStartDate())
+                .build();
+    }
+
+    private PinOverlayResponse.MiniItem toMini(Long id, String title, String status) {
+        if (id == null) return null;
+        return PinOverlayResponse.MiniItem.builder().id(id).title(title).teamStatus(status).build();
+    }
+
+    private List<String> splitCsv(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
     }
 }
