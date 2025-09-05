@@ -1,14 +1,12 @@
 package goorm.ddok.study.service;
 
 import goorm.ddok.global.dto.PreferredAgesDto;
-import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.study.domain.StudyMode;
 import goorm.ddok.study.domain.StudyRecruitment;
 import goorm.ddok.study.domain.StudyType;
 import goorm.ddok.study.dto.response.StudyListResponse;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
-import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -154,17 +152,10 @@ public class StudyListService {
             String t = token.trim();
             if (t.isEmpty()) continue;
 
-            // 1) ENUM 이름 직접 매칭 (대소문자 무시, 공백/슬래시/하이픈 → 언더스코어)
             String candidate = t.replaceAll("[\\s/-]+", "_").toUpperCase();
             try {
                 set.add(StudyType.valueOf(candidate));
-                continue;
             } catch (Exception ignored) {}
-
-            // 2) (선택) 한글 별칭 매핑이 필요하면 여기서 매핑하세요.
-            //    예) mapAlias("취업/면접") -> StudyType.JOB_INTERVIEW
-            // StudyType alias = mapAlias(t);
-            // if (alias != null) set.add(alias);
         }
         return set;
     }

@@ -2,7 +2,6 @@ package goorm.ddok.study.controller;
 
 import goorm.ddok.global.dto.PageResponse;
 import goorm.ddok.global.response.ApiResponseDto;
-import goorm.ddok.project.dto.response.ProjectListResponse;
 import goorm.ddok.study.dto.response.StudyListResponse;
 import goorm.ddok.study.service.StudyListService;
 import io.swagger.v3.oas.annotations.Operation;
