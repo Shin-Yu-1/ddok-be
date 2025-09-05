@@ -1,7 +1,9 @@
 package goorm.ddok.project.repository;
 
+import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.ProjectRecruitment;
 import goorm.ddok.project.domain.TeamStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -94,5 +96,43 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+    public interface ProjectOverlayRow {
+        Long getId();
+        String getTitle();
+        goorm.ddok.project.domain.TeamStatus getTeamStatus();
+        String getBannerImageUrl();
+        Integer getCapacity();
+        goorm.ddok.project.domain.ProjectMode getMode(); // enum 매핑
+        String getAddress();
+        Integer getAgeMin();
+        Integer getAgeMax();
+        Integer getExpectedMonth();
+        java.time.LocalDate getStartDate();
+        String getPositionsCsv();
+    }
+
+    @Query(value = """
+    SELECT
+        p.id,
+        p.title,
+        p.team_status                    AS teamStatus,
+        p.banner_image_url               AS bannerImageUrl,
+        p.capacity,
+        p.project_mode                   AS mode,
+        TRIM(BOTH ' ' FROM COALESCE(p.region1depth_name, '') || ' ' || COALESCE(p.region2depth_name, '')) AS address,
+        p.age_min                        AS ageMin,
+        p.age_max                        AS ageMax,
+        p.expected_months                AS expectedMonth,
+        p.start_date                     AS startDate,
+        (SELECT STRING_AGG(prp.position_name, ',')
+           FROM project_recruitment_position prp
+          WHERE prp.project_id = p.id)   AS positionsCsv
+    FROM project_recruitment p
+    WHERE p.deleted_at IS NULL
+      AND p.id = :id
+    """, nativeQuery = true)
+    Optional<ProjectOverlayRow> findOverlayById(@Param("id") Long id);
+
 }
 
