@@ -56,7 +56,6 @@ public class ProjectListService {
             Integer ageMin, Integer ageMax, Integer expectedMonth, LocalDate startDate
     ) {
         return (root, query, cb) -> {
-            // count 쿼리에는 fetch 금지 — 여기서는 @EntityGraph 사용하므로 fetch 하지 않음
             if (Objects.requireNonNull(query).getResultType() != Long.class && query.getResultType() != long.class) {
                 query.distinct(true);
             }
@@ -115,12 +114,28 @@ public class ProjectListService {
                 preds.add(cb.equal(root.get("projectMode"), parsedMode));
             }
 
-            // 나이: 각각 있을 때 개별 적용
-            if (ageMin != null && ageMin > 0) {
-                preds.add(cb.greaterThanOrEqualTo(root.get("ageMin"), ageMin));
-            }
-            if (ageMax != null && ageMax > 0) {
-                preds.add(cb.lessThanOrEqualTo(root.get("ageMax"), ageMax));
+            // 나이
+            if (ageMin != null || ageMax != null) {
+                // 잘못 들어온 경우 보정
+                Integer reqMin = ageMin;
+                Integer reqMax = ageMax;
+                if (reqMin != null && reqMax != null && reqMin > reqMax) {
+                    int tmp = reqMin; reqMin = reqMax; reqMax = tmp;
+                }
+
+                preds.add(cb.and(
+                        // 둘 다 전달된 경우: (sMin==0 or sMin <= reqMin) AND (sMax==0 or sMax >= reqMax)
+                        (reqMin != null && reqMax != null)
+                                ? cb.and(
+                                cb.or(cb.equal(root.get("ageMin"), 0), cb.lessThanOrEqualTo(root.get("ageMin"), reqMin)),
+                                cb.or(cb.equal(root.get("ageMax"), 0), cb.greaterThanOrEqualTo(root.get("ageMax"), reqMax))
+                        )
+                                // reqMin만: 상한이 열려있거나(sMax==0) sMax >= reqMin
+                                : (reqMin != null)
+                                ? cb.or(cb.equal(root.get("ageMax"), 0), cb.greaterThanOrEqualTo(root.get("ageMax"), reqMin))
+                                // reqMax만: 하한이 열려있거나(sMin==0) sMin <= reqMax
+                                : cb.or(cb.equal(root.get("ageMin"), 0), cb.lessThanOrEqualTo(root.get("ageMin"), reqMax))
+                ));
             }
 
             // 예상 개월 수 ==
