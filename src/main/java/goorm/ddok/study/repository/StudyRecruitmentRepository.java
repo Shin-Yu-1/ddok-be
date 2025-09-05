@@ -4,7 +4,9 @@ import goorm.ddok.study.domain.TeamStatus;
 import goorm.ddok.study.domain.StudyRecruitment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +16,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitment, Long> {
+public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitment, Long>, JpaSpecificationExecutor<StudyRecruitment> {
     Optional<StudyRecruitment> findByIdAndDeletedAtIsNull(Long id);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
