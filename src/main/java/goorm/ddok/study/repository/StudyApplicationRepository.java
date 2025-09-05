@@ -18,7 +18,7 @@ public interface StudyApplicationRepository extends JpaRepository<StudyApplicati
     Optional<StudyApplication> findByUser_IdAndStudyRecruitment_Id(Long userId, Long studyId);
 
     /** 특정 모집글(StudyRecruitment)에 대해, 지정한 상태(status)의 지원자 목록 조회 (페이징) */
-    Page<StudyApplication> findByStudyRecruitment_IdAndStatus(Long recruitmentId, ApplicationStatus status, Pageable pageable);
+    Page<StudyApplication> findByStudyRecruitment_IdAndApplicationStatus(Long recruitmentId, ApplicationStatus applicationStatus, Pageable pageable);
 
 
 }
