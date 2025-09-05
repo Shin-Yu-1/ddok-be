@@ -654,7 +654,7 @@ public class MapService {
         switch (category.trim().toLowerCase()) {
             case "project": return getProjectOverlay(id);
             case "study": return getStudyOverlay(id);
-            // case "cafe": ...
+            case "cafe":    return getCafeOverlay(id);
             // case "player": ...
             default:
                 throw new GlobalException(ErrorCode.NOT_SUPPORT_CATEGORY);
@@ -665,7 +665,6 @@ public class MapService {
         var row = projectRecruitmentRepository.findOverlayById(id)
                 .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
 
-        // 포지션 CSV → 리스트
         List<String> positions = splitCsv(row.getPositionsCsv());
 
         return PinOverlayResponse.builder()
@@ -707,6 +706,21 @@ public class MapService {
                         .build())
                 .expectedMonth(row.getExpectedMonth())
                 .startDate(row.getStartDate())
+                .build();
+    }
+
+    private PinOverlayResponse getCafeOverlay(Long id) {
+        var row = cafeRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        return PinOverlayResponse.builder()
+                .category("cafe")
+                .cafeId(row.getId())
+                .title(row.getName())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .rating(row.getRating() == null ? java.math.BigDecimal.ZERO : row.getRating())
+                .reviewCount(row.getReviewCount() == null ? 0L : row.getReviewCount())
+                .address(row.getAddress())
                 .build();
     }
 
