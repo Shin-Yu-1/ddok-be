@@ -1,6 +1,5 @@
 package goorm.ddok.project.repository;
 
-import goorm.ddok.project.domain.ProjectMode;
 import goorm.ddok.project.domain.ProjectRecruitment;
 import goorm.ddok.project.domain.TeamStatus;
 import org.springframework.data.domain.Page;
@@ -100,7 +99,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
             @Param("neLng") BigDecimal neLng
     );
 
-    public interface ProjectOverlayRow {
+    interface ProjectOverlayRow {
         Long getId();
         String getTitle();
         goorm.ddok.project.domain.TeamStatus getTeamStatus();
