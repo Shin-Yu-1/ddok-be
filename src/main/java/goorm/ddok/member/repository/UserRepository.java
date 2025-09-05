@@ -91,4 +91,107 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("select u from User u where u.id = :userId")
     Optional<User> findByUserId(@Param("userId") Long userId);
+
+
+    interface UserOverlayRow {
+        Long getId();
+        String getNickname();
+        String getProfileImageUrl();
+        String getMainBadgeType();
+        String getMainBadgeTier();
+        Boolean getAbandonGranted();
+        Integer getAbandonCount();
+        String getMainPosition();
+        String getAddress();
+        java.math.BigDecimal getTemperature();
+
+        Long getLatestProjectId();
+        String getLatestProjectTitle();
+        goorm.ddok.project.domain.TeamStatus getLatestProjectTeamStatus();
+
+        Long getLatestStudyId();
+        String getLatestStudyTitle();
+        goorm.ddok.study.domain.TeamStatus getLatestStudyTeamStatus();
+    }
+
+    @Query(value = """
+        SELECT
+            u.id,
+            u.nickname,
+            COALESCE(u.profile_image_url, '') AS profileImageUrl,
+            COALESCE(
+                      (SELECT up.position_name
+                         FROM user_position up
+                        WHERE up.user_id = u.id
+                          AND up.type = 'PRIMARY'
+                        ORDER BY up.created_at DESC
+                        LIMIT 1),
+                      (SELECT up2.position_name
+                         FROM user_position up2
+                        WHERE up2.user_id = u.id
+                          AND up2.type = 'SECONDARY'
+                          AND up2.ord = 1
+                        ORDER BY up2.created_at DESC
+                        LIMIT 1)
+                    ) AS mainPosition,
+
+            TRIM(BOTH ' ' FROM COALESCE(ul.region_1depth_name, '') || ' ' || COALESCE(ul.region_2depth_name, '')) AS address,
+
+            (SELECT pr.id
+               FROM project_recruitment pr
+               JOIN project_recruitment_position prp ON prp.project_id = pr.id
+               JOIN project_participant pp ON pp.position_id = prp.id AND pp.user_id = u.id
+              WHERE pr.deleted_at IS NULL
+                AND pp.deleted_at IS NULL
+              ORDER BY pr.created_at DESC
+              LIMIT 1) AS latestProjectId,
+
+            (SELECT pr.title
+               FROM project_recruitment pr
+               JOIN project_recruitment_position prp ON prp.project_id = pr.id
+               JOIN project_participant pp ON pp.position_id = prp.id AND pp.user_id = u.id
+              WHERE pr.deleted_at IS NULL
+                AND pp.deleted_at IS NULL
+              ORDER BY pr.created_at DESC
+              LIMIT 1) AS latestProjectTitle,
+
+            (SELECT pr.team_status
+               FROM project_recruitment pr
+               JOIN project_recruitment_position prp ON prp.project_id = pr.id
+               JOIN project_participant pp ON pp.position_id = prp.id AND pp.user_id = u.id
+              WHERE pr.deleted_at IS NULL
+                AND pp.deleted_at IS NULL
+              ORDER BY pr.created_at DESC
+              LIMIT 1) AS latestProjectTeamStatus,
+
+            (SELECT sr.id
+               FROM study_recruitment sr
+               JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
+              WHERE sr.deleted_at IS NULL
+                AND sp.deleted_at IS NULL
+              ORDER BY sr.created_at DESC
+              LIMIT 1) AS latestStudyId,
+
+            (SELECT sr.title
+               FROM study_recruitment sr
+               JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
+              WHERE sr.deleted_at IS NULL
+                AND sp.deleted_at IS NULL
+              ORDER BY sr.created_at DESC
+              LIMIT 1) AS latestStudyTitle,
+
+            (SELECT sr.team_status
+               FROM study_recruitment sr
+               JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
+              WHERE sr.deleted_at IS NULL
+                AND sp.deleted_at IS NULL
+              ORDER BY sr.created_at DESC
+              LIMIT 1) AS latestStudyTeamStatus
+
+        FROM users u
+        LEFT JOIN user_location ul ON ul.user_id = u.id
+        WHERE u.is_public = TRUE
+          AND u.id = :id
+        """, nativeQuery = true)
+    Optional<UserOverlayRow> findOverlayById(@Param("id") Long id);
 }

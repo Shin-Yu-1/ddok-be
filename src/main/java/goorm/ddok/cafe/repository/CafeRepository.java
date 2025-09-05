@@ -67,4 +67,39 @@ public interface CafeRepository extends JpaRepository<Cafe, Long> {
             @Param("swLng") BigDecimal swLng,
             @Param("neLng") BigDecimal neLng
     );
+
+    interface CafeOverlayRow {
+        Long getId();
+        String getName();
+        String getBannerImageUrl();
+        BigDecimal getRating();
+        Long getReviewCount();
+        String getAddress();
+    }
+
+    @Query(value = """
+        SELECT
+            c.id,
+            c.name,
+            COALESCE(c.banner_image_url, '') AS bannerImageUrl,
+            (
+              SELECT COALESCE(ROUND(AVG(cr.rating)::numeric, 1), 0)
+              FROM cafe_review cr
+              WHERE cr.cafe_id = c.id
+                AND cr.status = 'ACTIVE'
+                AND cr.deleted_at IS NULL
+            ) AS rating,
+            (
+              SELECT COUNT(*)
+              FROM cafe_review cr
+              WHERE cr.cafe_id = c.id
+                AND cr.status = 'ACTIVE'
+                AND cr.deleted_at IS NULL
+            ) AS reviewCount,
+            TRIM(BOTH ' ' FROM COALESCE(c.region_1depth_name, '') || ' ' || COALESCE(c.region_2depth_name, '')) AS address
+        FROM cafe c
+        WHERE c.deleted_at IS NULL
+          AND c.id = :id
+        """, nativeQuery = true)
+    Optional<CafeOverlayRow> findOverlayById(@Param("id") Long id);
 }

@@ -54,6 +54,8 @@ public enum ErrorCode {
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 5MB를 넘을 수 없습니다."),
     FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
     INVALID_TEAM_TYPE(HttpStatus.BAD_REQUEST,"잘못된 팀 타입입니다."),
+    RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "리소스를 찾을 수 없습니다."),
+    NOT_SUPPORT_CATEGORY(HttpStatus.BAD_REQUEST, "지원하지 않는 카테고리입니다."),
 
 
     // 401 UNAUTHORIZED
