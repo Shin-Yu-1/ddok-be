@@ -3,10 +3,13 @@ package goorm.ddok.map.service;
 import goorm.ddok.cafe.repository.CafeRepository;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PageResponse;
+import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.*;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.project.domain.ProjectRecruitmentPosition;
+import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -641,5 +644,136 @@ public class MapService {
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+    }
+
+    @Transactional(readOnly = true)
+    public PinOverlayResponse getOverlay(String category, Long id, Long currentUserId) {
+        if (category == null || id == null) {
+            throw new GlobalException(ErrorCode.REQUIRED_PARAMETER_MISSING);
+        }
+        switch (category.trim().toLowerCase()) {
+            case "project": return getProjectOverlay(id);
+            case "study": return getStudyOverlay(id);
+            case "cafe": return getCafeOverlay(id);
+            case "player": return getPlayerOverlay(id, currentUserId);
+            default:
+                throw new GlobalException(ErrorCode.NOT_SUPPORT_CATEGORY);
+        }
+    }
+
+    private PinOverlayResponse getProjectOverlay(Long id) {
+        var row = projectRecruitmentRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        List<String> positions = splitCsv(row.getPositionsCsv());
+
+        return PinOverlayResponse.builder()
+                .category("project")
+                .projectId(row.getId())
+                .title(row.getTitle())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .teamStatus(normalizeProjectTeamStatus(row.getTeamStatus()))
+                .positions(positions)
+                .capacity(row.getCapacity())
+                .mode(row.getMode().toString())
+                .address(row.getAddress())
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(row.getAgeMin())
+                        .ageMax(row.getAgeMax())
+                        .build())
+                .expectedMonth(row.getExpectedMonth())
+                .startDate(row.getStartDate())
+                .build();
+    }
+
+    private PinOverlayResponse getStudyOverlay(Long id) {
+        var row = studyRecruitmentRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        return PinOverlayResponse.builder()
+                .category("study")
+                .studyId(row.getId())
+                .title(row.getTitle())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .teamStatus(normalizeStudyTeamStatus(row.getTeamStatus()))
+                .studyType(row.getStudyType())
+                .capacity(row.getCapacity())
+                .mode(row.getMode().toString())
+                .address(row.getAddress())
+                .preferredAges(PreferredAgesDto.builder()
+                        .ageMin(row.getAgeMin())
+                        .ageMax(row.getAgeMax())
+                        .build())
+                .expectedMonth(row.getExpectedMonth())
+                .startDate(row.getStartDate())
+                .build();
+    }
+
+    private PinOverlayResponse getCafeOverlay(Long id) {
+        var row = cafeRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        return PinOverlayResponse.builder()
+                .category("cafe")
+                .cafeId(row.getId())
+                .title(row.getName())
+                .bannerImageUrl(row.getBannerImageUrl())
+                .rating(row.getRating() == null ? java.math.BigDecimal.ZERO : row.getRating())
+                .reviewCount(row.getReviewCount() == null ? 0L : row.getReviewCount())
+                .address(row.getAddress())
+                .build();
+    }
+
+    private PinOverlayResponse getPlayerOverlay(Long id, Long currentUserId) {
+        var row = userRepository.findOverlayById(id)
+                .orElseThrow(() -> new GlobalException(ErrorCode.RESOURCE_NOT_FOUND));
+
+        boolean mine = (currentUserId != null && currentUserId.equals(row.getId()));
+
+        String profile = row.getProfileImageUrl();
+
+        String latestProjectStatus = null;
+        if (row.getLatestProjectTeamStatus() != null) {
+            latestProjectStatus = normalizeProjectTeamStatus(row.getLatestProjectTeamStatus());
+        }
+        String latestStudyStatus = null;
+        if (row.getLatestStudyTeamStatus() != null) {
+            latestStudyStatus = normalizeStudyTeamStatus(row.getLatestStudyTeamStatus());
+        }
+
+        return PinOverlayResponse.builder()
+                .category("player")
+                .userId(row.getId())
+                .nickname(row.getNickname())
+                .profileImageUrl(profile)
+                .mainBadge(PinOverlayResponse.MainBadge.builder()
+                        .type("login")
+                        .tier("bronze")
+                        .build())
+                .abandonBadge(PinOverlayResponse.AbandonBadge.builder()
+                        .isGranted(true)
+                        .count(5)
+                        .build())
+                .mainPosition(row.getMainPosition())
+                .address(row.getAddress())
+                .latestProject(toMini(row.getLatestProjectId(), row.getLatestProjectTitle(), latestProjectStatus))
+                .latestStudy(toMini(row.getLatestStudyId(), row.getLatestStudyTitle(), latestStudyStatus))
+                .temperature(BigDecimal.valueOf(36.5))
+                .isMine(mine)
+                .build();
+    }
+
+    private PinOverlayResponse.MiniItem toMini(Long id, String title, String status) {
+        if (id == null) return null;
+        return PinOverlayResponse.MiniItem.builder().id(id).title(title).teamStatus(status).build();
+    }
+
+    private List<String> splitCsv(String csv) {
+        if (csv == null || csv.isBlank()) return List.of();
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .distinct()
+                .toList();
     }
 }
