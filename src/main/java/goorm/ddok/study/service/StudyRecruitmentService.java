@@ -209,16 +209,29 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
         }
 
-        return studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId)
-                .map(existing -> { studyApplicationRepository.delete(existing); return false; })
-                .orElseGet(() -> {
-                    studyApplicationRepository.save(StudyApplication.builder()
-                            .user(userDetails.getUser())
-                            .studyRecruitment(study)
-                            .applicationStatus(ApplicationStatus.PENDING)
-                            .build());
-                    return true;
-                });
+        Optional<StudyApplication> existingOpt =
+                studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId);
+
+        if (existingOpt.isPresent()) {
+            StudyApplication existing = existingOpt.get();
+
+            if (existing.getApplicationStatus() != ApplicationStatus.PENDING) {
+                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+            }
+
+            int deleted = studyApplicationRepository.deleteIfPending(existing.getId());
+            if (deleted == 0) {
+                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+            }
+            return false;
+        }
+
+        studyApplicationRepository.save(StudyApplication.builder()
+                .user(userDetails.getUser())
+                .studyRecruitment(study)
+                .applicationStatus(ApplicationStatus.PENDING)
+                .build());
+        return true;
     }
 
     private LocationDto buildLocationForRead(StudyRecruitment sr) {
