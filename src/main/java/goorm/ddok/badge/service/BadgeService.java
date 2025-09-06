@@ -82,7 +82,7 @@ public class BadgeService {
         return badgeTierRuleRepository
                 .findTopByBadgeTypeAndRequiredCntLessThanEqualOrderByRequiredCntDesc(type, totalCnt)
                 .map(BadgeTierRule::getTier)
-                .orElse(BadgeTier.BRONZE);
+                .orElse(BadgeTier.bronze);
     }
 
 

@@ -138,7 +138,7 @@ public class ProfileQueryService {
                                     badge.getBadgeType(), badge.getTotalCnt()
                             )
                             .map(BadgeTierRule::getTier)
-                            .orElse(BadgeTier.BRONZE);
+                            .orElse(BadgeTier.bronze);
                     return BadgeDto.builder()
                             .type(badge.getBadgeType())
                             .tier(tier)
