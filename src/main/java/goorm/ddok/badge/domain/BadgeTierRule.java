@@ -12,8 +12,8 @@ import java.time.Instant;
  * 배지 티어 규칙 엔티티
  *
  * - 착한 배지(complete, leader_complete, login)에만 적용됨
- * - 누적 횟수(total_cnt)에 따라 티어(BRONZE, SILVER, GOLD)를 결정하기 위한 기준
- * - ex) complete: {0=BRONZE, 5=SILVER, 10=GOLD}
+ * - 누적 횟수(total_cnt)에 따라 티어(bronze, silver, gold)를 결정하기 위한 기준
+ * - ex) complete: {0=bronze, 5=silver, 10=gold}
  */
 @Entity
 @Table(
