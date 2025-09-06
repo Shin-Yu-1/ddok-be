@@ -1,13 +1,11 @@
 package goorm.ddok.player.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
-@JsonInclude(JsonInclude.Include.NON_NULL)
 @Schema(name = "ProfileSearchResponse", description = "플레이어 검색 응답")
 public class ProfileSearchResponse {
 
