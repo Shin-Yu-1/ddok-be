@@ -41,7 +41,7 @@ public class ProfileSearchResponse {
     @Schema(description = "내 프로필 여부", example = "true")
     private final boolean IsMine;
 
-    @Schema(description = "채팅방 ID", example = "1")
+    @Schema(description = "채팅방 ID", example = "1", nullable = true)
     private final Long chatRoomId;
 
     @Schema(description = "1:1 대화 요청 상태", example = "false")
