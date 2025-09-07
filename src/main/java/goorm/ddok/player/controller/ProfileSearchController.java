@@ -66,7 +66,7 @@ public class ProfileSearchController {
                                         },
                                         "abandonBadge": {
                                             "count": 5,
-                                            "granted": true
+                                            "isGranted": true
                                         },
                                         "mainPosition": "백엔드",
                                         "address": "전북 익산시",
