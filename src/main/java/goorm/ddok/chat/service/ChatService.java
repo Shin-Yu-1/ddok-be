@@ -12,6 +12,8 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.team.domain.Team;
+import goorm.ddok.team.domain.TeamMemberRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -234,5 +236,30 @@ public class ChatService {
                 .room(room).user(receiver).role(ChatMemberRole.MEMBER).build();
 
         chatRoomMemberRepository.saveAll(List.of(admin, member));
+    }
+
+    @Transactional
+    public ChatRoom createTeamChatRoom(Team team, User leader) {
+        Optional<ChatRoom> existing = chatRepository.findByTeam(team);
+        if (existing.isPresent()) {
+            return existing.get();
+        }
+
+        ChatRoom room = chatRepository.save(ChatRoom.builder()
+                .roomType(ChatRoomType.GROUP)
+                .owner(leader)
+                .team(team)
+                .name(team.getTitle())
+                .build());
+
+        ChatRoomMember leaderMember = ChatRoomMember.builder()
+                .room(room)
+                .user(leader)
+                .role(ChatMemberRole.ADMIN)
+                .build();
+
+        chatRoomMemberRepository.save(leaderMember);
+
+        return room;
     }
 }
