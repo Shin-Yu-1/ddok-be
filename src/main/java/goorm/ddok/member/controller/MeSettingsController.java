@@ -75,7 +75,6 @@ public class MeSettingsController {
     /* =========================
      *  개인정보변경 페이지 조회
      * ========================= */
-    @ReauthRequired
     @GetMapping
     @Operation(summary = "개인정보변경 페이지 조회",
             security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
@@ -116,7 +115,6 @@ public class MeSettingsController {
     /* =========================
      *  프로필 이미지 수정 (JSON: URL)
      * ========================= */
-    @ReauthRequired
     @PatchMapping(value = "/image", consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "프로필 이미지 수정 (URL)",
             security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
@@ -158,7 +156,6 @@ public class MeSettingsController {
     /* =========================
      *  프로필 이미지 수정 (파일 업로드)
      * ========================= */
-    @ReauthRequired
     @PatchMapping(value = "/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "프로필 이미지 수정 (업로드)",
@@ -195,7 +192,6 @@ public class MeSettingsController {
     /* =========================
      *  닉네임 수정 (수정 후 개인정보 블록 반환)
      * ========================= */
-    @ReauthRequired
     @PatchMapping("/nickname")
     @Operation(summary = "닉네임 수정", description = "닉네임을 변경하고, 변경된 개인정보 블록을 반환합니다.",
             security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
@@ -237,6 +233,7 @@ public class MeSettingsController {
         SettingsPageResponse data = service.updatePhone(req, me);
         return ResponseEntity.ok(ApiResponseDto.of(200, "전화번호 변경에 성공했습니다.", data));
     }
+    // TODO : 비밀번호 변경
 
     /* =========================
      *  회원 탈퇴 (data=null 유지)
