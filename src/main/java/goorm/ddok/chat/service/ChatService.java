@@ -252,14 +252,27 @@ public class ChatService {
                 .name(team.getTitle())
                 .build());
 
-        ChatRoomMember leaderMember = ChatRoomMember.builder()
-                .room(room)
-                .user(leader)
-                .role(ChatMemberRole.ADMIN)
-                .build();
-
-        chatRoomMemberRepository.save(leaderMember);
+        addMemberToTeamChat(team, leader, TeamMemberRole.LEADER);
 
         return room;
+    }
+
+    @Transactional
+    public void addMemberToTeamChat(Team team, User user, TeamMemberRole role) {
+        ChatRoom room = chatRepository.findByTeam(team)
+                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+
+        boolean already = chatRoomMemberRepository.existsByRoomAndUser(room, user);
+        if (already) return;
+
+        ChatMemberRole chatRole = (role == TeamMemberRole.LEADER)
+                ? ChatMemberRole.ADMIN
+                : ChatMemberRole.MEMBER;
+
+        chatRoomMemberRepository.save(ChatRoomMember.builder()
+                .room(room)
+                .user(user)
+                .role(chatRole)
+                .build());
     }
 }
