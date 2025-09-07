@@ -27,4 +27,8 @@ public interface StudyApplicationRepository extends JpaRepository<StudyApplicati
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("delete from StudyApplication a where a.id = :id and a.applicationStatus = 'PENDING'")
     int deleteIfPending(@Param("id") Long id);
+
+    long countByStudyRecruitmentAndApplicationStatus(StudyRecruitment study, ApplicationStatus status);
+
+    boolean existsByUser_IdAndStudyRecruitment_IdAndApplicationStatus(Long userId, Long studyId, ApplicationStatus status);
 }
