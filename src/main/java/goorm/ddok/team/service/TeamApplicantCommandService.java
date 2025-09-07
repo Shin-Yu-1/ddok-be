@@ -1,5 +1,6 @@
 package goorm.ddok.team.service;
 
+import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -32,6 +33,7 @@ public class TeamApplicantCommandService {
     private final ProjectApplicationRepository projectApplicationRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
     private final TeamRepository teamRepository;
+    private final ChatService chatService;
 
     /**
      * 신청 승인 처리
@@ -124,6 +126,7 @@ public class TeamApplicantCommandService {
         studyParticipantRepository.save(participant);
 
         team.addMember(application.getUser(), TeamMemberRole.MEMBER);
+        chatService.addMemberToTeamChat(team, participant.getUser(), TeamMemberRole.MEMBER);
     }
 
     /**
@@ -174,6 +177,7 @@ public class TeamApplicantCommandService {
         projectParticipantRepository.save(participant);
 
         team.addMember(application.getUser(), TeamMemberRole.MEMBER);
+        chatService.addMemberToTeamChat(team, participant.getUser(), TeamMemberRole.MEMBER);
     }
 
     /**
