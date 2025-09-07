@@ -71,6 +71,10 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
      * 특정 프로젝트(ProjectRecruitment.id)에 대해, 지정한 상태(status)의 지원자 목록 조회 (페이징)
      */
     Page<ProjectApplication> findByPosition_ProjectRecruitment_IdAndStatus(Long recruitmentId, ApplicationStatus status, Pageable pageable);
+
+    int countByPositionAndStatus(ProjectRecruitmentPosition position, ApplicationStatus status);
+    boolean existsByUser_IdAndPosition_IdAndStatus(Long userId, Long positionId, ApplicationStatus status);
+    boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(Long userId, Long projectId, ApplicationStatus status);
 }
 
 

@@ -70,8 +70,12 @@ public class ProjectRecruitmentQueryService {
 
                     int appliedCountForPos = projectApplicationRepository.countByPosition(position);
 
-                    boolean isApplied = (me != null) &&
-                            projectApplicationRepository.existsByUser_IdAndPosition_Id(me.getId(), position.getId());
+                    boolean isApplied =
+                            (me != null) &&
+                            (projectApplicationRepository.existsByUser_IdAndPosition_IdAndStatus(
+                                    me.getId(), position.getId(), ApplicationStatus.PENDING) ||
+                            projectApplicationRepository.existsByUser_IdAndPosition_IdAndStatus(
+                                    me.getId(), position.getId(), ApplicationStatus.APPROVED));
 
                     boolean isApproved = (me != null) &&
                             projectParticipantRepository.existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
