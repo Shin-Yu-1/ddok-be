@@ -5,6 +5,7 @@ import goorm.ddok.chat.domain.ChatRoom;
 import goorm.ddok.chat.domain.ChatRoomMember;
 import goorm.ddok.chat.domain.ChatRoomType;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.team.domain.Team;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -108,4 +109,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
         and m1.deletedAt is null and m2.deletedAt is null
     """)
     boolean existsPrivateRoomByUserIds(@Param("u1") Long u1, @Param("u2") Long u2);
+
+    Optional<ChatRoom> findByTeam(Team team);
+    boolean existsByTeam(Team team);
 }
