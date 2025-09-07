@@ -310,8 +310,19 @@ public class ProjectRecruitmentService {
                 case PENDING -> {
                     if (appliedPosition == null
                             || existing.getPosition().getPositionName().equals(appliedPosition)) {
-                        int deleted = projectApplicationRepository.deleteIfPending(existing.getId());
-                        if (deleted == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+
+                        int deleted = projectApplicationRepository.deleteByIdAndStatus(
+                                existing.getId(), ApplicationStatus.PENDING);
+
+                        if (deleted == 0) {
+                            ApplicationStatus cur = projectApplicationRepository
+                                    .findStatusById(existing.getId())
+                                    .orElse(null);
+
+                            if (cur == ApplicationStatus.APPROVED) {
+                                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                            }
+                        }
                         return false;
                     } else {
                         throw new GlobalException(ErrorCode.ALREADY_APPLIED);

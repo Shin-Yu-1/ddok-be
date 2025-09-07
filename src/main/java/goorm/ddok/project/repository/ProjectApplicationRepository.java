@@ -67,6 +67,13 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     @Query("delete from StudyApplication a where a.id = :id and a.applicationStatus = 'PENDING'")
     int deleteIfPending(@Param("id") Long id);
 
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    int deleteByIdAndStatus(Long id, ApplicationStatus status);
+
+    @Query("select a.status from ProjectApplication a where a.id = :id")
+    Optional<ApplicationStatus> findStatusById(@Param("id") Long id);
+
     /**
      * 특정 프로젝트(ProjectRecruitment.id)에 대해, 지정한 상태(status)의 지원자 목록 조회 (페이징)
      */
