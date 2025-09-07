@@ -153,4 +153,10 @@ public class StudyRecruitmentDetailResponse {
 
     @Schema(description = "참여자 수(리더 제외)", example = "3")
     private Integer participantsCount;
+
+    @Schema(description = "현재 사용자가 이 스터디에 지원했는지 여부", example = "false")
+    private boolean IsApplied;
+
+    @Schema(description = "현재 사용자가 이 스터디에 확정되었는지 여부", example = "false")
+    private boolean IsApproved;
 }
