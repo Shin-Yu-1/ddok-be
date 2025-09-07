@@ -505,7 +505,7 @@ public class MapController {
                                 },
                                 "abandonBadge": {
                                     "count": 5,
-                                    "granted": true
+                                    "isGranted": true
                                 },
                                 "location": {
                                     "address": "서울 종로구 청운효자동 세종대로 175",

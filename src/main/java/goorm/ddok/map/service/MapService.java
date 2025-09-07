@@ -8,8 +8,6 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.*;
 import goorm.ddok.member.repository.UserRepository;
-import goorm.ddok.project.domain.ProjectRecruitmentPosition;
-import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -515,7 +513,7 @@ public class MapService {
                                 .tier("bronze")
                                 .build())
                         .abandonBadge(AllMapItemSearchResponse.AbandonBadge.builder()
-                                .isGranted(true)
+                                .IsGranted(true)
                                 .count(5)
                                 .build())
                         .location(LocationDto.builder()
@@ -751,7 +749,7 @@ public class MapService {
                         .tier("bronze")
                         .build())
                 .abandonBadge(PinOverlayResponse.AbandonBadge.builder()
-                        .isGranted(true)
+                        .IsGranted(true)
                         .count(5)
                         .build())
                 .mainPosition(row.getMainPosition())

@@ -47,7 +47,7 @@ public class ProfileDto {
 
     @Getter @AllArgsConstructor
     public static class AbandonBadge {
-        private Boolean isGranted;
+        private Boolean IsGranted;
         private Integer count;
     }
 
