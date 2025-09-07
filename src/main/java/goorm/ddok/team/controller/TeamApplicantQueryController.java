@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/teams")
+@Tag(name = "Team", description = "팀 관리 API")
 public class TeamApplicantQueryController {
 
     private final TeamApplicantQueryService teamApplicantQueryService;
@@ -28,7 +30,7 @@ public class TeamApplicantQueryController {
     @Operation(
             summary = "팀 참여 희망자 조회",
             description = """
-                특정 팀(teamId)의 참여 희망자 목록을 조회합니다. 
+                특정 팀(teamId)의 참여 희망자 목록을 조회합니다.
                 리더 및 승인된 팀원만 접근할 수 있으며, 지원 상태가 'PENDING'인 사용자만 조회됩니다.
                 """,
             security = @SecurityRequirement(name = "Authorization"),
