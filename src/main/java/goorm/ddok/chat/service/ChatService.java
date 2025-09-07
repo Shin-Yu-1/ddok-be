@@ -239,13 +239,13 @@ public class ChatService {
     }
 
     @Transactional
-    public ChatRoom createTeamChatRoom(Team team, User leader) {
+    public void createTeamChatRoom(Team team, User leader) {
         Optional<ChatRoom> existing = chatRepository.findByTeam(team);
         if (existing.isPresent()) {
-            return existing.get();
+            throw new GlobalException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
         }
 
-        ChatRoom room = chatRepository.save(ChatRoom.builder()
+        chatRepository.save(ChatRoom.builder()
                 .roomType(ChatRoomType.GROUP)
                 .owner(leader)
                 .team(team)
@@ -253,8 +253,6 @@ public class ChatService {
                 .build());
 
         addMemberToTeamChat(team, leader, TeamMemberRole.LEADER);
-
-        return room;
     }
 
     @Transactional
