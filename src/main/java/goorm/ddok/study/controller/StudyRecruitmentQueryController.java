@@ -78,6 +78,8 @@ public class StudyRecruitmentQueryController {
                                             "expectedMonth": 3,
                                             "startDate": "2025-09-16",
                                             "detail": "저희 정말 멋진 영어공부를 할거예요~ 하고 싶죠?",
+                                            "isApplied": false,
+                                            "isApproved": false,
                                             "leader": {
                                                 "userId": 1,
                                                 "nickname": null,
