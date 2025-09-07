@@ -21,6 +21,7 @@ import java.time.Instant;
 )
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder(toBuilder = true)
@@ -69,5 +70,9 @@ public class ProjectApplication {
 
     public boolean isPending() {
         return this.status == ApplicationStatus.PENDING;
+    }
+
+    public void changePosition(ProjectRecruitmentPosition newPos) {
+        this.position = newPos;
     }
 }

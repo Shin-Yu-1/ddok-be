@@ -59,6 +59,8 @@ public enum ErrorCode {
     INVALID_APPLICATION_STATUS(HttpStatus.BAD_REQUEST, "잘못된 신청 상태 값입니다."),
     CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "팀 정원을 초과할 수 없습니다."),
     PROJECT_POSITION_CLOSED(HttpStatus.BAD_REQUEST, "해당 포지션은 마감되었습니다."),
+    APPLICATION_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "이미 승인된 신청은 취소할 수 없습니다."),
+
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
