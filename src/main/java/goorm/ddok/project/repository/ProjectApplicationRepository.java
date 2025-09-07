@@ -81,7 +81,9 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
 
     int countByPositionAndStatus(ProjectRecruitmentPosition position, ApplicationStatus status);
     boolean existsByUser_IdAndPosition_IdAndStatus(Long userId, Long positionId, ApplicationStatus status);
-    boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(Long userId, Long projectId, ApplicationStatus status);
+
+    boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
+            Long userId, Long projectId, ApplicationStatus status);
 }
 
 
