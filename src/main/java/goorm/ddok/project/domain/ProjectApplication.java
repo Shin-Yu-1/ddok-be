@@ -21,6 +21,7 @@ import java.time.Instant;
 )
 @EntityListeners(AuditingEntityListener.class)
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder(toBuilder = true)
@@ -58,4 +59,20 @@ public class ProjectApplication {
     @LastModifiedDate
     @Column(nullable = false)
     private Instant updatedAt;
+
+    public void approve() {
+        this.status = ApplicationStatus.APPROVED;
+    }
+
+    public void reject() {
+        this.status = ApplicationStatus.REJECTED;
+    }
+
+    public boolean isPending() {
+        return this.status == ApplicationStatus.PENDING;
+    }
+
+    public void changePosition(ProjectRecruitmentPosition newPos) {
+        this.position = newPos;
+    }
 }

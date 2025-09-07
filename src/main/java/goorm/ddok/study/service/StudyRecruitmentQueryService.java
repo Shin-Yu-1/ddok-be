@@ -7,10 +7,7 @@ import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
-import goorm.ddok.study.domain.ParticipantRole;
-import goorm.ddok.study.domain.StudyMode;
-import goorm.ddok.study.domain.StudyParticipant;
-import goorm.ddok.study.domain.StudyRecruitment;
+import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.UserSummaryDto;
 import goorm.ddok.study.dto.response.StudyRecruitmentDetailResponse;
 import goorm.ddok.study.repository.StudyApplicationRepository;
@@ -79,6 +76,29 @@ public class StudyRecruitmentQueryService {
                 ? null
                 : new PreferredAgesDto(study.getAgeMin(), study.getAgeMax());
 
+        boolean isApplied = false;
+        boolean isApproved = false;
+
+        if (me != null) {
+            Long meId = me.getId();
+
+            boolean isParticipant = all.stream()
+                    .anyMatch(p -> Objects.equals(p.getUser().getId(), meId) && p.getDeletedAt() == null);
+
+            boolean hasApprovedApplication =
+                    studyApplicationRepository.existsByUser_IdAndStudyRecruitment_IdAndApplicationStatus(
+                            meId, studyId, ApplicationStatus.APPROVED
+                    );
+
+            isApproved = isParticipant || hasApprovedApplication;
+
+            if (!isApproved) {
+                isApplied = studyApplicationRepository.existsByUser_IdAndStudyRecruitment_IdAndApplicationStatus(
+                        meId, studyId, ApplicationStatus.PENDING
+                );
+            }
+        }
+
         // 7) 응답
         return StudyRecruitmentDetailResponse.builder()
                 .studyId(study.getId())
@@ -99,6 +119,8 @@ public class StudyRecruitmentQueryService {
                 .leader(leaderDto)
                 .participants(participantDtos)
                 .participantsCount(participantsCount)
+                .IsApplied(isApplied)
+                .IsApproved(isApproved)
                 .build();
     }
 
