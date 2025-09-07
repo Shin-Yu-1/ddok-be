@@ -215,13 +215,19 @@ public class StudyRecruitmentService {
         if (existingOpt.isPresent()) {
             StudyApplication existing = existingOpt.get();
 
-            if (existing.getApplicationStatus() != ApplicationStatus.PENDING) {
-                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
-            }
+            switch (existing.getApplicationStatus()) {
+                case PENDING -> {
+                    int deleted = studyApplicationRepository.deleteIfPending(existing.getId());
+                    if (deleted == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                    return false;
+                }
+                case APPROVED -> throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                case REJECTED -> {
+                    int updated = studyApplicationRepository.reapplyIfRejected(existing.getId());
+                    if (updated == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                    return true;
+                }
 
-            int deleted = studyApplicationRepository.deleteIfPending(existing.getId());
-            if (deleted == 0) {
-                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
             }
             return false;
         }
