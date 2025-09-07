@@ -1,5 +1,6 @@
 package goorm.ddok.team.service;
 
+import goorm.ddok.chat.service.ChatService;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamMemberRole;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TeamCommandService {
 
+    private final ChatService chatService;
     private final TeamRepository teamRepository;
 
     /**
@@ -27,6 +29,8 @@ public class TeamCommandService {
 
         // 리더 팀원 자동 추가
         team.addMember(leader, TeamMemberRole.LEADER);
+        // 팀 채팅 추가
+        chatService.createTeamChatRoom(team, leader);
 
         return teamRepository.save(team);
     }
