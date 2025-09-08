@@ -58,4 +58,8 @@ public class ProjectParticipant {
     public void changePosition(ProjectRecruitmentPosition newPos) {
         this.position = newPos;
     }
+
+    public void expel() {
+        this.deletedAt = Instant.now();
+    }
 }

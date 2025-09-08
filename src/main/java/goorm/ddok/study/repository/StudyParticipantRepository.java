@@ -12,6 +12,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.Instant;
 
 import java.util.List;
+import java.util.Optional;
 
 
 public interface StudyParticipantRepository extends JpaRepository<StudyParticipant, Long> {
@@ -41,5 +42,15 @@ public interface StudyParticipantRepository extends JpaRepository<StudyParticipa
 
     // 스터디 모집글 기준 현재 참가자 수 (Soft Delete 제외)
     long countByStudyRecruitment_IdAndDeletedAtIsNull(Long studyId);
+
+    /**
+     * 스터디 단위에서 특정 유저의 참가자 정보를 조회한다.
+     * - Soft Delete 제외
+     */
+    Optional<StudyParticipant> findByStudyRecruitment_IdAndUser_IdAndDeletedAtIsNull(
+            Long studyId,
+            Long userId
+    );
+
 
 }

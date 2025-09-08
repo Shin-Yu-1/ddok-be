@@ -65,6 +65,8 @@ public enum ErrorCode {
     CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "팀 정원을 초과할 수 없습니다."),
     PROJECT_POSITION_CLOSED(HttpStatus.BAD_REQUEST, "해당 포지션은 마감되었습니다."),
     APPLICATION_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "이미 승인된 신청은 취소할 수 없습니다."),
+    ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
+    LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
 
 
     // 401 UNAUTHORIZED
@@ -104,6 +106,7 @@ public enum ErrorCode {
     EVALUATION_NOT_FOUND(HttpStatus.NOT_FOUND, "평가 라운드를 찾을 수 없습니다."),
     REPUTATION_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 온도 정보를 찾을 수 없습니다."),
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "참여 신청 내역을 찾을 수 없습니다."),
+    TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀원을 찾을 수 없습니다."),
 
 
     // 409 CONFLICT
