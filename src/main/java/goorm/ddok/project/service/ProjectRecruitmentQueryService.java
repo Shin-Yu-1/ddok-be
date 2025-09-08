@@ -27,7 +27,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -70,8 +69,12 @@ public class ProjectRecruitmentQueryService {
 
                     int appliedCountForPos = projectApplicationRepository.countByPosition(position);
 
-                    boolean isApplied = (me != null) &&
-                            projectApplicationRepository.existsByUser_IdAndPosition_Id(me.getId(), position.getId());
+                    boolean isApplied =
+                            (me != null) &&
+                            (projectApplicationRepository.existsByUser_IdAndPosition_IdAndStatus(
+                                    me.getId(), position.getId(), ApplicationStatus.PENDING) ||
+                            projectApplicationRepository.existsByUser_IdAndPosition_IdAndStatus(
+                                    me.getId(), position.getId(), ApplicationStatus.APPROVED));
 
                     boolean isApproved = (me != null) &&
                             projectParticipantRepository.existsByUser_IdAndPosition_IdAndRoleAndDeletedAtIsNull(
@@ -81,9 +84,14 @@ public class ProjectRecruitmentQueryService {
                             projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_Id(me.getId(), project.getId())
                             && !isApplied;
 
-                    boolean alreadyMemberAnyPos = (me != null) &&
-                            projectParticipantRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndDeletedAtIsNull(
-                                    me.getId(), project.getId());
+                    boolean hasPendingInProject =
+                            (me != null) &&
+                            (projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
+                                    me.getId(), project.getId(), ApplicationStatus.PENDING) ||
+                            projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
+                                    me.getId(), project.getId(), ApplicationStatus.APPROVED));
+
+                    boolean alreadyMemberAnyPos = hasPendingInProject && !isApplied;
 
                     boolean isAvailable = (project.getTeamStatus() == TeamStatus.RECRUITING)
                             && (confirmedCount < project.getCapacity())

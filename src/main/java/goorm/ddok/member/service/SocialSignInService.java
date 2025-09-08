@@ -70,9 +70,18 @@ public class SocialSignInService {
                         .orElse(null);
 
         // 8) 사용자 DTO 생성
-        boolean isPreferences = false;
+        boolean isPreferences = checkIfUserHasPreferences(user);
+
         SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
 
         return new SignInResponse(accessToken, userDto);
+    }
+
+    private boolean checkIfUserHasPreferences(User user) {
+        return user.getLocation() != null &&
+                !user.getPositions().isEmpty() &&
+                !user.getTraits().isEmpty() &&
+                user.getBirthDate() != null &&
+                user.getActivity() != null;
     }
 }

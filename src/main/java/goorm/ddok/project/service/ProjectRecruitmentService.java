@@ -300,24 +300,57 @@ public class ProjectRecruitmentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
         }
 
-        Optional<ProjectApplication> existingApplication =
+        Optional<ProjectApplication> existingOpt =
                 projectApplicationRepository.findByUser_IdAndPosition_ProjectRecruitment_Id(userId, projectId);
 
-        if (existingApplication.isPresent()) {
-            ProjectApplication existing = existingApplication.get();
-            if (appliedPosition == null
-                    || existing.getPosition().getPositionName().equals(appliedPosition)) {
-                projectApplicationRepository.delete(existing);
-                return false;
-            } else {
-                throw new GlobalException(ErrorCode.ALREADY_APPLIED);
+        if (existingOpt.isPresent()) {
+            ProjectApplication existing = existingOpt.get();
+
+            switch (existing.getStatus()) {
+                case PENDING -> {
+                    if (appliedPosition == null
+                            || existing.getPosition().getPositionName().equals(appliedPosition)) {
+
+                        int deleted = projectApplicationRepository.deleteByIdAndStatus(
+                                existing.getId(), ApplicationStatus.PENDING);
+
+                        if (deleted == 0) {
+                            ApplicationStatus cur = projectApplicationRepository
+                                    .findStatusById(existing.getId())
+                                    .orElse(null);
+
+                            if (cur == ApplicationStatus.APPROVED) {
+                                throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                            }
+                        }
+                        return false;
+                    } else {
+                        throw new GlobalException(ErrorCode.ALREADY_APPLIED);
+                    }
+                }
+                case APPROVED -> throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                case REJECTED -> {
+                    String targetName = (appliedPosition == null || appliedPosition.isBlank())
+                            ? existing.getPosition().getPositionName()
+                            : appliedPosition;
+
+                    ProjectRecruitmentPosition targetPos = projectRecruitmentPositionRepository
+                            .findByProjectRecruitmentIdAndPositionName(projectId, targetName)
+                            .orElseThrow(() -> new GlobalException(ErrorCode.POSITION_NOT_FOUND));
+
+                    existing.changePosition(targetPos);
+                    existing.setStatus(ApplicationStatus.PENDING);
+                    projectApplicationRepository.save(existing);
+
+                    return true;
+                }
             }
+            return false;
         }
 
         if (appliedPosition == null || appliedPosition.isBlank()) {
             throw new GlobalException(ErrorCode.POSITION_REQUIRED);
         }
-
         ProjectRecruitmentPosition position = projectRecruitmentPositionRepository
                 .findByProjectRecruitmentIdAndPositionName(projectId, appliedPosition)
                 .orElseThrow(() -> new GlobalException(ErrorCode.POSITION_NOT_FOUND));

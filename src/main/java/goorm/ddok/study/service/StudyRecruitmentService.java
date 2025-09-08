@@ -209,16 +209,35 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
         }
 
-        return studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId)
-                .map(existing -> { studyApplicationRepository.delete(existing); return false; })
-                .orElseGet(() -> {
-                    studyApplicationRepository.save(StudyApplication.builder()
-                            .user(userDetails.getUser())
-                            .studyRecruitment(study)
-                            .applicationStatus(ApplicationStatus.PENDING)
-                            .build());
+        Optional<StudyApplication> existingOpt =
+                studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId);
+
+        if (existingOpt.isPresent()) {
+            StudyApplication existing = existingOpt.get();
+
+            switch (existing.getApplicationStatus()) {
+                case PENDING -> {
+                    int deleted = studyApplicationRepository.deleteIfPending(existing.getId());
+                    if (deleted == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                    return false;
+                }
+                case APPROVED -> throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+                case REJECTED -> {
+                    int updated = studyApplicationRepository.reapplyIfRejected(existing.getId());
+                    if (updated == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
                     return true;
-                });
+                }
+
+            }
+            return false;
+        }
+
+        studyApplicationRepository.save(StudyApplication.builder()
+                .user(userDetails.getUser())
+                .studyRecruitment(study)
+                .applicationStatus(ApplicationStatus.PENDING)
+                .build());
+        return true;
     }
 
     private LocationDto buildLocationForRead(StudyRecruitment sr) {

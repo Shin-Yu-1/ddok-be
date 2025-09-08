@@ -53,6 +53,7 @@ public enum ErrorCode {
     INVALID_FILE(HttpStatus.BAD_REQUEST, "부적절한 파일입니다."),
     FILE_TOO_LARGE(HttpStatus.BAD_REQUEST, "파일 크기는 5MB를 넘을 수 없습니다."),
     FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST, "파일 업로드에 실패하였습니다."),
+    INVALID_TEAM_TYPE(HttpStatus.BAD_REQUEST,"잘못된 팀 타입입니다."),
     RESOURCE_NOT_FOUND(HttpStatus.NOT_FOUND, "리소스를 찾을 수 없습니다."),
     NOT_SUPPORT_CATEGORY(HttpStatus.BAD_REQUEST, "지원하지 않는 카테고리입니다."),
     EVALUATION_CLOSED(HttpStatus.BAD_REQUEST, "평가 기간이 종료되어 저장할 수 없습니다."),
@@ -60,6 +61,11 @@ public enum ErrorCode {
     EVALUATION_ITEM_OUT_OF_RANGE(HttpStatus.BAD_REQUEST, "평가 점수가 허용 범위를 벗어났습니다."),
     EVALUATION_ALREADY_SUBMITTED(HttpStatus.BAD_REQUEST, "이미 제출한 평가는 수정할 수 없습니다."),
     EVALUATION_TARGET_NOT_MEMBER(HttpStatus.BAD_REQUEST, "평가 대상이 팀원이 아닙니다."),
+    INVALID_APPLICATION_STATUS(HttpStatus.BAD_REQUEST, "잘못된 신청 상태 값입니다."),
+    CAPACITY_EXCEEDED(HttpStatus.BAD_REQUEST, "팀 정원을 초과할 수 없습니다."),
+    PROJECT_POSITION_CLOSED(HttpStatus.BAD_REQUEST, "해당 포지션은 마감되었습니다."),
+    APPLICATION_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "이미 승인된 신청은 취소할 수 없습니다."),
+
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -81,6 +87,8 @@ public enum ErrorCode {
     NOT_CHAT_MEMBER(HttpStatus.FORBIDDEN, "채팅방에 참여하지 않은 사용자입니다."),
     FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "리더는 참여 신청을 할 수 없습니다."),
     REAUTH_USER_MISMATCH(HttpStatus.FORBIDDEN, "재인증 사용자 정보가 일치하지 않습니다."),
+    FORBIDDEN_TEAM_ACCESS(HttpStatus.FORBIDDEN, "팀에 소속되지 않은 사용자는 접근할 수 없습니다."),
+    FORBIDDEN_LEADER_ONLY(HttpStatus.FORBIDDEN,"해당 작업은 팀 리더만 가능합니다."),
 
 
     // 404 NOT FOUND
@@ -94,7 +102,8 @@ public enum ErrorCode {
     POSITION_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 포지션을 찾을 수 없습니다."),
     STUDY_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 스터디입니다."),
     EVALUATION_NOT_FOUND(HttpStatus.NOT_FOUND, "평가 라운드를 찾을 수 없습니다."),
-
+    REPUTATION_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 온도 정보를 찾을 수 없습니다."),
+    APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "참여 신청 내역을 찾을 수 없습니다."),
 
 
     // 409 CONFLICT
@@ -107,6 +116,7 @@ public enum ErrorCode {
     CHAT_ROOM_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 채팅방입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
+    ALREADY_PROCESSED_APPLICATION(HttpStatus.CONFLICT, "이미 처리된 신청입니다."),
 
     // 429 TOO MANY REQUESTS
     KAKAO_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "카카오 토큰 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),
