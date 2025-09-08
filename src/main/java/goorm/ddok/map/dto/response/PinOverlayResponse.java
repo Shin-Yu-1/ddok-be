@@ -139,7 +139,7 @@ public class PinOverlayResponse {
     @Schema(description = "탈주 뱃지 정보")
     public static class AbandonBadge {
         @Schema(description = "뱃지 부여 여부", example = "false")
-        private final boolean isGranted;
+        private final boolean IsGranted;
 
         @Schema(description = "포기 횟수", example = "0")
         private final Integer count;

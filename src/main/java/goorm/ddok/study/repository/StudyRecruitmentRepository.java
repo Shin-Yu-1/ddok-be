@@ -126,6 +126,7 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
             s.team_status                          AS teamStatus,
             s.banner_image_url                     AS bannerImageUrl,
             s.study_type                           AS studyType,
+            s.capacity                              AS capacity,
             s.mode                                  AS mode,
             TRIM(BOTH ' ' FROM COALESCE(s.region1depth_name, '') || ' ' || COALESCE(s.region2depth_name, '')) AS address,
             s.age_min                              AS ageMin,

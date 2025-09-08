@@ -68,7 +68,7 @@ public class PlayerProfileController {
                           "subPositions": ["프론트엔드","디자이너"],
                           "mainBadge": null,
                           "abandonBadge": null,
-                          "activeHours": { "start": 9, "end": 18 },
+                          "activeHours": { "start": 09, "end": 18 },
                           "traits": ["성실","실행력"],
                           "content": null,
                           "portfolio": null,
@@ -137,7 +137,7 @@ public class PlayerProfileController {
     @PatchMapping("/hours")
     @Operation(
             summary = "주 활동 시간 수정",
-            description = "하루 기준 활동 시작/종료 시간을 0~24 범위의 정수로 설정합니다. 종료시간은 시작시간 이상이어야 합니다.",
+            description = "하루 기준 활동 시작/종료 시간을 00~24 범위의 정수로 설정합니다. 종료시간은 시작시간 이상이어야 합니다.",
             security = @SecurityRequirement(name = "Authorization"),
             parameters = {
                     @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,

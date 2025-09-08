@@ -53,4 +53,16 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
 
     /** 프로젝트 전체 참가자 수 (Soft Delete 제외) */
     long countByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(Long projectId);
+
+
+    /**
+     * 프로젝트 단위(포지션 구분 없음)에서 특정 유저의 참가자 정보를 조회한다.
+     * - Soft Delete 제외
+     * - 팀원의 확정 포지션명 조회 등에 사용됨
+     */
+    Optional<ProjectParticipant> findByPosition_ProjectRecruitment_IdAndUser_IdAndDeletedAtIsNull(
+            Long projectId,
+            Long userId
+    );
+
 }

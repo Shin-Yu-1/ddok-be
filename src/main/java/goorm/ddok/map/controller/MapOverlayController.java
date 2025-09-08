@@ -58,7 +58,7 @@ public class MapOverlayController {
                             },
                             "abandonBadge": {
                                 "count": 5,
-                                "granted": true
+                                "isGranted": true
                             },
                             "latestProject": {
                                 "id": 1,

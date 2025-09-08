@@ -35,7 +35,7 @@ public class ProfileSearchService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Order.asc("nickname").ignoreCase())
+                Sort.by(Sort.Order.asc("nickname"), Sort.Order.asc("id"))
         );
         Specification<User> spec = Specification.where(null);
 
@@ -179,7 +179,7 @@ public class ProfileSearchService {
                 .abandonBadge(ProfileSearchResponse
                         .AbandonBadge
                         .builder()
-                        .isGranted(true)
+                        .IsGranted(true)
                         .count(5)
                         .build()) // TODO: 배지 도메인 연동
                 .mainPosition(mainPosition) // isPublic이 false이면 null
