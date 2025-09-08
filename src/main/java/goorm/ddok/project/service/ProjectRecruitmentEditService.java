@@ -215,7 +215,9 @@ public class ProjectRecruitmentEditService {
         }
 
         // 배너: 파일 > 요청 URL > 기존 > 기본
-        String bannerUrl = resolveBannerUrl(bannerImage, req.getBannerImageUrl(), pr.getBannerImageUrl(), req.getTitle());
+        String bannerUrl= (bannerImage != null && !bannerImage.isEmpty())
+                ? uploadBannerImage(bannerImage)
+                : bannerImageService.generateBannerImageUrl(req.getTitle(), "PROJECT", 1200, 600);
 
         // 위치 업데이트 (카카오 필드 개별 저장)
         boolean offline = req.getMode() == ProjectMode.offline;
@@ -278,6 +280,14 @@ public class ProjectRecruitmentEditService {
             }
         }
         pr.getTraits().removeIf(t -> !desired.contains(t.getTraitName()));
+    }
+
+    private String uploadBannerImage(MultipartFile file) {
+        try {
+            return fileService.upload(file);
+        } catch (IOException e) {
+            throw new GlobalException(ErrorCode.BANNER_UPLOAD_FAILED);
+        }
     }
 
     private void mergePositionsStrict(ProjectRecruitment pr, List<String> desired) {
