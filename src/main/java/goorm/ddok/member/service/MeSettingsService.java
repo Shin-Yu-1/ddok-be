@@ -6,10 +6,7 @@ import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.security.token.CustomReauthTokenService;
 import goorm.ddok.member.domain.User;
-import goorm.ddok.member.dto.request.NicknameUpdateRequest;
-import goorm.ddok.member.dto.request.PasswordVerifyRequest;
-import goorm.ddok.member.dto.request.PhoneUpdateRequest;
-import goorm.ddok.member.dto.request.ProfileImageUpdateRequest;
+import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.dto.response.SettingsPageResponse;
 import goorm.ddok.member.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -193,5 +190,25 @@ public class MeSettingsService {
         if (file.getSize() > max) {
             throw new GlobalException(ErrorCode.FILE_TOO_LARGE);
         }
+    }
+
+    public void updatePassword(PasswordResetRequest req, CustomUserDetails me) {
+        User user = requireMe(me);
+        String newPassword = (req.getNewPassword() != null) ? req.getNewPassword().trim() : null;
+        String passwordCheck = (req.getPasswordCheck() != null) ? req.getPasswordCheck().trim() : null;
+
+        if (!StringUtils.hasText(newPassword) || !StringUtils.hasText(passwordCheck)) {
+            throw new GlobalException(ErrorCode.INVALID_INPUT);
+        }
+        if (!newPassword.equals(passwordCheck)) {
+            throw new GlobalException(ErrorCode.PASSWORD_MISMATCH);
+        }
+        if (!newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\w\\s]).{8,64}$")) {
+            throw new GlobalException(ErrorCode.INVALID_PASSWORD_FORMAT);
+        }
+
+        String encoded = passwordEncoder.encode(newPassword);
+        user.setPassword(encoded);
+        userRepository.save(user);
     }
 }

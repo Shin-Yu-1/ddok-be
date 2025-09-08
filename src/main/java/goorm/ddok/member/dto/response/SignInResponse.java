@@ -18,7 +18,8 @@ import lombok.Getter;
         "nickname": "고통스러운 개발자",
         "profileImageUrl": "https://cdn.pixabay.com/photo/2013/07/12/14/15/boy-148071_1280.png",
         "mainPosition": "백엔드",
-        "IsPreference": true,
+        "isPreference": true,
+        "isSocial": false,
         "location": {
           "latitude": 37.5665,
           "longitude": 126.9780,

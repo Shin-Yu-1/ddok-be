@@ -12,7 +12,6 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -72,9 +71,15 @@ public class SocialSignInService {
         // 8) 사용자 DTO 생성
         boolean isPreferences = checkIfUserHasPreferences(user);
 
-        SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
+        boolean isSocial = checkIfUserSocial(user);
+
+        SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, isSocial, location);
 
         return new SignInResponse(accessToken, userDto);
+    }
+
+    private boolean checkIfUserSocial(User user) {
+        return user.getEmail() == null || user.getEmail().isEmpty();
     }
 
     private boolean checkIfUserHasPreferences(User user) {
