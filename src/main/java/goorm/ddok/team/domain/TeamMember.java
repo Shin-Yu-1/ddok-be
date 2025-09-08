@@ -4,7 +4,6 @@ import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
@@ -44,4 +43,9 @@ public class TeamMember {
 
     /** 탈퇴/추방 시각 (soft delete) */
     private Instant deletedAt;
+
+    public void expel() {
+        this.deletedAt = Instant.now();
+    }
+
 }
