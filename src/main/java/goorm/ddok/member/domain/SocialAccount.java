@@ -19,7 +19,7 @@ public class SocialAccount {
     @Column(nullable = false)  // 카카오의 id
     private String providerUserId;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 }

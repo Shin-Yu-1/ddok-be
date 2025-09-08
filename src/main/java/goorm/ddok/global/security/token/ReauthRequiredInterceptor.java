@@ -2,6 +2,7 @@ package goorm.ddok.global.security.token;
 
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.member.repository.SocialAccountRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class ReauthRequiredInterceptor implements HandlerInterceptor {
     public static final String HEADER = "X-Reauth-Token";
 
     private final CustomReauthTokenService customReauthTokenService;
+    private final SocialAccountRepository socialAccountRepository;
 
     @Override
     public boolean preHandle(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull Object handler) {
@@ -42,6 +44,10 @@ public class ReauthRequiredInterceptor implements HandlerInterceptor {
             userId = cud.getId();
         } else {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (socialAccountRepository.existsByUser_Id(userId)) {
+            return true;
         }
 
         String token = request.getHeader(HEADER);

@@ -77,7 +77,8 @@ public class User {
 
     @OneToOne(
             mappedBy = "user",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
     )
     @ToString.Exclude
     @JsonIgnore
@@ -85,7 +86,8 @@ public class User {
 
     @OneToOne(
             mappedBy = "user",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
     )
     @ToString.Exclude
     @JsonIgnore
@@ -127,8 +129,8 @@ public class User {
     @OneToOne(
             mappedBy = "user",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
-            fetch = FetchType.LAZY,
-            optional = false
+            optional = false,
+            orphanRemoval = true
     )
     @ToString.Exclude
     @JsonIgnore
@@ -144,6 +146,13 @@ public class User {
     @JsonIgnore
     @Builder.Default
     private List<UserBadge> badges = new ArrayList<>();
+
+    @OneToOne(
+            mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
+            orphanRemoval = true
+    )
+    private SocialAccount socialAccount;
 
 
 
