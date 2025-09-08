@@ -49,4 +49,8 @@ public class StudyParticipant {
     /** 삭제 시각(Soft Delete */
     @Column
     private Instant deletedAt;
+
+    public void expel() {
+        this.deletedAt = Instant.now();
+    }
 }
