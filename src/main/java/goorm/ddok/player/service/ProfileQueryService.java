@@ -12,9 +12,7 @@ import goorm.ddok.member.domain.*;
 import goorm.ddok.member.dto.response.ActiveHoursResponse;
 import goorm.ddok.member.dto.response.LocationResponse;
 import goorm.ddok.member.repository.UserPortfolioRepository;
-import goorm.ddok.member.repository.UserPositionRepository;
 import goorm.ddok.member.repository.UserRepository;
-import goorm.ddok.member.repository.UserTraitRepository;
 import goorm.ddok.player.dto.response.ProfileDetailResponse;
 import goorm.ddok.player.dto.response.UserPortfolioResponse;
 import lombok.RequiredArgsConstructor;
@@ -119,10 +117,21 @@ public class ProfileQueryService {
 
     private ActiveHoursResponse toActiveHours(UserActivity activity) {
         if (activity == null) return null;
-        return new ActiveHoursResponse(
-                String.valueOf(activity.getActivityStartTime()),
-                String.valueOf(activity.getActivityEndTime())
-        );
+
+        String startTime;
+        if (activity.getActivityStartTime() < 10) {
+            startTime = "0" + activity.getActivityStartTime();
+        } else startTime = String.valueOf(activity.getActivityStartTime());
+
+        String endTime;
+
+        if (activity.getActivityEndTime() < 10) {
+            endTime = "0" + activity.getActivityEndTime();
+        } else  endTime = String.valueOf(activity.getActivityEndTime());
+        return ActiveHoursResponse.builder()
+                .start(startTime)
+                .end(endTime)
+                .build();
     }
 
     private LocationResponse toLocation(UserLocation location) {
