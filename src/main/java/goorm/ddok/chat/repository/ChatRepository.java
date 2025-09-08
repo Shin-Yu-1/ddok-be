@@ -48,7 +48,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
     // 내가 속한 특정 타입의 방을 최근 대화순
     @Query("""
-      select distinct r
+      select r
       from ChatRoom r
       join r.members m
       where m.user = :user
@@ -62,15 +62,16 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
     // 1:1 방에서 상대 닉네임으로 검색
     @Query("""
-      select distinct r
+      select r
       from ChatRoom r
       join r.members mMe
       join r.members mPeer
       join mPeer.user uPeer
-      where r.roomType = "PRIVATE"
+      where r.roomType = 'PRIVATE'
         and mMe.user = :me
         and mPeer.user <> :me
-        and mMe.deletedAt is null and mPeer.deletedAt is null
+        and mMe.deletedAt is null
+        and mPeer.deletedAt is null
         and uPeer.nickname like concat('%', :search, '%')
       order by coalesce(r.lastMessageAt, r.createdAt) desc, r.createdAt desc
     """)
@@ -80,13 +81,13 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
 
     // 팀방: 방 이름 OR 멤버 닉네임으로 검색
     @Query("""
-      select distinct r
+      select r
       from ChatRoom r
       join r.members mm
       left join r.members mx
       left join mx.user ux
       where mm.user = :me
-        and r.roomType = "GROUP"
+        and r.roomType = 'GROUP'
         and mm.deletedAt is null
         and (
              r.name like concat('%', :search, '%')
