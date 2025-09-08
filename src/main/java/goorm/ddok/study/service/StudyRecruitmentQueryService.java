@@ -1,5 +1,7 @@
 package goorm.ddok.study.service;
 
+import goorm.ddok.badge.domain.BadgeTier;
+import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -153,8 +155,8 @@ public class StudyRecruitmentQueryService {
                 .nickname(u.getNickname())
                 .profileImageUrl(u.getProfileImageUrl())
                 .mainPosition(mainPosition)
-                .mainBadge(mainBadge)          // null
-                .abandonBadge(abandonBadge)    // null
+                .mainBadge(BadgeDto.builder().type(BadgeType.leader_complete).tier(BadgeTier.gold).build())
+                .abandonBadge(AbandonBadgeDto.builder().IsGranted(true).count(7).build())
                 .temperature(temperature)      // null 허용
                 .IsMine(me != null && Objects.equals(me.getId(), u.getId()))
                 .chatRoomId(null)
