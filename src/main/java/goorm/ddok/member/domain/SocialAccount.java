@@ -20,7 +20,7 @@ public class SocialAccount {
     @Column(nullable = false)  // 카카오의 id
     private String providerUserId;
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", unique = true)
     @JsonIgnore
     @ToString.Exclude
