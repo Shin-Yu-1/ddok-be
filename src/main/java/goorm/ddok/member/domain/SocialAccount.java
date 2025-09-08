@@ -1,5 +1,6 @@
 package goorm.ddok.member.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,9 @@ public class SocialAccount {
     @Column(nullable = false)  // 카카오의 id
     private String providerUserId;
 
-    @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", unique = true)
+    @JsonIgnore
+    @ToString.Exclude
     private User user;
 }
