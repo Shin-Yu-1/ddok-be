@@ -12,10 +12,10 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Schema(
-        name = "TeamApplicantsResponse",
-        description = "팀 참여 희망자 목록 조회 응답 DTO"
+        name = "TeamMembersResponse",
+        description = "팀 참여 확정자 목록 조회 응답 DTO"
 )
-public class TeamApplicantsResponse {
+public class TeamMembersResponse {
 
     @Schema(description = "페이지네이션 정보", implementation = PaginationResponse.class)
     private PaginationResponse pagination;
@@ -23,15 +23,18 @@ public class TeamApplicantsResponse {
     @Schema(description = "팀 ID", example = "2")
     private Long teamId;
 
-    @Schema(description = "모집글 ID", example = "33")
+    @Schema(description = "팀 타입 (PROJECT / STUDY)", example = "PROJECT")
+    private TeamType teamType;
+
+    @Schema(description = "팀 이름 (기본값: 모집글 제목)", example = "똑DDOK!")
+    private String teamTitle;
+
+    @Schema(description = "해당 팀이 연결된 모집글 ID", example = "33")
     private Long recruitmentId;
 
     @Schema(description = "현재 로그인한 사용자가 리더인지 여부", example = "true")
     private boolean IsLeader;
 
-    @Schema(description = "팀 타입 (PROJECT / STUDY)", example = "PROJECT")
-    private TeamType teamType;
-
-    @Schema(description = "참여 희망자 목록", implementation = TeamApplicantResponse.class)
-    private List<TeamApplicantResponse> items;
+    @Schema(description = "팀 참여 확정자 목록", implementation = TeamMemberResponse.class)
+    private List<TeamMemberResponse> items;
 }
