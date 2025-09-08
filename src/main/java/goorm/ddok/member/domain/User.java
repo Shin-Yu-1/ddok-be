@@ -147,17 +147,6 @@ public class User {
     @Builder.Default
     private List<UserBadge> badges = new ArrayList<>();
 
-    @OneToOne(
-            mappedBy = "user",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
-            orphanRemoval = true
-    )
-    @JsonIgnore
-    @ToString.Exclude
-    private SocialAccount socialAccount;
-
-
-
     public User(String username, String nickname, String email, String phoneNumber, String password, String profileImageUrl) {
         this.username = username;
         this.nickname = nickname;

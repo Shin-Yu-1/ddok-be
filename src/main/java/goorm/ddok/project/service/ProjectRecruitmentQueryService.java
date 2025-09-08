@@ -1,5 +1,7 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.badge.domain.BadgeTier;
+import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.dto.BadgeDto;
@@ -186,8 +188,8 @@ public class ProjectRecruitmentQueryService {
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .mainPosition(mainPosition)
-                .mainBadge(mainBadge)
-                .abandonBadge(abandonBadge)
+                .mainBadge(BadgeDto.builder().type(BadgeType.login).tier(BadgeTier.bronze).build())
+                .abandonBadge(AbandonBadgeDto.builder().IsGranted(true).count(3).build())
                 .temperature(temperature)
                 .decidedPosition(participant.getPosition().getPositionName())
                 .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
