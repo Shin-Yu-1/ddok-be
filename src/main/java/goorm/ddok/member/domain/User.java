@@ -152,6 +152,8 @@ public class User {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE},
             orphanRemoval = true
     )
+    @JsonIgnore
+    @ToString.Exclude
     private SocialAccount socialAccount;
 
 

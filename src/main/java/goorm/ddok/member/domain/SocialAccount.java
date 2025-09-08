@@ -1,5 +1,6 @@
 package goorm.ddok.member.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,6 +21,8 @@ public class SocialAccount {
     private String providerUserId;
 
     @OneToOne(optional = false, fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", unique = true)
+    @JsonIgnore
+    @ToString.Exclude
     private User user;
 }
