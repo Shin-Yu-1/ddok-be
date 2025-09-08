@@ -6,6 +6,7 @@ import goorm.ddok.member.domain.SocialAccount;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.SocialAccountRepository;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +21,7 @@ public class SocialAuthService {
 
     private final SocialAccountRepository socialAccountRepository;
     private final UserRepository userRepository;
+    private final UserReputationRepository userReputationRepository;
     private final PasswordEncoder passwordEncoder;
 
     private static final String PROVIDER_KAKAO = "KAKAO";
@@ -80,7 +82,7 @@ public class SocialAuthService {
         String safeEmail  = (email != null && !email.isBlank()) ? email : null;
         String encodedPw  = passwordEncoder.encode(UUID.randomUUID().toString());
 
-        return userRepository.save(
+        User user = userRepository.save(
                 User.builder()
                         .username(desiredUsername)
                         .nickname(null)
@@ -90,6 +92,15 @@ public class SocialAuthService {
                         .profileImageUrl(profileImageUrl)
                         .build()
         );
+
+        userReputationRepository.save(
+                goorm.ddok.reputation.domain.UserReputation.builder()
+                        .user(user)
+                        .temperature(java.math.BigDecimal.valueOf(36.5))
+                        .build()
+        );
+
+        return user;
     }
 
     // 사람 표시용 username: 카카오 닉네임 없으면 기본값
