@@ -62,6 +62,7 @@ public enum ErrorCode {
     APPLICATION_ALREADY_APPROVED(HttpStatus.BAD_REQUEST, "이미 승인된 신청은 취소할 수 없습니다."),
     ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
     LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
+    LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
 
 
     // 401 UNAUTHORIZED

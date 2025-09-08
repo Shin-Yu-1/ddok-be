@@ -98,4 +98,56 @@ public class TeamCommandService {
             ).ifPresent(StudyParticipant::expel);
         }
     }
+
+    /**
+     * 팀원 중도 하차 처리 (Soft Delete)
+     *
+     * @param teamId      팀 ID
+     * @param memberId    하차할 팀원 ID
+     * @param user        현재 로그인한 사용자
+     * @param confirmText 확인 문구 ("하차합니다.")
+     */
+    @Transactional
+    public void withdrawMember(Long teamId, Long memberId, CustomUserDetails user, String confirmText) {
+        if (user == null || user.getUser() == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+        if (!"하차합니다.".equals(confirmText)) {
+            throw new GlobalException(ErrorCode.INVALID_CONFIRM_TEXT);
+        }
+
+        Team team = teamRepository.findById(teamId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
+
+        TeamMember member = teamMemberRepository.findById(memberId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_MEMBER_NOT_FOUND));
+
+        // 본인만 하차 가능
+        if (!member.getUser().getId().equals(user.getId())) {
+            throw new GlobalException(ErrorCode.FORBIDDEN);
+        }
+
+        // 리더는 하차 불가
+        if (member.getRole() == TeamMemberRole.LEADER) {
+            throw new GlobalException(ErrorCode.LEADER_CANNOT_WITHDRAW);
+        }
+
+        if (member.getDeletedAt() != null) {
+            throw new GlobalException(ErrorCode.ALREADY_EXPELLED);
+        }
+
+        // Soft Delete
+        member.expel();
+
+        if (team.getType() == TeamType.PROJECT) {
+            projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndUser_IdAndDeletedAtIsNull(
+                    team.getRecruitmentId(), member.getUser().getId()
+            ).ifPresent(ProjectParticipant::expel);
+        } else if (team.getType() == TeamType.STUDY) {
+            studyParticipantRepository.findByStudyRecruitment_IdAndUser_IdAndDeletedAtIsNull(
+                    team.getRecruitmentId(), member.getUser().getId()
+            ).ifPresent(StudyParticipant::expel);
+        }
+    }
+
 }
