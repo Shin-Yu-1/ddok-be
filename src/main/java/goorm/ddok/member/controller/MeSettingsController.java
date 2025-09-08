@@ -233,7 +233,27 @@ public class MeSettingsController {
         SettingsPageResponse data = service.updatePhone(req, me);
         return ResponseEntity.ok(ApiResponseDto.of(200, "전화번호 변경에 성공했습니다.", data));
     }
-    // TODO : 비밀번호 변경
+
+    @ReauthRequired
+    @PatchMapping("/password")
+    @Operation(summary = "비밀번호 변경", description = "비밀번호를 변경합니다.",
+            security = { @SecurityRequirement(name = "Authorization"), @SecurityRequirement(name = "Reauth") },
+            parameters = {
+                    @Parameter(name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")),
+                    @Parameter(name = HEADER, in = ParameterIn.HEADER, required = true,
+                            description = "reauthToken (비밀번호 검증으로 발급)",
+                            examples = @ExampleObject(value = "reauth_0d2d5f..."))
+            })
+    public ResponseEntity<ApiResponseDto<PasswordResetRequest>> updatePassword(
+            @Valid @RequestBody PasswordResetRequest req,
+            @AuthenticationPrincipal CustomUserDetails me
+    ) {
+        service.updatePassword(req, me);
+        return ResponseEntity.ok(ApiResponseDto.of(200, "비밀번호 변경에 성공했습니다.", null));
+    }
+
 
     /* =========================
      *  회원 탈퇴 (data=null 유지)
