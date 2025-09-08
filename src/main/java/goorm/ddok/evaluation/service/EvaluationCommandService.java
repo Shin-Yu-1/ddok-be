@@ -32,45 +32,56 @@ public class EvaluationCommandService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final UserReputationRepository userReputationRepository;
+    /** 온도 누적 가중치 완충값 */
+    private static final double REPUTATION_DAMPING_C = 10.0;
 
     public SaveScoresResponse saveScores(Long teamId, Long evaluationId, Long meUserId, SaveScoresRequest req) {
         TeamEvaluation eval = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.EVALUATION_NOT_FOUND));
 
-        if (!Objects.equals(eval.getTeam().getId(), teamId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN);
+        // === 자동 마감 처리: closesAt이 지났으면 즉시 CLOSED로 전환 ===
+        if (eval.getStatus() == EvaluationStatus.OPEN
+                && eval.getClosesAt() != null
+                && eval.getClosesAt().isBefore(Instant.now())) {
+            eval.setStatus(EvaluationStatus.CLOSED);
+            evaluationRepository.save(eval);
         }
-        if (eval.getStatus() != EvaluationStatus.OPEN) {
-            throw new GlobalException(ErrorCode.EVALUATION_CLOSED);
-        }
+
+        if (!Objects.equals(eval.getTeam().getId(), teamId)) throw new GlobalException(ErrorCode.FORBIDDEN);
+        if (eval.getStatus() != EvaluationStatus.OPEN) throw new GlobalException(ErrorCode.EVALUATION_CLOSED);
 
         Long targetUserId = req.getTargetUserId();
         if (Objects.equals(meUserId, targetUserId)) {
             throw new GlobalException(ErrorCode.EVALUATION_SELF_NOT_ALLOWED);
         }
 
-        // 둘 다 해당 팀의 멤버인지 확인
+        // 팀 멤버 검증
         teamMemberRepository.findByTeamIdAndUserId(teamId, meUserId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.FORBIDDEN));
         teamMemberRepository.findByTeamIdAndUserId(teamId, targetUserId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.EVALUATION_TARGET_NOT_MEMBER));
 
-        // 이미 제출했는지(타겟 기준 한 번만)
+        // 중복 제출 방지(타겟 기준 1회)
         boolean already = scoreRepository.existsByEvaluationIdAndEvaluatorUserIdAndTargetUserId(
                 evaluationId, meUserId, targetUserId);
-        if (already) {
-            throw new GlobalException(ErrorCode.EVALUATION_ALREADY_SUBMITTED);
-        }
+        if (already) throw new GlobalException(ErrorCode.EVALUATION_ALREADY_SUBMITTED);
 
-        // 점수 저장 + 범위 체크
-        double sum = 0; int cnt = 0;
-        for (var s : req.getScores()) {
+        // === 점수 목록 준비: 비어 있으면 모든 항목을 3점으로 자동 채우기 ===
+        var incoming = (req.getScores() == null || req.getScores().isEmpty())
+                ? itemRepository.findAll().stream()
+                .map(it -> new SaveScoresRequest.Score(it.getId(), 3))
+                .toList()
+                : req.getScores();
+
+        double sum = 0.0;
+        int cnt = 0;
+
+        for (var s : incoming) {
             EvaluationItem item = itemRepository.findById(s.getItemId())
                     .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
 
-            if (s.getScore() == null ||
-                    s.getScore() < item.getScaleMin() ||
-                    s.getScore() > item.getScaleMax()) {
+            Integer v = s.getScore();
+            if (v == null || v < item.getScaleMin() || v > item.getScaleMax()) {
                 throw new GlobalException(ErrorCode.EVALUATION_ITEM_OUT_OF_RANGE);
             }
 
@@ -79,18 +90,17 @@ public class EvaluationCommandService {
                     .evaluatorUserId(meUserId)
                     .targetUserId(targetUserId)
                     .itemId(item.getId())
-                    .score(s.getScore())
+                    .score(v)
                     .createdAt(Instant.now())
                     .build());
 
-            sum += s.getScore();
+            sum += v;
             cnt++;
         }
 
-        // === 온도 반영(간단 예시): 평균 점수 -> 델타 -> 현재 온도에 적용 ===
-        double avg = (cnt == 0) ? 0 : (sum / cnt);
-        BigDecimal delta = BigDecimal.valueOf(avg - 3.0) // 3점을 기준점
-                .setScale(1, RoundingMode.HALF_UP);
+        // === 온도 갱신 (점진적 누적 가중치 방식) ===
+        double avg = (cnt == 0) ? 0.0 : (sum / cnt);   // 항목 평균(1~5)
+        double targetScore100 = avg * 10.0;            // 0~100 스케일
 
         User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
@@ -103,12 +113,15 @@ public class EvaluationCommandService {
                                 .build()
                 ));
 
-        BigDecimal next = rep.getTemperature().add(delta);
-        if (next.compareTo(BigDecimal.ZERO) < 0) next = BigDecimal.ZERO;
-        if (next.compareTo(BigDecimal.valueOf(100.0)) > 0) next = BigDecimal.valueOf(100.0);
-        next = next.setScale(1, RoundingMode.HALF_UP);
+        long n = scoreRepository.countDistinctEvaluatorsByTargetUserId(targetUserId); // 이번 포함 고유 평가자 수
+        double alpha = 1.0 / (n + REPUTATION_DAMPING_C);
 
-        rep.applyTemperature(next);
+        double current = rep.getTemperature().doubleValue();
+        double updated = current + alpha * (targetScore100 - current);
+        if (updated < 0.0) updated = 0.0;
+        if (updated > 100.0) updated = 100.0;
+
+        rep.applyTemperature(BigDecimal.valueOf(updated).setScale(1, RoundingMode.HALF_UP));
         userReputationRepository.save(rep);
 
         return SaveScoresResponse.builder()

@@ -30,7 +30,6 @@ public class EvaluationQueryService {
     private final TeamMemberRepository teamMemberRepository;
     private final TeamEvaluationRepository evaluationRepository;
     private final TeamEvaluationScoreRepository scoreRepository;
-    private final EvaluationItemRepository itemRepository;
 
     public EvaluationModalResponse getModal(Long teamId, Long meUserId) {
         Team team = teamRepository.findById(teamId)
@@ -46,15 +45,13 @@ public class EvaluationQueryService {
         Map<Long, List<TeamEvaluationScore>> givenByTarget =
                 given.stream().collect(Collectors.groupingBy(TeamEvaluationScore::getTargetUserId));
 
-        // 평가 항목
-        var items = itemRepository.findAll();
 
         // 모달 멤버 블록
         List<EvaluationMemberItem> memberItems = members.stream()
-                .filter(m -> !Objects.equals(m.getUser().getId(), meUserId)) // 내 자신 제외
                 .map(m -> {
                     Long targetId = m.getUser().getId();
                     boolean evaluated = givenByTarget.containsKey(targetId);
+                    boolean isMine = Objects.equals(targetId, meUserId);
 
                     List<ScoreItem> myScores = givenByTarget
                             .getOrDefault(targetId, List.of())
@@ -76,20 +73,12 @@ public class EvaluationQueryService {
 
                     return EvaluationMemberItem.builder()
                             .memberId(m.getId())
-                            .isMine(false)
+                            .isMine(isMine)
                             .user(simple)
                             .isEvaluated(evaluated)
                             .scores(myScores)
                             .build();
                 })
-                .collect(Collectors.toList());
-
-        List<EvaluationItemDto> itemDtos = items.stream()
-                .map(it -> EvaluationItemDto.builder()
-                        .itemId(it.getId())
-                        .code(it.getCode())
-                        .name(it.getName())
-                        .build())
                 .collect(Collectors.toList());
 
         return EvaluationModalResponse.builder()
@@ -98,7 +87,6 @@ public class EvaluationQueryService {
                 .evaluationId(eval.getId())
                 .status(eval.getStatus().name())
                 .items(memberItems)
-                .evaluationItems(itemDtos)
                 .build();
     }
 }

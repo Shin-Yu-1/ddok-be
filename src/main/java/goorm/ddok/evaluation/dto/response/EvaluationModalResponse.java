@@ -16,5 +16,4 @@ public class EvaluationModalResponse {
     private Long evaluationId;
     private String status;         // OPEN/CLOSED/CANCELED
     private List<EvaluationMemberItem> items;
-    private List<EvaluationItemDto> evaluationItems;
 }

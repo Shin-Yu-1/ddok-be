@@ -40,7 +40,4 @@ public class TeamEvaluationScore {
     @Column(name="created_at", nullable=false)
     private Instant createdAt;
 
-    // === 편의 게터 (ID 사용) ===
-    public Long getTargetUserId() { return targetUserId; }
-    public Long getItemId() { return itemId; }
 }
