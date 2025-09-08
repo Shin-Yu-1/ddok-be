@@ -42,4 +42,6 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
     // 나를 제외한 멤버
     Optional<ChatRoomMember> findFirstByRoom_IdAndDeletedAtIsNullAndUser_IdNotOrderByCreatedAtAsc(
             Long roomId, Long currentUserId);
+
+    boolean existsByRoom_IdAndUser_IdAndDeletedAtIsNull(Long roomId, Long userId);
 }
