@@ -9,6 +9,7 @@ import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/teams/{teamId}/evaluations")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "Team", description = "팀 관리 API")
 public class EvaluationController {
 
     private final EvaluationQueryService queryService;
