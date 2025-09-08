@@ -29,9 +29,10 @@ public class TeamCommandService {
 
         // 리더 팀원 자동 추가
         team.addMember(leader, TeamMemberRole.LEADER);
+        Team savedTeam = teamRepository.save(team);
         // 팀 채팅 추가
-        chatService.createTeamChatRoom(team, leader);
+        chatService.createTeamChatRoom(savedTeam, leader);
 
-        return teamRepository.save(team);
+        return savedTeam;
     }
 }
