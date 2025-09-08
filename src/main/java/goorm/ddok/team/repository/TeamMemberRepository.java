@@ -6,8 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
+    List<TeamMember> findByTeamId(Long teamId);
+    Optional<TeamMember> findByTeamIdAndUserId(Long teamId, Long userId);
 
     /**
      * 특정 팀(teamId)에 대해, 주어진 사용자(userId)가

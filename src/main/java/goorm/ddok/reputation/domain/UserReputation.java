@@ -35,4 +35,9 @@ public class UserReputation {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    // === 온도 적용 메서드 ===
+    public void applyTemperature(BigDecimal newTemp) {
+        this.temperature = newTemp;
+    }
+
 }
