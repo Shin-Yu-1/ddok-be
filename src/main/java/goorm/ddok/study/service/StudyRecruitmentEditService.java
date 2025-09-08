@@ -119,9 +119,14 @@ public class StudyRecruitmentEditService {
             study = clearLocation(study);
         }
 
-        String bannerUrl = (bannerImage != null && !bannerImage.isEmpty())
-                ? uploadBannerImage(bannerImage)
-                : bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);
+        String bannerUrl;
+        if (req.getBannerImageUrl() != null){
+            bannerUrl = req.getBannerImageUrl();
+        } else if (bannerImage != null && !bannerImage.isEmpty()){
+            bannerUrl = uploadBannerImage(bannerImage);
+        } else {
+            bannerUrl = bannerImageService.generateBannerImageUrl(req.getTitle(), "STUDY", 1200, 600);
+        }
 
 
         // 기본 필드 반영 (배너 업로드는 생략: 요청값 없으면 기존 유지)
