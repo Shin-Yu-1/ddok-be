@@ -531,7 +531,7 @@ public class MapService {
                             .nickname(r.getNickname())
                             .IsMine(userId != null && userId.equals(r.getId()))
                             .profileImageUrl(r.getProfileImageUrl())
-                            .temperature(DEFAULT_TEMPERATURE)
+                            .temperature(r.getTemperature())
                             .mainBadge(mainBadge)
                             .abandonBadge(abandonBadge)
                             .location(LocationDto.builder()
@@ -787,7 +787,7 @@ public class MapService {
                 .address(row.getAddress())
                 .latestProject(toMini(row.getLatestProjectId(), row.getLatestProjectTitle(), latestProjectStatus))
                 .latestStudy(toMini(row.getLatestStudyId(), row.getLatestStudyTitle(), latestStudyStatus))
-                .temperature(BigDecimal.valueOf(36.5))
+                .temperature(row.getTemperature())
                 .isMine(mine)
                 .build();
     }

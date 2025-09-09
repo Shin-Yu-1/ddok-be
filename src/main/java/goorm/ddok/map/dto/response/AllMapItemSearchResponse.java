@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -54,7 +56,7 @@ public class AllMapItemSearchResponse {
     private final String profileImageUrl;
 
     @Schema(description = "온도 (category='player'일 때만 존재)", example = "36.5", nullable = true)
-    private final Double temperature;
+    private final BigDecimal temperature;
 
     @Schema(description = "메인 뱃지 (category='player'일 때만 존재)", nullable = true)
     private final MainBadge mainBadge;
