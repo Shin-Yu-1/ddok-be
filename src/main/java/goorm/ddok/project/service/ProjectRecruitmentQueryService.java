@@ -54,7 +54,7 @@ public class ProjectRecruitmentQueryService {
 
         // 2) 참가자 조회 (리더 포함)
         List<ProjectParticipant> participants =
-                projectParticipantRepository.findByPosition_ProjectRecruitment(project);
+                projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(project.getId());
 
         // 3) 리더
         ProjectParticipant leader = participants.stream()
