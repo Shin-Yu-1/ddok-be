@@ -143,7 +143,7 @@ public class BadgeService {
      * 프로젝트/스터디 종료 배지 부여
      *
      * 프로젝트 또는 스터디가 성공적으로 종료될 때 호출.
-     * - 모든 참여자: complete 배지 증가
+     * - 멤버: complete 배지 증가
      * - 리더: leader_complete 배지 추가 증가
      *
      * @param user    배지를 부여할 사용자
@@ -151,9 +151,10 @@ public class BadgeService {
      */
     @Transactional
     public void grantCompleteBadge(User user, boolean isLeader) {
-        increaseBadge(user, BadgeType.complete);
         if (isLeader) {
             increaseBadge(user, BadgeType.leader_complete);
+        } else {
+            increaseBadge(user, BadgeType.complete);
         }
     }
 
