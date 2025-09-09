@@ -80,8 +80,11 @@ public class ChatRoomManagementService {
 
     @Transactional
     public void removeMemberFromTeamChat(Long teamId, Long memberID) {
+        ChatRoom chatRoom = chatRepository.findByTeam_Id(teamId)
+                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
+
         ChatRoomMember chatMember = chatRoomMemberRepository
-                .findFirstByRoom_IdAndDeletedAtIsNullAndUser_IdNotOrderByCreatedAtAsc(teamId, memberID)
+                .findFirstByRoom_IdAndDeletedAtIsNullAndUser_IdNotOrderByCreatedAtAsc(chatRoom.getId(), memberID)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
 
         chatMember.expel();
