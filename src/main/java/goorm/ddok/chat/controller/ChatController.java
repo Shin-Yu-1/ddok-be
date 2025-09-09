@@ -3,7 +3,9 @@ package goorm.ddok.chat.controller;
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
 import goorm.ddok.chat.dto.response.*;
-import goorm.ddok.chat.service.ChatService;
+import goorm.ddok.chat.service.ChatMessageService;
+import goorm.ddok.chat.service.ChatRoomManagementService;
+import goorm.ddok.chat.service.ChatRoomQueryService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.response.ApiResponseDto;
@@ -29,7 +31,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Chat", description = "채팅 API")
 public class ChatController {
 
-    private final ChatService chatService;
+    private final ChatMessageService chatMessageService;
+    private final ChatRoomQueryService chatRoomQueryService;
 
     @GetMapping("/private")
     @Operation(summary = "개인 채팅 목록 조회", description = "사용자의 1:1 개인 채팅 목록을 조회합니다.")
@@ -49,8 +52,8 @@ public class ChatController {
 
         ChatListResponse response =
                 (search == null)
-                        ? chatService.getPrivateChats(email, pageable)
-                        : chatService.searchPrivateChats(email, search.trim(), pageable);
+                        ? chatRoomQueryService.getPrivateChats(email, pageable)
+                        : chatRoomQueryService.searchPrivateChats(email, search.trim(), pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "개인 채팅 목록 조회 성공", response));
     }
@@ -88,8 +91,8 @@ public class ChatController {
 
         ChatListResponse response =
                 (search == null)
-                        ? chatService.getTeamChats(email, pageable)
-                        : chatService.searchTeamChats(email, search.trim(), pageable);
+                        ? chatRoomQueryService.getTeamChats(email, pageable)
+                        : chatRoomQueryService.searchTeamChats(email, search.trim(), pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "팀 채팅 목록 조회 성공", response));
     }
@@ -123,7 +126,7 @@ public class ChatController {
             throw new GlobalException(ErrorCode.INVALID_ROOM_ID);
         }
         String email = authentication.getName();
-        ChatMembersResponse response = chatService.getRoomMembers(roomId, email);
+        ChatMembersResponse response = chatRoomQueryService.getRoomMembers(roomId, email);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 인원 조회 성공", response));
     }
@@ -152,7 +155,7 @@ public class ChatController {
             Authentication authentication) {
 
         String email = authentication.getName();
-        ChatMessageResponse response = chatService.sendMessage(email, roomId, request);
+        ChatMessageResponse response = chatMessageService.sendMessage(email, roomId, request);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "메시지 전송 성공", response));
     }
@@ -176,7 +179,7 @@ public class ChatController {
         String email = authentication.getName();
 
         ChatMessageListResponse response =
-                chatService.getChatMessages(email, roomId, pageable, search);
+                chatMessageService.getChatMessages(email, roomId, pageable, search);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 메세지 조회 성공", response));
     }
@@ -190,7 +193,7 @@ public class ChatController {
             Authentication authentication) {
 
         String email = authentication.getName();
-        ChatReadResponse response = chatService.lastReadMessage(email, roomId, request);
+        ChatReadResponse response = chatMessageService.lastReadMessage(email, roomId, request);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", response));
     }

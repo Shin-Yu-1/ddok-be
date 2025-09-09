@@ -1,6 +1,6 @@
 package goorm.ddok.team.service;
 
-import goorm.ddok.chat.service.ChatService;
+import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class TeamCommandService {
 
-    private final ChatService chatService;
+    private final ChatRoomManagementService chatRoomManagementService;
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
@@ -45,7 +45,7 @@ public class TeamCommandService {
         team.addMember(leader, TeamMemberRole.LEADER);
         Team savedTeam = teamRepository.save(team);
         // 팀 채팅 추가
-        chatService.createTeamChatRoom(savedTeam, leader);
+        chatRoomManagementService.createTeamChatRoom(savedTeam, leader);
 
         return savedTeam;
     }
