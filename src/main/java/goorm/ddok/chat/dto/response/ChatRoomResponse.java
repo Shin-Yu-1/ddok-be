@@ -28,6 +28,9 @@ public class ChatRoomResponse {
     @Schema(description = "채팅방 이름", example = "채팅방이에옹")
     private String name;
 
+    @Schema(description = "팀 ID", example = "1")
+    private Long teamId;
+
     @Schema(description = "고정 여부", example = "false")
     private Boolean isPinned;
 

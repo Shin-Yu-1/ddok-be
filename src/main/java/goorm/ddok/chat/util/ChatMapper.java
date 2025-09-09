@@ -51,7 +51,9 @@ public class ChatMapper {
                 .updatedAt(Optional.ofNullable(chatRoom.getLastMessageAt())
                         .orElse(chatRoom.getCreatedAt()));
 
-        System.out.println("* * * * toChatRoomDto currentUserId: " + currentUserId);
+        if (chatRoom.getTeam() != null) {
+            builder.teamId(chatRoom.getTeam().getId());
+        }
 
         // 채팅방 타입에 따라 다른 정보 설정
         if (chatRoom.getRoomType() == ChatRoomType.PRIVATE) {
