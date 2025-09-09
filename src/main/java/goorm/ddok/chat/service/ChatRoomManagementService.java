@@ -77,4 +77,13 @@ public class ChatRoomManagementService {
                 .role(chatRole)
                 .build());
     }
+
+    @Transactional
+    public void removeMemberFromTeamChat(Long teamId, Long memberID) {
+        ChatRoomMember chatMember = chatRoomMemberRepository
+                .findFirstByRoom_IdAndDeletedAtIsNullAndUser_IdNotOrderByCreatedAtAsc(teamId, memberID)
+                .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
+
+        chatMember.expel();
+    }
 }
