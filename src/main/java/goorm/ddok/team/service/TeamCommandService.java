@@ -91,6 +91,8 @@ public class TeamCommandService {
 
         // Soft Delete
         member.expel();
+        // 채팅방 멤버 삭제
+        chatRoomManagementService.removeMemberFromTeamChat(teamId, memberId);
 
         // 모집글 참가자 동기화
         if (team.getType() == TeamType.PROJECT) {
@@ -143,6 +145,8 @@ public class TeamCommandService {
 
         // Soft Delete
         member.expel();
+        // 채팅방 멤버 삭제
+        chatRoomManagementService.removeMemberFromTeamChat(teamId, memberId);
 
         if (team.getType() == TeamType.PROJECT) {
             projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndUser_IdAndDeletedAtIsNull(
