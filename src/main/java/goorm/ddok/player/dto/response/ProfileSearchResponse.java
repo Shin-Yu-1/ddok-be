@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 @Builder
 @Schema(name = "ProfileSearchResponse", description = "플레이어 검색 응답")
@@ -34,7 +36,7 @@ public class ProfileSearchResponse {
     private final String address;
 
     @Schema(description = "온도", example = "36.6")
-    private final Double temperature;
+    private final BigDecimal temperature;
 
     @Schema(description = "내 프로필 여부", example = "true")
     private final boolean IsMine;

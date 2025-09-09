@@ -80,11 +80,10 @@ public class ProfileQueryService {
                 .build();
     }
 
-    // TODO: 온도 구현 시 교체
+
     private BigDecimal findTemperature(User user) {
         if (user.getReputation() == null || user.getReputation().getTemperature() == null) {
-            return BigDecimal.valueOf(36.5);
-//            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
+            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
         }
         return user.getReputation().getTemperature();
     }

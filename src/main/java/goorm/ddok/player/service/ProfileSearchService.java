@@ -9,6 +9,8 @@ import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.player.dto.response.ProfileSearchResponse;
+import goorm.ddok.reputation.domain.UserReputation;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -24,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.util.StringUtils.hasText;
 
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @Service
@@ -31,6 +34,7 @@ import java.util.*;
 public class ProfileSearchService {
 
     private final UserRepository userRepository;
+    private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
 
     @Transactional(readOnly = true)
@@ -168,6 +172,9 @@ public class ProfileSearchService {
             );
             mainPosition = pickMainPosition(u);
         }
+        BigDecimal temp = userReputationRepository.findByUserId(u.getId())
+                .map(UserReputation::getTemperature)
+                .orElse(null);
 
         // 대표 배지 조회
         BadgeDto representative = badgeService.getRepresentativeGoodBadge(u);
@@ -196,7 +203,7 @@ public class ProfileSearchService {
                 .abandonBadge(abandonBadge)
                 .mainPosition(mainPosition) // isPublic이 false이면 null
                 .address(address) // isPublic이 false이면 null
-                .temperature(36.5) // TODO: 평판/온도 도메인 연동
+                .temperature(temp)
                 .IsMine(currentUserId != null && currentUserId.equals(u.getId()))
                 .chatRoomId(null) // TODO: 채팅 도메인 연동
                 .dmRequestPending(false) // TODO: DM 도메인 연동

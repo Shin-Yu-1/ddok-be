@@ -7,6 +7,7 @@ import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.member.domain.User;
 import goorm.ddok.project.domain.ProjectApplication;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.study.domain.StudyApplication;
@@ -145,7 +146,7 @@ public class TeamApplicantQueryService {
                 .userId(user.getId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
-                .temperature(user.getReputation() != null ? user.getReputation().getTemperature() : BigDecimal.valueOf(36.5))
+                .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
                 .chatRoomId(null)
                 .dmRequestPending(false)
@@ -161,4 +162,12 @@ public class TeamApplicantQueryService {
                 .findFirst()
                 .orElse(null);
     }
+
+    private BigDecimal findTemperature(User user) {
+        if (user.getReputation() == null || user.getReputation().getTemperature() == null) {
+            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
+        }
+        return user.getReputation().getTemperature();
+    }
+
 }
