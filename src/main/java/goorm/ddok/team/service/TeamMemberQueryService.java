@@ -134,8 +134,7 @@ public class TeamMemberQueryService {
                 .userId(user.getId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
-                .temperature(user.getReputation() != null ?
-                        user.getReputation().getTemperature() : BigDecimal.valueOf(36.5))
+                .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
                 .chatRoomId(null)
                 .dmRequestPending(false)
@@ -156,5 +155,11 @@ public class TeamMemberQueryService {
                 .map(UserPosition::getPositionName)
                 .findFirst()
                 .orElse(null);
+    }
+    private BigDecimal findTemperature(User user) {
+        if (user.getReputation() == null || user.getReputation().getTemperature() == null) {
+            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
+        }
+        return user.getReputation().getTemperature();
     }
 }
