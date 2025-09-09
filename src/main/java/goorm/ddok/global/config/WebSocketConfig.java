@@ -1,6 +1,5 @@
 package goorm.ddok.global.config;
 
-import goorm.ddok.global.websocket.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
