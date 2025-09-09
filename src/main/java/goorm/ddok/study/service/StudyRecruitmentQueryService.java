@@ -53,7 +53,7 @@ public class StudyRecruitmentQueryService {
         User me = (userDetails != null) ? userDetails.getUser() : null;
 
         // 2) 참가자(리더+멤버)
-        List<StudyParticipant> all = studyParticipantRepository.findByStudyRecruitment(study);
+        List<StudyParticipant> all = studyParticipantRepository.findByStudyRecruitment_IdAndDeletedAtIsNull(study.getId());
 
         // 3) 리더 필수
         StudyParticipant leader = all.stream()
