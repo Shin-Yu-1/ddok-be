@@ -2,6 +2,7 @@ package goorm.ddok.study.service;
 
 import goorm.ddok.badge.domain.BadgeTier;
 import goorm.ddok.badge.domain.BadgeType;
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -39,6 +40,8 @@ public class StudyRecruitmentQueryService {
     private final StudyParticipantRepository studyParticipantRepository;
     private final StudyApplicationRepository studyApplicationRepository;
     private final UserReputationRepository userReputationRepository;
+    private final BadgeService badgeService;
+
 
     /** 스터디 상세 조회 (수정페이지와 동일 스키마) */
     public StudyRecruitmentDetailResponse getStudyDetail(Long studyId, CustomUserDetails userDetails) {
@@ -135,6 +138,9 @@ public class StudyRecruitmentQueryService {
     private UserSummaryDto toUserSummaryDto(StudyParticipant participant, User me) {
         User u = participant.getUser();
 
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
+
         String mainPosition = u.getPositions().stream()
                 .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
                 .map(UserPosition::getPositionName)
@@ -146,17 +152,13 @@ public class StudyRecruitmentQueryService {
                 .map(UserReputation::getTemperature)
                 .orElse(null);
 
-        // 뱃지: 아직 연동 전 → null
-        BadgeDto mainBadge = null;
-        AbandonBadgeDto abandonBadge = null;
-
         return UserSummaryDto.builder()
                 .userId(u.getId())
                 .nickname(u.getNickname())
                 .profileImageUrl(u.getProfileImageUrl())
                 .mainPosition(mainPosition)
-                .mainBadge(BadgeDto.builder().type(BadgeType.leader_complete).tier(BadgeTier.gold).build())
-                .abandonBadge(AbandonBadgeDto.builder().IsGranted(true).count(7).build())
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
                 .temperature(temperature)      // null 허용
                 .IsMine(me != null && Objects.equals(me.getId(), u.getId()))
                 .chatRoomId(null)
