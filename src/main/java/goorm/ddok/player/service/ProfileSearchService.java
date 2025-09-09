@@ -1,5 +1,8 @@
 package goorm.ddok.player.service;
 
+import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.global.dto.AbandonBadgeDto;
+import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.domain.UserLocation;
 import goorm.ddok.member.domain.UserPosition;
@@ -28,6 +31,7 @@ import java.util.*;
 public class ProfileSearchService {
 
     private final UserRepository userRepository;
+    private final BadgeService badgeService;
 
     @Transactional(readOnly = true)
     public Page<ProfileSearchResponse> searchPlayers(String keyword, int page, int size, Long currentUserId) {
@@ -165,23 +169,31 @@ public class ProfileSearchService {
             mainPosition = pickMainPosition(u);
         }
 
+        // 대표 배지 조회
+        BadgeDto representative = badgeService.getRepresentativeGoodBadge(u);
+        ProfileSearchResponse.MainBadge mainBadge = null;
+        if (representative != null) {
+            mainBadge = ProfileSearchResponse.MainBadge.builder()
+                    .type(representative.getType().name())
+                    .tier(representative.getTier().name())
+                    .build();
+        }
+
+        // 나쁜 배지 조회
+        AbandonBadgeDto abandon = badgeService.getAbandonBadge(u);
+        ProfileSearchResponse.AbandonBadge abandonBadge =
+                ProfileSearchResponse.AbandonBadge.builder()
+                        .IsGranted(abandon.isIsGranted())
+                        .count(abandon.getCount())
+                        .build();
+
         return ProfileSearchResponse.builder()
                 .userId(u.getId())
                 .category("players")
                 .nickname(u.getNickname())
                 .profileImageUrl(u.getProfileImageUrl())
-                .mainBadge(ProfileSearchResponse
-                        .MainBadge
-                        .builder()
-                        .type("login")
-                        .tier("bronze")
-                        .build()) // TODO: 배지 도메인 연동
-                .abandonBadge(ProfileSearchResponse
-                        .AbandonBadge
-                        .builder()
-                        .IsGranted(true)
-                        .count(5)
-                        .build()) // TODO: 배지 도메인 연동
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
                 .mainPosition(mainPosition) // isPublic이 false이면 null
                 .address(address) // isPublic이 false이면 null
                 .temperature(36.5) // TODO: 평판/온도 도메인 연동

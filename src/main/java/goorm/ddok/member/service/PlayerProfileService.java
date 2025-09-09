@@ -1,5 +1,8 @@
 package goorm.ddok.member.service;
 
+import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.global.dto.AbandonBadgeDto;
+import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -32,6 +35,7 @@ public class PlayerProfileService {
     private final TechStackRepository techStackRepository;
     private final UserReputationRepository userReputationRepository;
     private final UserPortfolioRepository userPortfolioRepository;
+    private final BadgeService badgeService;
 
     /* -------- 포지션 수정 -------- */
     public ProfileDto updatePositions(PositionsUpdateRequest req, CustomUserDetails me) {
@@ -277,6 +281,9 @@ public class PlayerProfileService {
 
         Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
 
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(fresh);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(fresh);
+
         // temperature (없으면 null)
         BigDecimal temp = userReputationRepository.findByUserId(fresh.getId())
                 .map(UserReputation::getTemperature)
@@ -335,8 +342,8 @@ public class PlayerProfileService {
                 .ageGroup(user.getAgeGroup())
                 .mainPosition(main)
                 .subPositions(subs)
-                .mainBadge(null)                // 요구사항: 없으면 null
-                .abandonBadge(null)             // 요구사항: 없으면 null
+                .mainBadge(mainBadge)                // 요구사항: 없으면 null
+                .abandonBadge(abandonBadge)             // 요구사항: 없으면 null
                 .activeHours(ah)
                 .traits(traits)
                 .content(fresh.getIntroduce())
