@@ -2,6 +2,7 @@ package goorm.ddok.project.service;
 
 import goorm.ddok.badge.domain.BadgeTier;
 import goorm.ddok.badge.domain.BadgeType;
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.dto.BadgeDto;
@@ -39,6 +40,8 @@ public class ProjectRecruitmentQueryService {
     private final ProjectParticipantRepository projectParticipantRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final UserReputationRepository userReputationRepository;
+    private final BadgeService badgeService;
+
 
     /** 프로젝트 모집글 상세 조회 */
     public ProjectDetailResponse getProjectDetail(Long projectId, CustomUserDetails userDetails) {
@@ -51,7 +54,7 @@ public class ProjectRecruitmentQueryService {
 
         // 2) 참가자 조회 (리더 포함)
         List<ProjectParticipant> participants =
-                projectParticipantRepository.findByPosition_ProjectRecruitment(project);
+                projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(project.getId());
 
         // 3) 리더
         ProjectParticipant leader = participants.stream()
@@ -169,6 +172,10 @@ public class ProjectRecruitmentQueryService {
     private ProjectUserSummaryDto toUserSummaryDto(ProjectParticipant participant, User currentUser, BigDecimal temperature) {
         User user = participant.getUser();
 
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(user);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
+
+
         String mainPosition = user.getPositions().stream()
                 .filter(pos -> pos.getType() == UserPositionType.PRIMARY)
                 .map(UserPosition::getPositionName)
@@ -178,8 +185,6 @@ public class ProjectRecruitmentQueryService {
         Long meId = (currentUser != null) ? currentUser.getId() : null;
         Long otherId = user.getId();
 
-        BadgeDto mainBadge = resolveMainBadge(user);
-        AbandonBadgeDto abandonBadge = resolveAbandonBadge(user);
         Long chatRoomId = resolveChatRoomId(meId, otherId);
         boolean dmPending = resolveDmPending(meId, otherId);
 
@@ -188,8 +193,8 @@ public class ProjectRecruitmentQueryService {
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .mainPosition(mainPosition)
-                .mainBadge(BadgeDto.builder().type(BadgeType.login).tier(BadgeTier.bronze).build())
-                .abandonBadge(AbandonBadgeDto.builder().IsGranted(true).count(3).build())
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
                 .temperature(temperature)
                 .decidedPosition(participant.getPosition().getPositionName())
                 .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
@@ -233,8 +238,6 @@ public class ProjectRecruitmentQueryService {
     }
 
     // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====
-    private BadgeDto resolveMainBadge(User user) { return null; }
-    private AbandonBadgeDto resolveAbandonBadge(User user) { return null; }
     private Long resolveChatRoomId(Long meId, Long otherId) { return null; }
     private boolean resolveDmPending(Long meId, Long otherId) { return false; }
 }

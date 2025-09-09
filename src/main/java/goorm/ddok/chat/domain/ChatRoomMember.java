@@ -3,6 +3,7 @@ package goorm.ddok.chat.domain;
 import goorm.ddok.member.domain.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -78,6 +79,24 @@ public class ChatRoomMember {
     protected void onCreate() {
         if (createdAt == null) createdAt = Instant.now();
         if (updatedAt == null) updatedAt = createdAt;
+    }
+
+    // 활성 여부
+    public boolean isActive() {
+        return deletedAt == null;
+    }
+
+    // 멤버 삭제
+    public void expel() {
+        if (!isActive()) return;
+
+        this.deletedAt = Instant.now();
+    }
+
+    // 멤버 재초대
+    public void restore() {
+        if (isActive()) return;
+        this.deletedAt = null;
     }
 }
 

@@ -124,10 +124,7 @@ public class TeamMemberQueryService {
      * @return {@link TeamApplicantUserResponse} 사용자 요약 정보
      */
     private TeamApplicantUserResponse toUserResponse(User user) {
-        BadgeDto mainBadge = badgeService.getGoodBadges(user).stream()
-                .max(Comparator.comparingInt(b -> b.getTier().ordinal()))
-                .orElse(null);
-
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(user);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
 
         return TeamApplicantUserResponse.builder()

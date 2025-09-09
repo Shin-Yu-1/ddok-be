@@ -1,5 +1,6 @@
 package goorm.ddok.member.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
@@ -47,6 +48,7 @@ public class AuthService {
     private final EmailVerificationService emailVerificationService;
     private final RefreshTokenService refreshTokenService;
     private final ReauthTokenService reauthTokenService;
+    private final BadgeService badgeService;
 
     private static final String PASSWORD_PATTERN = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%]).{8,}$";
     private static final Pattern PASSWORD_REGEX = Pattern.compile(PASSWORD_PATTERN);
@@ -133,6 +135,10 @@ public class AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new GlobalException(ErrorCode.WRONG_PASSWORD);
         }
+
+        // 로그인 배지 반영 (1일 1회)
+        badgeService.grantLoginBadge(user);
+
 // 아직 이메일할 필요가 없으니까 이건 일단 빼놓고
 //        if (!user.isEmailVerified()) {
 //            emailVerificationService.handleEmailVerification(user.getEmail());

@@ -39,9 +39,6 @@ public interface ProjectParticipantRepository extends JpaRepository<ProjectParti
 
     List<ProjectParticipant> findByPosition_ProjectRecruitment_Id(Long projectId);
 
-    // 특정 포지션을 참조하는 참가자 수
-    List<ProjectParticipant> findByPosition_ProjectRecruitment(ProjectRecruitment recruitment);
-
     /**
      * 특정 사용자(userId)가 참여한 프로젝트 목록 조회 (Soft Delete 제외, 모집중(RECRUITING) 제외)
      */
