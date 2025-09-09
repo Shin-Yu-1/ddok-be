@@ -112,5 +112,7 @@ public interface ChatRepository extends JpaRepository<ChatRoom, Long> {
     boolean existsPrivateRoomByUserIds(@Param("u1") Long u1, @Param("u2") Long u2);
 
     Optional<ChatRoom> findByTeam(Team team);
+    // team id로 채팅방 조회
+    Optional<ChatRoom> findByTeam_Id(Long teamId);
     boolean existsByTeam(Team team);
 }
