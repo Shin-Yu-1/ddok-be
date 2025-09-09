@@ -1,5 +1,7 @@
 package goorm.ddok.member.dto;
 
+import goorm.ddok.global.dto.AbandonBadgeDto;
+import goorm.ddok.global.dto.BadgeDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -24,8 +26,8 @@ public class ProfileDto {
     private String mainPosition;
     private List<String> subPositions;
 
-    private Badge mainBadge;        // 요구: 값 없으면 null
-    private AbandonBadge abandonBadge; // 요구: 값 없으면 null
+    private BadgeDto mainBadge;        // 요구: 값 없으면 null
+    private AbandonBadgeDto abandonBadge; // 요구: 값 없으면 null
 
     private ActiveHours activeHours;
     private List<String> traits;
@@ -38,18 +40,6 @@ public class ProfileDto {
     private LocationBlock location;
 
     private List<String> techStacks;
-
-    @Getter @AllArgsConstructor
-    public static class Badge {
-        private String type;
-        private String tier;
-    }
-
-    @Getter @AllArgsConstructor
-    public static class AbandonBadge {
-        private Boolean IsGranted;
-        private Integer count;
-    }
 
     @Getter @Builder
     public static class LocationBlock {
