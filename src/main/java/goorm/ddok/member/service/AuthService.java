@@ -10,6 +10,8 @@ import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.dto.response.*;
 import goorm.ddok.member.repository.*;
 import goorm.ddok.member.util.NicknameGenerator;
+import goorm.ddok.reputation.domain.UserReputation;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +39,7 @@ public class AuthService {
     private final UserActivityRepository userActivityRepository;
     private final UserTraitRepository userTraitRepository;
     private final TechStackRepository techStackRepository;
+    private final UserReputationRepository userReputationRepository;
 
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
@@ -92,6 +95,13 @@ public class AuthService {
                 .password(encodedPassword)
                 .emailVerified(false)
                 .build());
+
+        UserReputation userReputation = UserReputation.builder()
+                .user(user)
+                .temperature(BigDecimal.valueOf(36.5))
+                .build();
+
+        userReputationRepository.save(userReputation);
 
         return SignUpResponse.builder()
                 .id(user.getId())
@@ -149,12 +159,14 @@ public class AuthService {
 
         boolean isPreferences = checkIfUserHasPreferences(user);
 
+        boolean isSocial = checkIfUserSocial(user);
+
         LocationResponse location =
                 Optional.ofNullable(user.getLocation())
                         .map(LocationResponse::from)
                         .orElse(null);
 
-        SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, location);
+        SignInUserResponse userDto = new SignInUserResponse(user, isPreferences, isSocial, location);
         return new SignInResponse(accessToken, userDto);
     }
 
@@ -164,6 +176,10 @@ public class AuthService {
                 !user.getTraits().isEmpty() &&
                 user.getBirthDate() != null &&
                 user.getActivity() != null;
+    }
+
+    private boolean checkIfUserSocial(User user) {
+        return user.getPassword() == null || user.getPassword().isEmpty();
     }
 
     public void signOut(String authorizationHeader, HttpServletResponse response) {

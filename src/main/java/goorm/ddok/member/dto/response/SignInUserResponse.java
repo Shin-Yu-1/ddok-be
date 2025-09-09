@@ -17,12 +17,13 @@ import lombok.Getter;
       "nickname": "고통스러운 개발자",
       "profileImageUrl": "https://cdn.pixabay.com/photo/2013/07/12/14/15/boy-148071_1280.png",
       "mainPosition": "백엔드",
-      "IsPreference": true,
+      "isPreference": true,
       "location": {
         "latitude": 37.5665,
         "longitude": 126.9780,
         "address": "서울특별시 강남구 테헤란로 123"
-      }
+      },
+      "isSocial": false
     }
     """
 )
@@ -52,7 +53,10 @@ public class SignInUserResponse {
     @Schema(description = "사용자 위치 정보", implementation = LocationResponse.class, accessMode = Schema.AccessMode.READ_ONLY)
     private final LocationResponse location;
 
-    public SignInUserResponse(User user, boolean isPreference, LocationResponse location) {
+    @Schema(description = "소셜 로그인 여부", example = "false", accessMode = Schema.AccessMode.READ_ONLY)
+    private final boolean IsSocial;
+
+    public SignInUserResponse(User user, boolean isPreference, boolean isSocial, LocationResponse location) {
         this.id = user.getId();
         this.username = user.getUsername();
         this.email = user.getEmail();
@@ -61,6 +65,7 @@ public class SignInUserResponse {
         this.mainPosition = getMainPositionFromUser(user);
         this.IsPreference = isPreference;
         this.location = location;
+        this.IsSocial = isSocial;
     }
 
     private String getMainPositionFromUser(User user) {

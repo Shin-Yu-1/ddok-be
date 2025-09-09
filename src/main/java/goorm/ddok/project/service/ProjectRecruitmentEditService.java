@@ -214,10 +214,18 @@ public class ProjectRecruitmentEditService {
             }
         }
 
+        String bannerUrl;
         // 배너: 파일 > 요청 URL > 기존 > 기본
-        String bannerUrl= (bannerImage != null && !bannerImage.isEmpty())
-                ? uploadBannerImage(bannerImage)
-                : bannerImageService.generateBannerImageUrl(req.getTitle(), "PROJECT", 1200, 600);
+        if (req.getBannerImageUrl() != null){
+            bannerUrl = req.getBannerImageUrl();
+        } else if (bannerImage != null && !bannerImage.isEmpty()){
+            bannerUrl = uploadBannerImage(bannerImage);
+        } else {
+            bannerUrl = bannerImageService.generateBannerImageUrl(req.getTitle(), "PROJECT", 1200, 600);
+        }
+//        String bannerUrl= (bannerImage != null && !bannerImage.isEmpty())
+//                ? uploadBannerImage(bannerImage)
+//                : bannerImageService.generateBannerImageUrl(req.getTitle(), "PROJECT", 1200, 600);
 
         // 위치 업데이트 (카카오 필드 개별 저장)
         boolean offline = req.getMode() == ProjectMode.offline;
