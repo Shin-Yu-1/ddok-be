@@ -1,7 +1,11 @@
 package goorm.ddok.notification.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
+import goorm.ddok.member.domain.User;
 import goorm.ddok.notification.domain.Notification;
+import jakarta.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
 
@@ -10,42 +14,47 @@ import java.time.Instant;
 
 @Value
 @Builder
+@JsonInclude(Include.NON_NULL)
 public class NotificationResponse {
     String id;
     String type;
     String message;
-    boolean IsRead;
+    boolean isRead;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     Instant createdAt;
 
-    String userId;
-    String userNickname;
+    // ✅ 항상 "행위자" 정보
+    String actorUserId;
+    String actorNickname;
+    BigDecimal actorTemperature;
 
-    String projectId;
-    String projectTitle;
-    String studyId;
-    String studyTitle;
+    /** @deprecated 프론트 마이그레이션 완료 후 제거 예정 */
+    @Deprecated String userId;        // = actorUserId
+    /** @deprecated 프론트 마이그레이션 완료 후 제거 예정 */
+    @Deprecated String userNickname;  // = actorNickname
+
+    String projectId; String projectTitle;
+    String studyId;   String studyTitle;
     String achievementName;
-    String teamId;
-    String teamName;
+    String teamId;    String teamName;
 
-    BigDecimal userTemperature;
+    public static NotificationResponse from(Notification n, @Nullable User actor, @Nullable BigDecimal temp) {
+        String actorId = resolveActorId(n);
+        String actorNick = actor != null ? actor.getNickname() : null;
 
-    public static NotificationResponse from(Notification n) {
-        return from(n, null);
-    }
-
-    // ★ 온도 주입용 오버로드
-    public static NotificationResponse from(Notification n, BigDecimal userTemperature) {
         return NotificationResponse.builder()
                 .id(String.valueOf(n.getId()))
                 .type(n.getType().name())
                 .message(n.getMessage())
-                .IsRead(Boolean.TRUE.equals(n.getRead()))
+                .isRead(Boolean.TRUE.equals(n.getRead()))
                 .createdAt(n.getCreatedAt())
-                .userId(n.getApplicantUserId() != null ? String.valueOf(n.getApplicantUserId()) : null)
-                .userNickname(null) // 필요 시 채우기
+                .actorUserId(actorId)
+                .actorNickname(actorNick)
+                .actorTemperature(temp)
+                // 호환 필드 (임시)
+                .userId(actorId)
+                .userNickname(actorNick)
                 .projectId(n.getProjectId() != null ? String.valueOf(n.getProjectId()) : null)
                 .projectTitle(n.getProjectTitle())
                 .studyId(n.getStudyId() != null ? String.valueOf(n.getStudyId()) : null)
@@ -53,7 +62,17 @@ public class NotificationResponse {
                 .achievementName(n.getAchievementName())
                 .teamId(n.getTeamId() != null ? String.valueOf(n.getTeamId()) : null)
                 .teamName(n.getTeamName())
-                .userTemperature(userTemperature) // ★ 주입
                 .build();
+    }
+
+    private static String resolveActorId(Notification n) {
+        return switch (n.getType()) {
+            case PROJECT_JOIN_REQUEST, STUDY_JOIN_REQUEST ->
+                    n.getApplicantUserId() != null ? String.valueOf(n.getApplicantUserId()) : null;
+            case PROJECT_JOIN_APPROVED, PROJECT_JOIN_REJECTED,
+                 STUDY_JOIN_APPROVED, STUDY_JOIN_REJECTED ->
+                    n.getRequesterUserId() != null ? String.valueOf(n.getRequesterUserId()) : null;
+            default -> null;
+        };
     }
 }

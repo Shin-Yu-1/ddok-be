@@ -4,8 +4,10 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class NotificationPayload {
     private String id;
@@ -14,17 +16,18 @@ public class NotificationPayload {
     private boolean isRead;
     private Instant createdAt;
 
-    private String userId;
-    private String userNickname;
+    private String actorUserId;
+    private String actorNickname;
+    private BigDecimal actorTemperature;
+
+    @Deprecated private String userId;
+    @Deprecated private String userNickname;
 
     private String projectId;
     private String projectTitle;
     private String studyId;
     private String studyTitle;
-
     private String achievementName;
     private String teamId;
     private String teamName;
-
-    private BigDecimal userTemperature;
 }
