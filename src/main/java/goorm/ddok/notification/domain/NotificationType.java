@@ -1,0 +1,15 @@
+package goorm.ddok.notification.domain;
+
+public enum NotificationType {
+    PROJECT_JOIN_REQUEST,
+    PROJECT_JOIN_APPROVED,
+    PROJECT_JOIN_REJECTED,
+    STUDY_JOIN_REQUEST,
+    STUDY_JOIN_APPROVED,
+    STUDY_JOIN_REJECTED,
+    DM_REQUEST,
+    ACHIEVEMENT,
+    TEAM_LEADER_VIOLATION,
+    TEAM_MEMBER_VIOLATION
+}
+
