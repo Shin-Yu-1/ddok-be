@@ -14,8 +14,8 @@ public class DmRequestDto {
     Long dmRequestId;
     Long fromUserId;
     Long toUserId;
-    String status;       // "PENDING" | "ACCEPTED" | ...
-    Long chatRoomId;     // null 가능
+    String status;
+    Long chatRoomId;
     Boolean dmRequestPending;
     Instant createdAt;
 
