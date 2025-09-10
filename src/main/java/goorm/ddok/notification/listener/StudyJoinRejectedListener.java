@@ -1,0 +1,69 @@
+package goorm.ddok.notification.listener;
+
+import goorm.ddok.member.domain.User;
+import goorm.ddok.notification.domain.Notification;
+import goorm.ddok.notification.domain.NotificationType;
+import goorm.ddok.notification.dto.NotificationPayload;
+import goorm.ddok.notification.event.StudyJoinRejectedEvent;
+import goorm.ddok.notification.repository.NotificationRepository;
+import goorm.ddok.notification.service.NotificationPushService;
+import goorm.ddok.notification.support.NotificationMessageHelper;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.time.Instant;
+
+@Component
+@RequiredArgsConstructor
+public class StudyJoinRejectedListener {
+
+    private final NotificationRepository notificationRepository;
+    private final NotificationPushService pushService;
+    private final NotificationMessageHelper messageHelper;
+
+    @PersistenceContext
+    private EntityManager em;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void on(StudyJoinRejectedEvent e) {
+        User applicantRef = em.getReference(User.class, e.getApplicantUserId());
+
+        String base = "당신의 \"" + e.getStudyTitle() + "\" 스터디 참여 희망 요청을 스터디 모집자가 거절하였습니다.";
+        String msg  = messageHelper.withTemperatureSuffix(e.getRejectorUserId(), base);
+
+        Notification noti = Notification.builder()
+                .receiver(applicantRef)
+                .type(NotificationType.STUDY_JOIN_REJECTED)
+                .message(msg)
+                .read(false)
+                .processed(false)
+                .processedAt(null)
+                .studyId(e.getStudyId())
+                .studyTitle(e.getStudyTitle())
+                .applicantUserId(e.getApplicantUserId())
+                .requesterUserId(e.getRejectorUserId())
+                .createdAt(Instant.now())
+                .build();
+
+        noti = notificationRepository.save(noti);
+
+        NotificationPayload payload = NotificationPayload.builder()
+                .id(String.valueOf(noti.getId()))
+                .type(noti.getType().name())
+                .message(msg)
+                .isRead(false)
+                .createdAt(noti.getCreatedAt())
+                .studyId(String.valueOf(e.getStudyId()))
+                .studyTitle(e.getStudyTitle())
+                .build();
+
+        pushService.pushToUser(e.getApplicantUserId(), payload);
+    }
+}
