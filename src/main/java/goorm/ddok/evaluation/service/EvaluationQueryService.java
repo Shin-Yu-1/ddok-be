@@ -1,11 +1,10 @@
 package goorm.ddok.evaluation.service;
 
 import goorm.ddok.evaluation.domain.*;
-import goorm.ddok.evaluation.dto.EvaluationItemDto;
 import goorm.ddok.evaluation.dto.EvaluationMemberItem;
 import goorm.ddok.evaluation.dto.ScoreItem;
 import goorm.ddok.evaluation.dto.SimpleUserDto;
-import goorm.ddok.evaluation.dto.response.*;
+import goorm.ddok.evaluation.dto.response.EvaluationModalResponse;
 import goorm.ddok.evaluation.repository.*;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -45,9 +44,9 @@ public class EvaluationQueryService {
         Map<Long, List<TeamEvaluationScore>> givenByTarget =
                 given.stream().collect(Collectors.groupingBy(TeamEvaluationScore::getTargetUserId));
 
-
-        // 모달 멤버 블록
+        // === 나를 제외한 멤버만 노출 ===
         List<EvaluationMemberItem> memberItems = members.stream()
+                .filter(m -> !Objects.equals(m.getUser().getId(), meUserId)) // 본인 제외
                 .map(m -> {
                     Long targetId = m.getUser().getId();
                     boolean evaluated = givenByTarget.containsKey(targetId);
@@ -60,7 +59,7 @@ public class EvaluationQueryService {
                                     .itemId(s.getItemId())
                                     .score(s.getScore())
                                     .build())
-                            .collect(Collectors.toList());
+                            .toList();
 
                     SimpleUserDto simple = SimpleUserDto.builder()
                             .userId(targetId)
@@ -73,13 +72,13 @@ public class EvaluationQueryService {
 
                     return EvaluationMemberItem.builder()
                             .memberId(m.getId())
-                            .isMine(isMine)
+                            .isMine(isMine)               // 본인 제외했으므로 항상 false
                             .user(simple)
                             .isEvaluated(evaluated)
                             .scores(myScores)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return EvaluationModalResponse.builder()
                 .teamId(team.getId())
