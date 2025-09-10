@@ -1,8 +1,9 @@
 package goorm.ddok.chat.ws;
+
 import goorm.ddok.chat.domain.ChatContentType;
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
 import goorm.ddok.chat.dto.response.ChatMessageResponse;
-import goorm.ddok.chat.service.ChatService;
+import goorm.ddok.chat.service.ChatMessageService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.domain.User;
@@ -20,7 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ChatWsController {
 
-    private final ChatService chatService;
+    private final ChatMessageService chatMessageService;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserRepository userRepository;
 
@@ -44,7 +45,7 @@ public class ChatWsController {
             payload.setContentType(ChatContentType.TEXT);
         }
 
-        ChatMessageResponse saved = chatService.sendMessage(email, roomId, payload);
+        ChatMessageResponse saved = chatMessageService.sendMessage(email, roomId, payload);
 
         messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
     }
@@ -68,7 +69,7 @@ public class ChatWsController {
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
         String email = user.getEmail();
 
-        ChatMessageResponse saved = chatService.sendMessage(email, roomId, payload);
+        ChatMessageResponse saved = chatMessageService.sendMessage(email, roomId, payload);
         messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
     }
 }

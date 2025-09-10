@@ -51,6 +51,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
         String getZoneNo();
         BigDecimal getLatitude();
         BigDecimal getLongitude();
+        BigDecimal getTemperature();
     }
 
     @Query("""
@@ -67,7 +68,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
           l.subBuildingNo as subBuildingNo,
           l.zoneNo as zoneNo,
           l.activityLatitude as latitude,
-          l.activityLongitude as longitude
+          l.activityLongitude as longitude,
+          r.temperature as temperature
         from User u
         join u.location l
         left join goorm.ddok.member.domain.UserPosition pPri
@@ -76,6 +78,8 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
           on pSec1.user = u
          and pSec1.type = goorm.ddok.member.domain.UserPositionType.SECONDARY
          and pSec1.ord = 1
+        left join goorm.ddok.reputation.domain.UserReputation r
+          on r.user = u
         where u.isPublic = true
           and l.activityLatitude  is not null
           and l.activityLongitude is not null
@@ -135,9 +139,11 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                         ORDER BY up2.created_at DESC
                         LIMIT 1)
                     ) AS mainPosition,
-
+    
             TRIM(BOTH ' ' FROM COALESCE(ul.region_1depth_name, '') || ' ' || COALESCE(ul.region_2depth_name, '')) AS address,
-
+    
+            r.temperature AS temperature,
+    
             (SELECT pr.id
                FROM project_recruitment pr
                JOIN project_recruitment_position prp ON prp.project_id = pr.id
@@ -146,7 +152,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND pp.deleted_at IS NULL
               ORDER BY pr.created_at DESC
               LIMIT 1) AS latestProjectId,
-
+    
             (SELECT pr.title
                FROM project_recruitment pr
                JOIN project_recruitment_position prp ON prp.project_id = pr.id
@@ -155,7 +161,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND pp.deleted_at IS NULL
               ORDER BY pr.created_at DESC
               LIMIT 1) AS latestProjectTitle,
-
+    
             (SELECT pr.team_status
                FROM project_recruitment pr
                JOIN project_recruitment_position prp ON prp.project_id = pr.id
@@ -164,7 +170,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND pp.deleted_at IS NULL
               ORDER BY pr.created_at DESC
               LIMIT 1) AS latestProjectTeamStatus,
-
+    
             (SELECT sr.id
                FROM study_recruitment sr
                JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
@@ -172,7 +178,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND sp.deleted_at IS NULL
               ORDER BY sr.created_at DESC
               LIMIT 1) AS latestStudyId,
-
+    
             (SELECT sr.title
                FROM study_recruitment sr
                JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
@@ -180,7 +186,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND sp.deleted_at IS NULL
               ORDER BY sr.created_at DESC
               LIMIT 1) AS latestStudyTitle,
-
+    
             (SELECT sr.team_status
                FROM study_recruitment sr
                JOIN study_participant sp ON sp.study_id = sr.id AND sp.user_id = u.id
@@ -188,9 +194,10 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
                 AND sp.deleted_at IS NULL
               ORDER BY sr.created_at DESC
               LIMIT 1) AS latestStudyTeamStatus
-
+    
         FROM users u
         LEFT JOIN user_location ul ON ul.user_id = u.id
+        LEFT JOIN user_reputation r ON r.user_id = u.id
         WHERE u.is_public = TRUE
           AND u.id = :id
         """, nativeQuery = true)

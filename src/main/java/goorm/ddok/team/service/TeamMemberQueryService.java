@@ -124,18 +124,14 @@ public class TeamMemberQueryService {
      * @return {@link TeamApplicantUserResponse} 사용자 요약 정보
      */
     private TeamApplicantUserResponse toUserResponse(User user) {
-        BadgeDto mainBadge = badgeService.getGoodBadges(user).stream()
-                .max(Comparator.comparingInt(b -> b.getTier().ordinal()))
-                .orElse(null);
-
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(user);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
 
         return TeamApplicantUserResponse.builder()
                 .userId(user.getId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
-                .temperature(user.getReputation() != null ?
-                        user.getReputation().getTemperature() : BigDecimal.valueOf(36.5))
+                .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
                 .chatRoomId(null)
                 .dmRequestPending(false)
@@ -156,5 +152,11 @@ public class TeamMemberQueryService {
                 .map(UserPosition::getPositionName)
                 .findFirst()
                 .orElse(null);
+    }
+    private BigDecimal findTemperature(User user) {
+        if (user.getReputation() == null || user.getReputation().getTemperature() == null) {
+            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
+        }
+        return user.getReputation().getTemperature();
     }
 }

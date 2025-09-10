@@ -1,12 +1,12 @@
 package goorm.ddok.map.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.cafe.repository.CafeRepository;
-import goorm.ddok.global.dto.LocationDto;
-import goorm.ddok.global.dto.PageResponse;
-import goorm.ddok.global.dto.PreferredAgesDto;
+import goorm.ddok.global.dto.*;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.map.dto.response.*;
+import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
@@ -29,6 +29,8 @@ public class MapService {
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final UserRepository userRepository;
     private final CafeRepository cafeRepository;
+    private final BadgeService badgeService;
+
 
     private static final Double DEFAULT_TEMPERATURE = 36.5;
 
@@ -501,40 +503,57 @@ public class MapService {
             var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
 
             if (rows != null) {
-                rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
-                        .category("player")
-                        .userId(r.getId())
-                        .nickname(r.getNickname())
-                        .IsMine(userId != null && userId.equals(r.getId()))
-                        .profileImageUrl(r.getProfileImageUrl())
-                        .temperature(DEFAULT_TEMPERATURE)
-                        .mainBadge(AllMapItemSearchResponse.MainBadge.builder()
-                                .type("login")
-                                .tier("bronze")
-                                .build())
-                        .abandonBadge(AllMapItemSearchResponse.AbandonBadge.builder()
-                                .IsGranted(true)
-                                .count(5)
-                                .build())
-                        .location(LocationDto.builder()
-                                .address(composeRoadAddress(
-                                        r.getRegion1DepthName(),
-                                        r.getRegion2DepthName(),
-                                        r.getRegion3DepthName(),
-                                        r.getRoadName(),
-                                        r.getMainBuildingNo(),
-                                        r.getSubBuildingNo()))
-                                .region1depthName(r.getRegion1DepthName())
-                                .region2depthName(r.getRegion2DepthName())
-                                .region3depthName(r.getRegion3DepthName())
-                                .roadName(r.getRoadName())
-                                .mainBuildingNo(r.getMainBuildingNo())
-                                .subBuildingNo(r.getSubBuildingNo())
-                                .zoneNo(r.getZoneNo())
-                                .latitude(r.getLatitude())
-                                .longitude(r.getLongitude())
-                                .build())
-                        .build()));
+                rows.forEach(r -> {
+                    User user = userRepository.findById(r.getId())
+                            .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+                    // 대표 배지
+                    BadgeDto representative = badgeService.getRepresentativeGoodBadge(user);
+                    AllMapItemSearchResponse.MainBadge mainBadge = null;
+                    if (representative != null) {
+                        mainBadge = AllMapItemSearchResponse.MainBadge.builder()
+                                .type(representative.getType().name())
+                                .tier(representative.getTier().name())
+                                .build();
+                    }
+
+                    // 나쁜 배지
+                    AbandonBadgeDto abandon = badgeService.getAbandonBadge(user);
+                    AllMapItemSearchResponse.AbandonBadge abandonBadge =
+                            AllMapItemSearchResponse.AbandonBadge.builder()
+                                    .IsGranted(abandon.isIsGranted())
+                                    .count(abandon.getCount())
+                                    .build();
+
+                    items.add(AllMapItemSearchResponse.builder()
+                            .category("player")
+                            .userId(r.getId())
+                            .nickname(r.getNickname())
+                            .IsMine(userId != null && userId.equals(r.getId()))
+                            .profileImageUrl(r.getProfileImageUrl())
+                            .temperature(r.getTemperature())
+                            .mainBadge(mainBadge)
+                            .abandonBadge(abandonBadge)
+                            .location(LocationDto.builder()
+                                    .address(composeRoadAddress(
+                                            r.getRegion1DepthName(),
+                                            r.getRegion2DepthName(),
+                                            r.getRegion3DepthName(),
+                                            r.getRoadName(),
+                                            r.getMainBuildingNo(),
+                                            r.getSubBuildingNo()))
+                                    .region1depthName(r.getRegion1DepthName())
+                                    .region2depthName(r.getRegion2DepthName())
+                                    .region3depthName(r.getRegion3DepthName())
+                                    .roadName(r.getRoadName())
+                                    .mainBuildingNo(r.getMainBuildingNo())
+                                    .subBuildingNo(r.getSubBuildingNo())
+                                    .zoneNo(r.getZoneNo())
+                                    .latitude(r.getLatitude())
+                                    .longitude(r.getLongitude())
+                                    .build())
+                            .build());
+                });
             }
         }
 
@@ -739,24 +758,36 @@ public class MapService {
             latestStudyStatus = normalizeStudyTeamStatus(row.getLatestStudyTeamStatus());
         }
 
+        User user = userRepository.findById(row.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+        BadgeDto representative = badgeService.getRepresentativeGoodBadge(user);
+        PinOverlayResponse.MainBadge mainBadge = null;
+        if (representative != null) {
+            mainBadge = PinOverlayResponse.MainBadge.builder()
+                    .type(representative.getType().name())
+                    .tier(representative.getTier().name())
+                    .build();
+        }
+
+        AbandonBadgeDto abandon = badgeService.getAbandonBadge(user);
+        PinOverlayResponse.AbandonBadge abandonBadge =
+                PinOverlayResponse.AbandonBadge.builder()
+                        .IsGranted(abandon.isIsGranted())
+                        .count(abandon.getCount())
+                        .build();
+
         return PinOverlayResponse.builder()
                 .category("player")
                 .userId(row.getId())
                 .nickname(row.getNickname())
                 .profileImageUrl(profile)
-                .mainBadge(PinOverlayResponse.MainBadge.builder()
-                        .type("login")
-                        .tier("bronze")
-                        .build())
-                .abandonBadge(PinOverlayResponse.AbandonBadge.builder()
-                        .IsGranted(true)
-                        .count(5)
-                        .build())
+                .mainBadge(mainBadge)
+                .abandonBadge(abandonBadge)
                 .mainPosition(row.getMainPosition())
                 .address(row.getAddress())
                 .latestProject(toMini(row.getLatestProjectId(), row.getLatestProjectTitle(), latestProjectStatus))
                 .latestStudy(toMini(row.getLatestStudyId(), row.getLatestStudyTitle(), latestStudyStatus))
-                .temperature(BigDecimal.valueOf(36.5))
+                .temperature(row.getTemperature())
                 .isMine(mine)
                 .build();
     }

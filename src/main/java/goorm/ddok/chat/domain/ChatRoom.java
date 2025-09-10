@@ -1,6 +1,7 @@
 package goorm.ddok.chat.domain;
 
 import goorm.ddok.member.domain.User;
+import goorm.ddok.team.domain.Team; // ⬅ 추가
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Where;
@@ -22,7 +23,8 @@ import java.util.List;
         name = "chat_room",
         indexes = {
                 @Index(name = "idx_chat_room_type", columnList = "room_type"),
-                @Index(name = "idx_chat_room_last_msg_at", columnList = "last_message_at")
+                @Index(name = "idx_chat_room_last_msg_at", columnList = "last_message_at"),
+                @Index(name = "idx_chat_room_team", columnList = "team_id") // ⬅ 추가
         }
 )
 @EntityListeners(AuditingEntityListener.class)
@@ -46,6 +48,11 @@ public class ChatRoom {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_user_id")
     private User owner;
+
+    /** TEAM 연관 (GROUP 전용, PRIVATE에서는 null) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
 
     @Column(name = "last_message_at")
     private Instant lastMessageAt;

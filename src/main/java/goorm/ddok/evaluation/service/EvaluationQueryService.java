@@ -1,5 +1,6 @@
 package goorm.ddok.evaluation.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.evaluation.domain.*;
 import goorm.ddok.evaluation.dto.EvaluationItemDto;
 import goorm.ddok.evaluation.dto.EvaluationMemberItem;
@@ -30,6 +31,7 @@ public class EvaluationQueryService {
     private final TeamMemberRepository teamMemberRepository;
     private final TeamEvaluationRepository evaluationRepository;
     private final TeamEvaluationScoreRepository scoreRepository;
+    private final BadgeService badgeService;
 
     public EvaluationModalResponse getModal(Long teamId, Long meUserId) {
         Team team = teamRepository.findById(teamId)
@@ -67,8 +69,8 @@ public class EvaluationQueryService {
                             .nickname(m.getUser().getNickname())
                             .profileImageUrl(m.getUser().getProfileImageUrl())
                             .role(m.getRole() == TeamMemberRole.LEADER ? "LEADER" : "MEMBER")
-                            .mainBadge(null)
-                            .abandonBadge(null)
+                            .mainBadge(badgeService.getRepresentativeGoodBadge(m.getUser()))
+                            .abandonBadge(badgeService.getAbandonBadge(m.getUser()))
                             .build();
 
                     return EvaluationMemberItem.builder()

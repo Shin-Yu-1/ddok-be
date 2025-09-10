@@ -1,5 +1,6 @@
 package goorm.ddok.study.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -47,6 +48,8 @@ public class StudyRecruitmentEditService {
     private final UserReputationRepository userReputationRepository;
     private final BannerImageService bannerImageService;
     private final FileService fileService;
+    private final BadgeService badgeService;
+
 
     /* =========================
      * 수정 페이지 조회 (상세 스키마 동일)
@@ -276,8 +279,8 @@ public class StudyRecruitmentEditService {
                 .map(UserReputation::getTemperature)
                 .orElse(null); // null 허용
 
-        BadgeDto mainBadge = null;
-        AbandonBadgeDto abandonBadge = null;
+        BadgeDto mainBadge =  badgeService.getRepresentativeGoodBadge(u);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
         return UserSummaryDto.builder()
                 .userId(u.getId())

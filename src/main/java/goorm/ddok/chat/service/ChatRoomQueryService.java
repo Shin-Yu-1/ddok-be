@@ -12,6 +12,8 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.team.domain.Team;
+import goorm.ddok.team.domain.TeamMemberRole;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,10 +27,9 @@ import java.util.*;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Slf4j
-public class ChatService {
+public class ChatRoomQueryService {
     private final ChatRepository chatRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
-    private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final ChatMapper chatMapper;
 
@@ -37,19 +38,11 @@ public class ChatService {
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
     }
 
-    private ChatRoom getRoomById(Long roomId) {
-        return chatRepository.findById(roomId)
-                .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
-    }
-
     // 1:1 채팅 목록 조회
     public ChatListResponse getPrivateChats(String email, Pageable pageable) {
-
         User me = getUserByEmail(email);
-
         Page<ChatRoom> page = chatRepository.pageRoomsByMemberAndTypeOrderByRecent(
                 me, ChatRoomType.PRIVATE, pageable);
-
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
 
         return ChatListResponse.builder()
@@ -60,12 +53,9 @@ public class ChatService {
 
     // 팀 채팅 목록 조회
     public ChatListResponse getTeamChats(String email, Pageable pageable) {
-
         User me = getUserByEmail(email);
-
         Page<ChatRoom> page = chatRepository.pageRoomsByMemberAndTypeOrderByRecent(
                 me, ChatRoomType.GROUP, pageable);
-
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
 
         return ChatListResponse.builder()
@@ -76,13 +66,11 @@ public class ChatService {
 
     // 1:1 채팅 목록 검색
     public ChatListResponse searchPrivateChats(String email, String search, Pageable pageable) {
-
         User me = getUserByEmail(email);
-
         Page<ChatRoom> page = chatRepository.pagePrivateRoomsByMemberAndPeerNickname(
                 me, search, pageable);
-
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
+
         return ChatListResponse.builder()
                 .chats(chats)
                 .pagination(PaginationResponse.of(page))
@@ -91,13 +79,11 @@ public class ChatService {
 
     // 팀 채팅 목록 검색
     public ChatListResponse searchTeamChats(String email, String search, Pageable pageable) {
-
         User me = getUserByEmail(email);
-
         Page<ChatRoom> page = chatRepository.pageGroupRoomsByMemberAndRoomOrMemberName(
                 me, search, pageable);
-
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
+
         return ChatListResponse.builder()
                 .chats(chats)
                 .pagination(PaginationResponse.of(page))
@@ -112,7 +98,6 @@ public class ChatService {
         boolean isMember = chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(roomRef, me);
         if (!isMember) throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
 
-        // User를 한 번에 가져오도록 EntityGraph/Fetch Join 사용
         List<ChatRoomMember> members = chatRoomMemberRepository.findByRoomWithUser(roomRef);
         List<ChatMembersResponse.Member> dtos = members.stream()
                 .map(m -> ChatMembersResponse.Member.builder()
@@ -128,111 +113,5 @@ public class ChatService {
                 .members(dtos)
                 .totalCount(dtos.size())
                 .build();
-    }
-
-    // 메세지 전송
-    @Transactional
-    public ChatMessageResponse sendMessage(String email, Long roomId, ChatMessageRequest request) {
-        User sender = getUserByEmail(email);
-        ChatRoom room = getRoomById(roomId);
-
-        if (!chatRoomMemberRepository.existsByRoomAndUser(room, sender)) {
-            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
-        }
-
-        ChatMessage replyTo = (request.getReplyToId() == null) ? null :
-                chatMessageRepository.findById(request.getReplyToId()).orElse(null);
-
-        ChatMessage saved = chatMessageRepository.save(ChatMessage.builder()
-                .room(room)
-                .sender(sender)
-                .contentType(request.getContentType())
-                .contentText(request.getContentText())
-                .fileUrl(request.getFileUrl())
-                .replyTo(replyTo)
-                .build());
-
-        room.setLastMessageAt(saved.getCreatedAt());
-
-        return ChatMessageResponse.builder()
-                .messageId(saved.getId())
-                .roomId(room.getId())
-                .senderId(sender.getId())
-                .senderNickname(sender.getNickname())
-                .contentType(saved.getContentType())
-                .contentText(saved.getContentText())
-                .fileUrl(saved.getFileUrl())
-                .createdAt(saved.getCreatedAt())
-                .build();
-    }
-
-    // 채팅 메세지 메시지 목록/검색
-    @Transactional
-    public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
-        User me = getUserByEmail(email);
-        ChatRoom room = getRoomById(roomId);
-
-        if (!chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(room, me)) {
-            throw new GlobalException(ErrorCode.NOT_CHAT_MEMBER);
-        }
-
-        Page<ChatMessageRepository.MessageView> page =
-                (search == null || search.isBlank())
-                        ? chatMessageRepository.pageViewsByRoom(room, pageable)
-                        : chatMessageRepository.pageViewsByRoomAndKeyword(room, search, pageable);
-
-        List<ChatMessageResponse> messages = page.getContent().stream()
-                .map(v -> ChatMessageResponse.builder()
-                        .messageId(v.getId())
-                        .roomId(room.getId())
-                        .senderId(v.getSenderId())
-                        .senderNickname(v.getSenderNickname())
-                        .contentType(v.getContentType())
-                        .contentText(v.getContentText())
-                        .fileUrl(v.getFileUrl())
-                        .createdAt(v.getCreatedAt())
-                        .build())
-                .toList();
-
-        return ChatMessageListResponse.builder()
-                .messages(messages)
-                .pagination(PaginationResponse.of(page))
-                .build();
-    }
-
-    // 마지막 읽은 메세지 처리
-    @Transactional
-    public ChatReadResponse lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
-
-        User me = getUserByEmail(email);
-        ChatRoom roomRef = chatRepository.getReferenceById(roomId);
-
-        ChatRoomMember member = chatRoomMemberRepository.findByRoomAndUser(roomRef, me)
-                .orElseThrow(() -> new GlobalException(ErrorCode.NOT_CHAT_MEMBER));
-
-        member.setLastReadMessageId(request.getMessageId());
-
-        return ChatReadResponse.builder()
-                .messageId(request.getMessageId())
-                .build();
-    }
-
-    @Transactional
-    public void createPrivateChatRoom(User sender, User receiver) {
-        if (chatRepository.existsPrivateRoomByUserIds(sender.getId(), receiver.getId())) {
-            throw new GlobalException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
-        }
-
-        ChatRoom room = chatRepository.save(ChatRoom.builder()
-                .roomType(ChatRoomType.PRIVATE)
-                .owner(sender)
-                .build());
-
-        ChatRoomMember admin = ChatRoomMember.builder()
-                .room(room).user(sender).role(ChatMemberRole.ADMIN).build();
-        ChatRoomMember member = ChatRoomMember.builder()
-                .room(room).user(receiver).role(ChatMemberRole.MEMBER).build();
-
-        chatRoomMemberRepository.saveAll(List.of(admin, member));
     }
 }

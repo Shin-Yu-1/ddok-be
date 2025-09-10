@@ -4,6 +4,7 @@ import goorm.ddok.badge.domain.BadgeTier;
 import goorm.ddok.badge.domain.BadgeTierRule;
 import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.badge.repository.BadgeTierRuleRepository;
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -29,10 +30,10 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ProfileQueryService {
 
-    private static final Logger log = LoggerFactory.getLogger(ProfileQueryService.class);
     private final UserRepository userRepository;
     private final UserPortfolioRepository userPortfolioRepository;
     private final BadgeTierRuleRepository badgeTierRuleRepository;
+    private final BadgeService badgeService;
 
     public ProfileDetailResponse getProfile(Long targetUserId, Long loginUserId) {
         User user = userRepository.findById(targetUserId)
@@ -79,11 +80,10 @@ public class ProfileQueryService {
                 .build();
     }
 
-    // TODO: 온도 구현 시 교체
+
     private BigDecimal findTemperature(User user) {
         if (user.getReputation() == null || user.getReputation().getTemperature() == null) {
-            return BigDecimal.valueOf(36.5);
-//            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
+            throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
         }
         return user.getReputation().getTemperature();
     }
@@ -157,14 +157,7 @@ public class ProfileQueryService {
     }
 
     private AbandonBadgeDto toAbandonBadgeDto(User user) {
-        return user.getBadges().stream()
-                .filter(badge -> badge.getBadgeType() == BadgeType.abandon && badge.getDeletedAt() == null)
-                .findFirst()
-                .map(AbandonBadgeDto::from)
-                .orElse(AbandonBadgeDto.builder()
-                        .IsGranted(false)
-                        .count(0)
-                        .build());
+        return badgeService.getAbandonBadge(user);
     }
 
     private boolean isGoodBadge(BadgeType type) {

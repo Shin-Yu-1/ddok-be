@@ -1,5 +1,6 @@
 package goorm.ddok.project.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -45,6 +46,8 @@ public class ProjectRecruitmentEditService {
     private final UserReputationRepository userReputationRepository;
     private final FileService fileService;
     private final BannerImageService bannerImageService;
+    private final BadgeService badgeService;
+
 
     /* =========================
      *  수정 페이지 조회 (상세와 동일 스키마)
@@ -498,8 +501,8 @@ public class ProjectRecruitmentEditService {
                 .map(BigDecimal::doubleValue)
                 .orElse(null);
 
-        BadgeDto mainBadge = fetchMainBadge(u.getId());
-        AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
         return ProjectUpdateResultResponse.LeaderBlock.builder()
                 .userId(u.getId())
@@ -537,8 +540,8 @@ public class ProjectRecruitmentEditService {
                             .map(BigDecimal::doubleValue)
                             .orElse(null);
 
-                    BadgeDto mainBadge = fetchMainBadge(u.getId());
-                    AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
+                    BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
+                    AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
                     return ProjectUpdateResultResponse.ParticipantBlock.builder()
                             .userId(u.getId())
@@ -571,8 +574,8 @@ public class ProjectRecruitmentEditService {
                 .map(UserReputation::getTemperature)
                 .orElse(null);
 
-        BadgeDto mainBadge = fetchMainBadge(u.getId());
-        AbandonBadgeDto abandonBadge = fetchAbandonBadge(u.getId());
+        BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
+        AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
         return ProjectUserSummaryDto.builder()
                 .userId(u.getId())
@@ -624,7 +627,4 @@ public class ProjectRecruitmentEditService {
         return s.isBlank() ? null : s;
     }
 
-    // === 배지 조회 Stub (실제 구현으로 교체 예정) ===
-    private BadgeDto fetchMainBadge(Long userId) { return null; }
-    private AbandonBadgeDto fetchAbandonBadge(Long userId) { return null; }
 }
