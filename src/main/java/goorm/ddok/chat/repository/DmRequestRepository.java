@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 public interface DmRequestRepository extends JpaRepository<DmRequest, Long> {
 
     @Query("""
@@ -23,4 +25,7 @@ public interface DmRequestRepository extends JpaRepository<DmRequest, Long> {
             @Param("b") Long userB,
             @Param("status") DmRequestStatus status
     );
+
+    Optional<DmRequest> findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(
+            Long fromUserId, Long toUserId, DmRequestStatus status);
 }

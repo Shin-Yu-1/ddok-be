@@ -67,15 +67,14 @@ public class DmRequest {
         return this.status == DmRequestStatus.PENDING;
     }
 
-    public void accept(Long chatRoomId) {
+    public void accept() {
+        if (this.status != DmRequestStatus.PENDING) throw new IllegalStateException("Already processed");
         this.status = DmRequestStatus.ACCEPTED;
-        this.chatRoomId = chatRoomId;
-        this.respondedAt = Instant.now();
     }
 
     public void reject() {
+        if (this.status != DmRequestStatus.PENDING) throw new IllegalStateException("Already processed");
         this.status = DmRequestStatus.REJECTED;
-        this.respondedAt = Instant.now();
     }
 
     public void cancel() {

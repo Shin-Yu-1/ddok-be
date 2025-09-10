@@ -1,8 +1,11 @@
 package goorm.ddok.notification.service;
 
+import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.member.domain.User;
+import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.notification.domain.Notification;
 import goorm.ddok.notification.domain.NotificationType;
 import goorm.ddok.notification.repository.NotificationRepository;
@@ -31,6 +34,8 @@ public class NotificationActionService {
     private final StudyApplicationRepository studyApplicationRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final TeamApplicantCommandService teamApplicantCommandService;
+    private final UserRepository userRepository;
+    private final ChatRoomManagementService chatRoomManagementService;
 
     public void accept(Long notificationId, CustomUserDetails user) {
         handle(notificationId, user, true);
@@ -46,7 +51,6 @@ public class NotificationActionService {
         Notification n = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
-        // 수신자 확인
         if (!n.getReceiver().getId().equals(user.getUser().getId())) {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
@@ -54,7 +58,6 @@ public class NotificationActionService {
             throw new GlobalException(ErrorCode.ALREADY_PROCESSED_NOTIFICATION);
         }
 
-        // 타입 분기
         if (n.getType() == NotificationType.STUDY_JOIN_REQUEST) {
             Long teamId = resolveTeamId(n, TeamType.STUDY, n.getStudyId());
             StudyApplication app = studyApplicationRepository
@@ -76,12 +79,14 @@ public class NotificationActionService {
             if (accept) teamApplicantCommandService.approve(teamId, app.getId(), user);
             else        teamApplicantCommandService.reject(teamId, app.getId(), user);
 
+        } else if (n.getType() == NotificationType.DM_REQUEST) {
+            if (accept) acceptDm(n, user);
+            else        rejectDm(n, user);
+
         } else {
-            // 알림 액션이 가능한 타입만 허용
             throw new GlobalException(ErrorCode.INVALID_NOTIFICATION_ACTION);
         }
 
-        // 알림 마킹
         n.setProcessed(true);
         n.setProcessedAt(Instant.now());
         n.setRead(true);
@@ -90,10 +95,30 @@ public class NotificationActionService {
 
     private Long resolveTeamId(Notification n, TeamType type, Long recruitmentId) {
         if (n.getTeamId() != null) return n.getTeamId();
-
         Team team = teamRepository.findByTypeAndRecruitmentId(type, recruitmentId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
-        // (원하면 n.setTeamId(team.getId()) 후 저장)
         return team.getId();
+    }
+
+    private void acceptDm(Notification n, CustomUserDetails currentUser) {
+        Long fromUserId = n.getApplicantUserId();
+        if (fromUserId == null) throw new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND);
+
+        Long toUserId = currentUser.getId();
+        User from = userRepository.getReferenceById(fromUserId);
+        User to   = userRepository.getReferenceById(toUserId);
+
+        try {
+            chatRoomManagementService.createPrivateChatRoom(from, to);
+        } catch (GlobalException ex) {
+            if (ex.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_EXISTS) {
+                throw ex;
+            }
+        }
+    }
+
+    private void rejectDm(Notification n, CustomUserDetails currentUser) {
+        // 필요 시 DMRequestRepository로 PENDING → REJECTED 전환 추가 가능
+        // 현재는 알림만 processed 처리
     }
 }
