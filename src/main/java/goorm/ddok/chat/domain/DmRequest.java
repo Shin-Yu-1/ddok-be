@@ -12,10 +12,6 @@ import java.time.Instant;
 @Entity
 @Table(
         name = "dm_request",
-        uniqueConstraints = {
-                // 동일 from→to 에서 PENDING 중복 방지
-                @UniqueConstraint(name = "uk_dm_req_from_to_status", columnNames = {"from_user_id", "to_user_id", "status"})
-        },
         indexes = {
                 @Index(name = "idx_dm_req_to_status", columnList = "to_user_id,status"),
                 @Index(name = "idx_dm_req_from_to", columnList = "from_user_id,to_user_id")
@@ -64,17 +60,23 @@ public class DmRequest {
 
     // === 도메인 메서드 ===
     public boolean isPending() {
-        return this.status == DmRequestStatus.PENDING;
+        return this.status == DmRequestStatus.PENDING || this.status == DmRequestStatus.ACCEPTED;
     }
 
     public void accept() {
-        if (this.status != DmRequestStatus.PENDING) throw new IllegalStateException("Already processed");
+        if (this.status != DmRequestStatus.PENDING) {
+            throw new IllegalStateException("Already processed");
+        }
         this.status = DmRequestStatus.ACCEPTED;
+        this.respondedAt = Instant.now();
     }
 
     public void reject() {
-        if (this.status != DmRequestStatus.PENDING) throw new IllegalStateException("Already processed");
+        if (this.status != DmRequestStatus.PENDING) {
+            throw new IllegalStateException("Already processed");
+        }
         this.status = DmRequestStatus.REJECTED;
+        this.respondedAt = Instant.now();
     }
 
     public void cancel() {

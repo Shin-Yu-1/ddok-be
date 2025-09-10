@@ -1,5 +1,8 @@
 package goorm.ddok.notification.service;
 
+import goorm.ddok.chat.domain.DmRequest;
+import goorm.ddok.chat.domain.DmRequestStatus;
+import goorm.ddok.chat.repository.DmRequestRepository;
 import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -33,6 +36,7 @@ public class NotificationActionService {
     private final TeamRepository teamRepository;
     private final StudyApplicationRepository studyApplicationRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
+    private final DmRequestRepository dmRequestRepository;
     private final TeamApplicantCommandService teamApplicantCommandService;
     private final UserRepository userRepository;
     private final ChatRoomManagementService chatRoomManagementService;
@@ -108,6 +112,13 @@ public class NotificationActionService {
         User from = userRepository.getReferenceById(fromUserId);
         User to   = userRepository.getReferenceById(toUserId);
 
+        DmRequest dmRequest = dmRequestRepository
+                .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
+                .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        dmRequest.accept();
+        dmRequestRepository.save(dmRequest);
+
         try {
             chatRoomManagementService.createPrivateChatRoom(from, to);
         } catch (GlobalException ex) {
@@ -118,7 +129,14 @@ public class NotificationActionService {
     }
 
     private void rejectDm(Notification n, CustomUserDetails currentUser) {
-        // 필요 시 DMRequestRepository로 PENDING → REJECTED 전환 추가 가능
-        // 현재는 알림만 processed 처리
+        Long fromUserId = n.getApplicantUserId();
+        Long toUserId = currentUser.getId();
+
+        DmRequest dmRequest = dmRequestRepository
+                .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
+                .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        dmRequest.reject();
+        dmRequestRepository.save(dmRequest);
     }
 }
