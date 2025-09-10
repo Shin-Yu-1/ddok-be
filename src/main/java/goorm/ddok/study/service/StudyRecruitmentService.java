@@ -8,6 +8,7 @@ import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.notification.event.StudyJoinRequestedEvent;
 import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.request.StudyRecruitmentCreateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentCreateResponse;
@@ -17,6 +18,7 @@ import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.service.TeamCommandService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +38,7 @@ public class StudyRecruitmentService {
     private final BannerImageService bannerImageService;
     private final FileService fileService;
     private final TeamCommandService teamCommandService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public StudyRecruitmentCreateResponse createStudy(StudyRecruitmentCreateRequest req,
                                                       MultipartFile bannerImage,
@@ -200,6 +203,7 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
         Long userId = userDetails.getUser().getId();
+        String nickname = userDetails.getUser().getNickname(); // 닉네임 필드명에 맞게
 
         StudyRecruitment study = studyRecruitmentRepository.findById(studyId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.STUDY_NOT_FOUND));
@@ -225,18 +229,42 @@ public class StudyRecruitmentService {
                 case REJECTED -> {
                     int updated = studyApplicationRepository.reapplyIfRejected(existing.getId());
                     if (updated == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
+
+                    eventPublisher.publishEvent(
+                            StudyJoinRequestedEvent.builder()
+                                    .applicationId(existing.getId())
+                                    .applicantUserId(userId)
+                                    .applicantNickname(nickname)
+                                    .studyId(study.getId())
+                                    .studyTitle(study.getTitle())   // 필드명 맞게
+                                    .ownerUserId(study.getUser().getId())
+                                    .build()
+                    );
                     return true;
                 }
-
             }
             return false;
         }
 
-        studyApplicationRepository.save(StudyApplication.builder()
-                .user(userDetails.getUser())
-                .studyRecruitment(study)
-                .applicationStatus(ApplicationStatus.PENDING)
-                .build());
+        StudyApplication newApp = studyApplicationRepository.save(
+                StudyApplication.builder()
+                        .user(userDetails.getUser())
+                        .studyRecruitment(study)
+                        .applicationStatus(ApplicationStatus.PENDING)
+                        .build()
+        );
+
+        eventPublisher.publishEvent(
+                StudyJoinRequestedEvent.builder()
+                        .applicationId(newApp.getId())
+                        .applicantUserId(userId)
+                        .applicantNickname(nickname)
+                        .studyId(study.getId())
+                        .studyTitle(study.getTitle())
+                        .ownerUserId(study.getUser().getId())
+                        .build()
+        );
+
         return true;
     }
 
