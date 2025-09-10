@@ -3,6 +3,8 @@ package goorm.ddok.evaluation.service;
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.evaluation.domain.TeamEvaluation;
 import goorm.ddok.evaluation.domain.TeamEvaluationScore;
+import goorm.ddok.evaluation.domain.*;
+import goorm.ddok.evaluation.dto.EvaluationItemDto;
 import goorm.ddok.evaluation.dto.EvaluationMemberItem;
 import goorm.ddok.evaluation.dto.ScoreItem;
 import goorm.ddok.evaluation.dto.SimpleUserDto;
@@ -37,8 +39,10 @@ public class EvaluationQueryService {
     private final TeamEvaluationScoreRepository scoreRepository;
     private final BadgeService badgeService;
 
+
     // ✅ 온도 조회용
     private final UserReputationRepository userReputationRepository;
+
 
     public EvaluationModalResponse getModal(Long teamId, Long meUserId) {
         Team team = teamRepository.findById(teamId)
@@ -79,10 +83,10 @@ public class EvaluationQueryService {
                             .userId(targetId)
                             .nickname(m.getUser().getNickname())
                             .profileImageUrl(m.getUser().getProfileImageUrl())
-                            .role(m.getRole() == TeamMemberRole.LEADER ? "LEADER" : "MEMBER")
-                            .mainBadge(badgeService.getRepresentativeGoodBadge(m.getUser())) // 대표 착한 배지
-                            .abandonBadge(badgeService.getAbandonBadge(m.getUser()))        // 탈주 배지
+                            .role(m.getRole() == TeamMemberRole.LEADER ? "LEADER" : "MEMBER")       // 탈주 배지
                             .temperature(temperature)
+                            .mainBadge(badgeService.getRepresentativeGoodBadge(m.getUser()))
+                            .abandonBadge(badgeService.getAbandonBadge(m.getUser()))
                             .build();
 
                     return EvaluationMemberItem.builder()
