@@ -27,16 +27,21 @@ public class ProjectJoinRejectedListener {
     private final NotificationPushService pushService;
     private final NotificationMessageHelper messageHelper;
 
-    @PersistenceContext
-    private EntityManager em;
+    @PersistenceContext private EntityManager em;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(ProjectJoinRejectedEvent e) {
         User applicantRef = em.getReference(User.class, e.getApplicantUserId());
 
+        User rejectorRef = em.getReference(User.class, e.getRejectorUserId());
+        String rejectorNick = rejectorRef.getNickname();
+        var rejectorTemp = (rejectorRef.getReputation() != null)
+                ? rejectorRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getProjectTitle() + "\" 프로젝트 참여 희망 요청을 프로젝트 모집자가 거절하였습니다.";
-        String msg = messageHelper.withTemperatureSuffix(e.getRejectorUserId(), base); // ★
+        String msg = messageHelper.withTemperatureSuffix(e.getRejectorUserId(), base);
 
         Notification noti = Notification.builder()
                 .receiver(applicantRef)
@@ -57,11 +62,16 @@ public class ProjectJoinRejectedListener {
         NotificationPayload payload = NotificationPayload.builder()
                 .id(String.valueOf(noti.getId()))
                 .type(noti.getType().name())
-                .message(noti.getMessage()) // ★ 온도 포함 푸시
+                .message(msg)
                 .isRead(false)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())
+                .actorUserId(String.valueOf(e.getRejectorUserId()))
+                .actorNickname(rejectorNick)
+                .actorTemperature(rejectorTemp)
+                .userId(String.valueOf(e.getRejectorUserId()))
+                .userNickname(rejectorNick)
                 .build();
 
         pushService.pushToUser(e.getApplicantUserId(), payload);

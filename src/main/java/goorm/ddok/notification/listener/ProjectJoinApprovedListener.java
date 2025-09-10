@@ -7,7 +7,7 @@ import goorm.ddok.notification.dto.NotificationPayload;
 import goorm.ddok.notification.event.ProjectJoinApprovedEvent;
 import goorm.ddok.notification.repository.NotificationRepository;
 import goorm.ddok.notification.service.NotificationPushService;
-import goorm.ddok.notification.support.NotificationMessageHelper; // ★ 추가
+import goorm.ddok.notification.support.NotificationMessageHelper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
@@ -35,8 +35,14 @@ public class ProjectJoinApprovedListener {
     public void on(ProjectJoinApprovedEvent e) {
         User applicantRef = em.getReference(User.class, e.getApplicantUserId());
 
+        User approverRef = em.getReference(User.class, e.getApproverUserId());
+        var approverNick = approverRef.getNickname();
+        var approverTemp = (approverRef.getReputation() != null)
+                ? approverRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getProjectTitle() + "\" 프로젝트 참여 희망 요청이 승인되었습니다.";
-        String msg = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base); // ★
+        String msg = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base);
 
         Notification noti = Notification.builder()
                 .receiver(applicantRef)
@@ -55,11 +61,16 @@ public class ProjectJoinApprovedListener {
         NotificationPayload payload = NotificationPayload.builder()
                 .id(String.valueOf(noti.getId()))
                 .type("PROJECT_JOIN_APPROVED")
-                .message(msg) // ★ 온도 포함 메시지 푸시
+                .message(msg)
                 .isRead(false)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())
+                .actorUserId(String.valueOf(e.getApproverUserId()))
+                .actorNickname(approverNick)
+                .actorTemperature(approverTemp)
+                .userId(String.valueOf(e.getApproverUserId()))
+                .userNickname(approverNick)
                 .build();
 
         pushService.pushToUser(e.getApplicantUserId(), payload);

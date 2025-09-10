@@ -35,9 +35,15 @@ public class ProjectJoinRequestedListener {
     public void on(ProjectJoinRequestedEvent e) {
         User ownerRef = em.getReference(User.class, e.getOwnerUserId());
 
+        User applicantRef = em.getReference(User.class, e.getApplicantUserId());
+        String actorNick = (e.getApplicantNickname() != null) ? e.getApplicantNickname() : applicantRef.getNickname();
+        var actorTemp = (applicantRef.getReputation() != null)
+                ? applicantRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getProjectTitle() + "\" 프로젝트에 "
-                + e.getApplicantNickname() + "님이 참여 승인 요청을 보냈습니다.";
-        String msg = messageHelper.withTemperatureSuffix(e.getApplicantUserId(), base); // ★ 온도 붙이기
+                + actorNick + "님이 참여 승인 요청을 보냈습니다.";
+        String msg = messageHelper.withTemperatureSuffix(e.getApplicantUserId(), base);
 
         Notification noti = Notification.builder()
                 .receiver(ownerRef)
@@ -47,7 +53,7 @@ public class ProjectJoinRequestedListener {
                 .processed(false)
                 .projectId(e.getProjectId())
                 .projectTitle(e.getProjectTitle())
-                .applicantUserId(e.getApplicantUserId())
+                .applicantUserId(e.getApplicantUserId()) // 행위자
                 .createdAt(Instant.now())
                 .build();
 
@@ -59,12 +65,16 @@ public class ProjectJoinRequestedListener {
                 .message(msg)
                 .isRead(false)
                 .createdAt(noti.getCreatedAt())
-                .userId(String.valueOf(e.getApplicantUserId()))
-                .userNickname(e.getApplicantNickname())
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())
+                .actorUserId(String.valueOf(e.getApplicantUserId()))
+                .actorNickname(actorNick)
+                .actorTemperature(actorTemp)
+                .userId(String.valueOf(e.getApplicantUserId()))
+                .userNickname(actorNick)
                 .build();
 
         pushService.pushToUser(e.getOwnerUserId(), payload);
     }
 }
+
