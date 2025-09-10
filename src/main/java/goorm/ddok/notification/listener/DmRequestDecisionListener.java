@@ -4,7 +4,7 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.notification.domain.Notification;
 import goorm.ddok.notification.domain.NotificationType;
 import goorm.ddok.notification.dto.NotificationPayload;
-import goorm.ddok.notification.event.DmRequestCreatedEvent;
+import goorm.ddok.notification.event.DmRequestDecisionEvent;
 import goorm.ddok.notification.repository.NotificationRepository;
 import goorm.ddok.notification.service.NotificationPushService;
 import goorm.ddok.notification.support.NotificationMessageHelper;
@@ -21,7 +21,7 @@ import java.time.Instant;
 
 @Component
 @RequiredArgsConstructor
-public class DmRequestCreatedListener {
+public class DmRequestDecisionListener {
 
     private final NotificationRepository notificationRepository;
     private final NotificationPushService pushService;
@@ -32,37 +32,42 @@ public class DmRequestCreatedListener {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void on(DmRequestCreatedEvent e) {
-        // 알림 수신자 = DM 요청의 받는이
-        User receiverRef = em.getReference(User.class, e.getToUserId());
+    public void on(DmRequestDecisionEvent e) {
+        User requester = em.getReference(User.class, e.getRequesterUserId());
+        User approver  = em.getReference(User.class, e.getApproverUserId());
 
-        String base = e.getFromNickname() + "님이 메시지를 보내고 싶어합니다.";
-        String msg  = messageHelper.withTemperatureSuffix(e.getFromUserId(), base); // 온도 suffix 포함
+        boolean accepted = "accept".equalsIgnoreCase(e.getDecision());
+        NotificationType type = accepted ? NotificationType.DM_APPROVED : NotificationType.DM_REJECTED;
+
+        String base = approver.getNickname() + (accepted ? "님이 DM 요청을 수락했습니다." : "님이 DM 요청을 거절했습니다.");
+        String msg  = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base);
 
         Notification noti = Notification.builder()
-                .receiver(receiverRef)
-                .type(NotificationType.DM_REQUEST)
+                .receiver(requester)
+                .type(type)
                 .message(msg)
                 .read(false)
                 .processed(false)
-                .applicantUserId(e.getFromUserId())
-                .requesterUserId(e.getFromUserId())
+                .applicantUserId(e.getApproverUserId())
+                .requesterUserId(e.getRequesterUserId())
                 .createdAt(Instant.now())
                 .build();
 
         noti = notificationRepository.save(noti);
 
-        // 프론트 WebSocket 페이로드 (userId/userNickname = 행위자)
         NotificationPayload payload = NotificationPayload.builder()
                 .id(String.valueOf(noti.getId()))
-                .type("DM_REQUEST")
+                .type(noti.getType().name())
                 .message(msg)
                 .IsRead(false)
                 .createdAt(noti.getCreatedAt())
-                .userId(String.valueOf(e.getFromUserId()))
-                .userNickname(e.getFromNickname())
+                .actorUserId(String.valueOf(e.getApproverUserId()))
+                .actorNickname(approver.getNickname())
+                .actorTemperature(approver.getReputation() != null ? approver.getReputation().getTemperature() : null)
+                .userId(String.valueOf(e.getApproverUserId()))
+                .userNickname(approver.getNickname())
                 .build();
 
-        pushService.pushToUser(e.getToUserId(), payload);
+        pushService.pushToUser(e.getRequesterUserId(), payload);
     }
 }
