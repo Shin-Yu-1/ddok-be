@@ -122,12 +122,13 @@ public class NotificationApplicationService {
 
     private void publishDmDecision(goorm.ddok.notification.domain.Notification noti,
                                    Long approverUserId, String decision) {
-        Long requesterUserId = noti.getRequesterUserId(); // DM을 보낸 사람
-
+        Long requesterUserId = noti.getRequesterUserId();
+        if (requesterUserId == null) {
+            requesterUserId = noti.getApplicantUserId();
+        }
         if (requesterUserId == null) {
             throw new GlobalException(ErrorCode.NOT_ACTIONABLE);
         }
-
         eventPublisher.publishEvent(DmRequestDecisionEvent.builder()
                 .approverUserId(approverUserId)
                 .requesterUserId(requesterUserId)

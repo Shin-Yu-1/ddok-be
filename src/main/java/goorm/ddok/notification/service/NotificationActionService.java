@@ -22,6 +22,7 @@ import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.repository.TeamRepository;
 import goorm.ddok.team.service.TeamApplicantCommandService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,8 @@ public class NotificationActionService {
     private final TeamApplicantCommandService teamApplicantCommandService;
     private final UserRepository userRepository;
     private final ChatRoomManagementService chatRoomManagementService;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     public void accept(Long notificationId, CustomUserDetails user) {
         handle(notificationId, user, true);
@@ -112,7 +115,7 @@ public class NotificationActionService {
         User from = userRepository.getReferenceById(fromUserId);
         User to   = userRepository.getReferenceById(toUserId);
 
-        DmRequest dmRequest = dmRequestRepository
+        var dmRequest = dmRequestRepository
                 .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
@@ -122,21 +125,37 @@ public class NotificationActionService {
         try {
             chatRoomManagementService.createPrivateChatRoom(from, to);
         } catch (GlobalException ex) {
-            if (ex.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_EXISTS) {
-                throw ex;
-            }
+            if (ex.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_EXISTS) throw ex;
         }
+
+        eventPublisher.publishEvent(
+                goorm.ddok.notification.event.DmRequestDecisionEvent.builder()
+                        .approverUserId(toUserId)
+                        .requesterUserId(fromUserId)
+                        .decision("accept")
+                        .notificationId(n.getId())
+                        .build()
+        );
     }
 
     private void rejectDm(Notification n, CustomUserDetails currentUser) {
         Long fromUserId = n.getApplicantUserId();
         Long toUserId = currentUser.getId();
 
-        DmRequest dmRequest = dmRequestRepository
+        var dmRequest = dmRequestRepository
                 .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
                 .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
 
         dmRequest.reject();
         dmRequestRepository.save(dmRequest);
+
+        eventPublisher.publishEvent(
+                goorm.ddok.notification.event.DmRequestDecisionEvent.builder()
+                        .approverUserId(toUserId)
+                        .requesterUserId(fromUserId)
+                        .decision("reject")
+                        .notificationId(n.getId())
+                        .build()
+        );
     }
 }
