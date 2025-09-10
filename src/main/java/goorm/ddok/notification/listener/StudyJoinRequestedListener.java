@@ -34,6 +34,12 @@ public class StudyJoinRequestedListener {
     public void on(StudyJoinRequestedEvent e) {
         User ownerRef = em.getReference(User.class, e.getOwnerUserId());
 
+        User applicantRef = em.getReference(User.class, e.getApplicantUserId());
+        String actorNick = (e.getApplicantNickname() != null) ? e.getApplicantNickname() : applicantRef.getNickname();
+        var actorTemp = (applicantRef.getReputation() != null)
+                ? applicantRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getStudyTitle() + "\" 스터디에 "
                 + e.getApplicantNickname() + "님이 참여 승인 요청을 보냈습니다.";
         String msg  = messageHelper.withTemperatureSuffix(e.getApplicantUserId(), base); // ★ 신청자 온도 포함
@@ -58,10 +64,13 @@ public class StudyJoinRequestedListener {
                 .message(msg)
                 .isRead(false)
                 .createdAt(noti.getCreatedAt())
+                .projectId(String.valueOf(e.getStudyId()))
+                .projectTitle(e.getStudyTitle())
+                .actorUserId(String.valueOf(e.getApplicantUserId()))
+                .actorNickname(actorNick)
+                .actorTemperature(actorTemp)
                 .userId(String.valueOf(e.getApplicantUserId()))
-                .userNickname(e.getApplicantNickname())
-                .studyId(String.valueOf(e.getStudyId()))
-                .studyTitle(e.getStudyTitle())
+                .userNickname(actorNick)
                 .build();
 
         pushService.pushToUser(e.getOwnerUserId(), payload);

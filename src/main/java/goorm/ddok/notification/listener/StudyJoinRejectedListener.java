@@ -35,6 +35,12 @@ public class StudyJoinRejectedListener {
     public void on(StudyJoinRejectedEvent e) {
         User applicantRef = em.getReference(User.class, e.getApplicantUserId());
 
+        User rejectorRef = em.getReference(User.class, e.getRejectorUserId());
+        String rejectorNick = rejectorRef.getNickname();
+        var rejectorTemp = (rejectorRef.getReputation() != null)
+                ? rejectorRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getStudyTitle() + "\" 스터디 참여 희망 요청을 스터디 모집자가 거절하였습니다.";
         String msg  = messageHelper.withTemperatureSuffix(e.getRejectorUserId(), base);
 
@@ -62,6 +68,11 @@ public class StudyJoinRejectedListener {
                 .createdAt(noti.getCreatedAt())
                 .studyId(String.valueOf(e.getStudyId()))
                 .studyTitle(e.getStudyTitle())
+                .actorUserId(String.valueOf(e.getRejectorUserId()))
+                .actorNickname(rejectorNick)
+                .actorTemperature(rejectorTemp)
+                .userId(String.valueOf(e.getRejectorUserId()))
+                .userNickname(rejectorNick)
                 .build();
 
         pushService.pushToUser(e.getApplicantUserId(), payload);

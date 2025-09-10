@@ -35,6 +35,12 @@ public class StudyJoinApprovedListener {
     public void on(StudyJoinApprovedEvent e) {
         User applicantRef = em.getReference(User.class, e.getApplicantUserId());
 
+        User approverRef = em.getReference(User.class, e.getApproverUserId());
+        var approverNick = approverRef.getNickname();
+        var approverTemp = (approverRef.getReputation() != null)
+                ? approverRef.getReputation().getTemperature()
+                : null;
+
         String base = "당신의 \"" + e.getStudyTitle() + "\" 스터디 참여 희망 요청이 승인되었습니다.";
         String msg = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base);
 
@@ -58,8 +64,13 @@ public class StudyJoinApprovedListener {
                 .message(msg)
                 .isRead(false)
                 .createdAt(noti.getCreatedAt())
-                .studyId(String.valueOf(e.getStudyId()))
-                .studyTitle(e.getStudyTitle())
+                .projectId(String.valueOf(e.getStudyId()))
+                .projectTitle(e.getStudyTitle())
+                .actorUserId(String.valueOf(e.getApproverUserId()))
+                .actorNickname(approverNick)
+                .actorTemperature(approverTemp)
+                .userId(String.valueOf(e.getApproverUserId()))
+                .userNickname(approverNick)
                 .build();
 
         pushService.pushToUser(e.getApplicantUserId(), payload);
