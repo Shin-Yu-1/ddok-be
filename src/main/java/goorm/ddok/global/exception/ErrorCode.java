@@ -71,6 +71,8 @@ public enum ErrorCode {
     NOT_ACTIONABLE(HttpStatus.BAD_REQUEST, "현재 상태에서 허용되지 않는 작업입니다."),
     INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
     INVALID_NOTIFICATION_ACTION(HttpStatus.BAD_REQUEST, "이 알림에 대해 허용되지 않은 작업입니다."),
+    CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게는 DM요청을 보낼 수 없습니다."),
+    DM_REQUEST_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "상대방과 이미 진행 중인 DM 요청이 있습니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
