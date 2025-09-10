@@ -19,12 +19,11 @@ public class NotificationResponse {
     String id;
     String type;
     String message;
-    boolean isRead;
+    boolean IsRead;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     Instant createdAt;
 
-    // ✅ 항상 "행위자" 정보
     String actorUserId;
     String actorNickname;
     BigDecimal actorTemperature;
@@ -47,7 +46,7 @@ public class NotificationResponse {
                 .id(String.valueOf(n.getId()))
                 .type(n.getType().name())
                 .message(n.getMessage())
-                .isRead(Boolean.TRUE.equals(n.getRead()))
+                .IsRead(Boolean.TRUE.equals(n.getRead()))
                 .createdAt(n.getCreatedAt())
                 .actorUserId(actorId)
                 .actorNickname(actorNick)

@@ -63,7 +63,7 @@ public class ProjectJoinRejectedListener {
                 .id(String.valueOf(noti.getId()))
                 .type(noti.getType().name())
                 .message(msg)
-                .isRead(false)
+                .IsRead(false)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())

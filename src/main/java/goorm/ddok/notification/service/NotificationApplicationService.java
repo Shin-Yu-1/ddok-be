@@ -73,12 +73,11 @@ public class NotificationApplicationService {
         noti.setRead(true); // 액션과 동시에 읽음 처리하는 정책
         notificationRepository.save(noti);
 
-        // (선택) 나 자신에게 “처리 완료” 토스트성 알림 푸시
         pushService.pushToUser(me, NotificationPayload.builder()
                 .id(String.valueOf(noti.getId()))
                 .type("ACTION_RESULT")
                 .message(action.equals("accept") ? "요청을 수락했습니다." : "요청을 거절했습니다.")
-                .isRead(true)
+                .IsRead(true)
                 .createdAt(Instant.now())
                 .userId(String.valueOf(me))
                 .build());

@@ -63,7 +63,7 @@ public class ProjectJoinRequestedListener {
                 .id(String.valueOf(noti.getId()))
                 .type("PROJECT_JOIN_REQUEST")
                 .message(msg)
-                .isRead(false)
+                .IsRead(false)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())

@@ -62,7 +62,7 @@ public class StudyJoinRequestedListener {
                 .id(String.valueOf(noti.getId()))
                 .type("STUDY_JOIN_REQUEST")
                 .message(msg)
-                .isRead(false)
+                .IsRead(false)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getStudyId()))
                 .projectTitle(e.getStudyTitle())

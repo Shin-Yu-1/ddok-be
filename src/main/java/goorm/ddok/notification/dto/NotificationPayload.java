@@ -13,7 +13,7 @@ public class NotificationPayload {
     private String id;
     private String type;
     private String message;
-    private boolean isRead;
+    private boolean IsRead;
     private Instant createdAt;
 
     private String actorUserId;

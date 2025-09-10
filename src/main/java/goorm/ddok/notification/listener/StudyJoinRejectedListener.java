@@ -64,7 +64,7 @@ public class StudyJoinRejectedListener {
                 .id(String.valueOf(noti.getId()))
                 .type(noti.getType().name())
                 .message(msg)
-                .isRead(false)
+                .IsRead(false)
                 .createdAt(noti.getCreatedAt())
                 .studyId(String.valueOf(e.getStudyId()))
                 .studyTitle(e.getStudyTitle())
