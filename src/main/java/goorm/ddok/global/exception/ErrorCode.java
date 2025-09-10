@@ -70,6 +70,7 @@ public enum ErrorCode {
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
     NOT_ACTIONABLE(HttpStatus.BAD_REQUEST, "현재 상태에서 허용되지 않는 작업입니다."),
     INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
+    INVALID_NOTIFICATION_ACTION(HttpStatus.BAD_REQUEST, "이 알림에 대해 허용되지 않은 작업입니다."),
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -109,6 +110,7 @@ public enum ErrorCode {
     REPUTATION_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 온도 정보를 찾을 수 없습니다."),
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "참여 신청 내역을 찾을 수 없습니다."),
     TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀원을 찾을 수 없습니다."),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
 
 
     // 409 CONFLICT
@@ -122,6 +124,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
     ALREADY_PROCESSED_APPLICATION(HttpStatus.CONFLICT, "이미 처리된 신청입니다."),
+    ALREADY_PROCESSED_NOTIFICATION(HttpStatus.CONFLICT, "이미 처리된 알림입니다."),
 
     // 429 TOO MANY REQUESTS
     KAKAO_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "카카오 토큰 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),
