@@ -29,6 +29,9 @@ public class TeamMembersResponse {
     @Schema(description = "팀 이름 (기본값: 모집글 제목)", example = "똑DDOK!")
     private String teamTitle;
 
+    @Schema(description = "팀 상태 (RECRUITING / ONGOING / CLOSED)", example = "RECRUITING")
+    private String teamStatus;
+
     @Schema(description = "해당 팀이 연결된 모집글 ID", example = "33")
     private Long recruitmentId;
 
