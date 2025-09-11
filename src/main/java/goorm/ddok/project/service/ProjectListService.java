@@ -103,9 +103,9 @@ public class ProjectListService {
                 preds.add(cb.like(cb.lower(posJoin.get("positionName")), pv));
             }
 
-            // 정원 >=
+            // 정원
             if (capacity != null && capacity > 0) {
-                preds.add(cb.greaterThanOrEqualTo(root.get("capacity"), capacity));
+                preds.add(cb.equal(root.get("capacity"), capacity));
             }
 
             // 모드

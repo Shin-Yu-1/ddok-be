@@ -115,9 +115,9 @@ public class StudyListService {
             spec = spec.and((root, q, cb) -> root.get("mode").in(modeSet));
         }
 
-        // 정원(이상)
+        // 정원
         if (capacity != null) {
-            spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("capacity"), capacity));
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("capacity"), capacity));
         }
 
         // 연령 필터
