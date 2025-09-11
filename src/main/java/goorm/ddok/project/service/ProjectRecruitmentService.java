@@ -81,21 +81,11 @@ public class ProjectRecruitmentService {
         }
 
         // 3) 연령대 검증 (null=무관, 값이 있으면 범위+10단위 강제)
-        int ageMin, ageMax;
-        if (request.getPreferredAges() == null) {
-            ageMin = 0;
-            ageMax = 0;
-        } else {
-            ageMin = request.getPreferredAges().getAgeMin();
-            ageMax = request.getPreferredAges().getAgeMax();
-            if (ageMin > ageMax) {
-                throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
-            }
-            // ★ 10단위 강제
-            if (ageMin % 10 != 0 || ageMax % 10 != 0) {
-                throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
-            }
-        }
+        validatePreferredAges(request.getPreferredAges());
+
+        Integer ageMin = (request.getPreferredAges() != null) ? request.getPreferredAges().getAgeMin() : null;
+        Integer ageMax = (request.getPreferredAges() != null) ? request.getPreferredAges().getAgeMax() : null;
+
 
         // 4) 시작일 검증
         if (request.getExpectedStart().isBefore(LocalDate.now())) {
@@ -228,12 +218,12 @@ public class ProjectRecruitmentService {
         }
 
         // preferredAges: 0/0(무관) → null 로 응답
-        PreferredAgesDto respAges = (recruitment.getAgeMin() == 0 && recruitment.getAgeMax() == 0)
-                ? null
-                : PreferredAgesDto.builder()
+        PreferredAgesDto respAges = PreferredAgesDto.builder()
                 .ageMin(recruitment.getAgeMin())
                 .ageMax(recruitment.getAgeMax())
                 .build();
+
+
 
         return ProjectRecruitmentResponse.builder()
                 .projectId(recruitment.getId())
@@ -363,4 +353,27 @@ public class ProjectRecruitmentService {
         projectApplicationRepository.save(newApp);
         return true;
     }
+
+    private void validatePreferredAges(PreferredAgesDto preferredAges) {
+        if (preferredAges == null) return; // 연령 무관
+
+        Integer min = preferredAges.getAgeMin();
+        Integer max = preferredAges.getAgeMax();
+
+        if (min == null && max == null) return; // 둘 다 null이면 무관
+
+        if (min == null || max == null) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min < 10 || max > 110) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min >= max) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+        if (min % 10 != 0 || max % 10 != 0) {
+            throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+        }
+    }
+
 }
