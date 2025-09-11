@@ -76,11 +76,13 @@ public class TeamLifecycleService {
         ProjectRecruitment pr = projectRecruitmentRepository.findById(recruitmentId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
 
-        // 주의: 프로젝트/스터디에 동일 이름의 enum이 각자 있음 → FQCN 사용
-        if (pr.getTeamStatus() != goorm.ddok.project.domain.TeamStatus.CLOSED) {
-            pr = pr.toBuilder().teamStatus(goorm.ddok.project.domain.TeamStatus.CLOSED).build();
-            projectRecruitmentRepository.save(pr);
+        if (pr.getTeamStatus() == goorm.ddok.project.domain.TeamStatus.CLOSED) {
+            // ✅ 이미 종료된 상태면 에러 던지기
+            throw new GlobalException(ErrorCode.ALREADY_CLOSED);
         }
+
+        pr = pr.toBuilder().teamStatus(goorm.ddok.project.domain.TeamStatus.CLOSED).build();
+        projectRecruitmentRepository.save(pr);
     }
 
     private void closeStudyRecruitment(Long recruitmentId) {
@@ -88,9 +90,12 @@ public class TeamLifecycleService {
         StudyRecruitment sr = studyRecruitmentRepository.findById(recruitmentId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.STUDY_NOT_FOUND));
 
-        if (sr.getTeamStatus() != goorm.ddok.study.domain.TeamStatus.CLOSED) {
-            sr = sr.toBuilder().teamStatus(goorm.ddok.study.domain.TeamStatus.CLOSED).build();
-            studyRecruitmentRepository.save(sr);
+        if (sr.getTeamStatus() == goorm.ddok.study.domain.TeamStatus.CLOSED) {
+            // ✅ 이미 종료된 상태면 에러 던지기
+            throw new GlobalException(ErrorCode.ALREADY_CLOSED);
         }
+
+        sr = sr.toBuilder().teamStatus(goorm.ddok.study.domain.TeamStatus.CLOSED).build();
+        studyRecruitmentRepository.save(sr);
     }
 }
