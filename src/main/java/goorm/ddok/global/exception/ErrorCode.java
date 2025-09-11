@@ -68,6 +68,7 @@ public enum ErrorCode {
     ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
     LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
+    CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
 
 
     // 401 UNAUTHORIZED

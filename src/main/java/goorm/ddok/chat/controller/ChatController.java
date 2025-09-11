@@ -23,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -153,6 +154,10 @@ public class ChatController {
             @PathVariable Long roomId,
             @Valid @RequestBody ChatMessageRequest request,
             Authentication authentication) {
+
+        if (!StringUtils.hasText(request.getContentText())) {
+            throw new GlobalException(ErrorCode.CHAT_MESSAGE_INVALID);
+        }
 
         String email = authentication.getName();
         ChatMessageResponse response = chatMessageService.sendMessage(email, roomId, request);
