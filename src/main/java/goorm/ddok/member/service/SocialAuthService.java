@@ -71,7 +71,8 @@ public class SocialAuthService {
         if (email != null && !email.isBlank() && !email.equals(u.getEmail())) {
             u.setEmail(email);
         }
-        if (profileImageUrl != null && !profileImageUrl.isBlank()) {
+        if ((u.getProfileImageUrl() == null || u.getProfileImageUrl().isBlank())
+                && profileImageUrl != null && !profileImageUrl.isBlank()) {
             u.setProfileImageUrl(profileImageUrl);
         }
     }
