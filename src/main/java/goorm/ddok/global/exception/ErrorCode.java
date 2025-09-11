@@ -68,6 +68,8 @@ public enum ErrorCode {
     ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
     LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
+    INVALID_REVIEW_TAG(HttpStatus.BAD_REQUEST, "잘못된 리뷰 태그가 포함되어 있습니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST,"평점이 올바르지 않습니다."),
 
 
     // 401 UNAUTHORIZED
