@@ -1,7 +1,5 @@
 package goorm.ddok.project.service;
 
-import goorm.ddok.badge.domain.BadgeTier;
-import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
@@ -135,9 +133,9 @@ public class ProjectRecruitmentQueryService {
         LocationDto location = buildLocationForRead(project);
 
         // 8) 선호 연령 (0/0이면 null)
-        PreferredAgesDto ages = (project.getAgeMin() == 0 && project.getAgeMax() == 0)
+        PreferredAgesDto ages = (isZero(project.getAgeMin()) && isZero(project.getAgeMax()))
                 ? null
-                : PreferredAgesDto.builder().ageMin(project.getAgeMin()).ageMax(project.getAgeMax()).build();
+                : new PreferredAgesDto(project.getAgeMin(), project.getAgeMax());
 
         // 9) 응답 조립
         return ProjectDetailResponse.builder()
@@ -240,4 +238,6 @@ public class ProjectRecruitmentQueryService {
     // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====
     private Long resolveChatRoomId(Long meId, Long otherId) { return null; }
     private boolean resolveDmPending(Long meId, Long otherId) { return false; }
+
+    private boolean isZero(Integer v) { return v == null || v == 0; }
 }
