@@ -42,6 +42,8 @@ public class TeamLifecycleService {
             throw new GlobalException(ErrorCode.FORBIDDEN);
         }
 
+
+
         // 1) 타입 판별 → 해당 모집 teamStatus 를 CLOSED 로
         if (team.getType() == TeamType.PROJECT) {
             closeProjectRecruitment(team.getRecruitmentId());
