@@ -6,6 +6,7 @@ import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.player.dto.response.StudyParticipationResponse;
 import goorm.ddok.study.domain.StudyParticipant;
 import goorm.ddok.study.domain.StudyRecruitment;
+import goorm.ddok.study.domain.TeamStatus;
 import goorm.ddok.study.repository.StudyParticipantRepository;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamType;
@@ -33,7 +34,7 @@ public class ProfileStudyQueryService {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<StudyParticipant> participations =
-                studyParticipantRepository.findByUserIdAndNotRecruiting(userId, pageable);
+                studyParticipantRepository.findByUserId(userId, pageable);
 
         return participations.map(p -> {
             StudyRecruitment study = p.getStudyRecruitment();
@@ -43,7 +44,13 @@ public class ProfileStudyQueryService {
                     .map(Team::getId)
                     .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
 
-            return StudyParticipationResponse.from(p, teamId);
+            String statusGroup = (study.getTeamStatus() == TeamStatus.RECRUITING
+                    || study.getTeamStatus() == TeamStatus.ONGOING)
+                    ? "ONGOING"
+                    : "CLOSED";
+
+            return StudyParticipationResponse.from(p, teamId, statusGroup);
+
         });
     }
 }

@@ -35,7 +35,7 @@ public class ProfileProjectQueryService {
         Pageable pageable = PageRequest.of(page, size);
 
         Page<ProjectParticipant> participations =
-                projectParticipantRepository.findByUser_IdAndDeletedAtIsNullAndPosition_ProjectRecruitment_TeamStatusNot(userId, TeamStatus.RECRUITING, pageable);
+                projectParticipantRepository.findByUser_IdAndDeletedAtIsNull(userId, pageable);
 
         return participations
                 .map(p -> {
@@ -46,7 +46,12 @@ public class ProfileProjectQueryService {
                     .map(Team::getId)
                     .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
 
-            return ProjectParticipationResponse.from(p, teamId);
+            String statusGroup = (recruitment.getTeamStatus() == TeamStatus.RECRUITING
+                    || recruitment.getTeamStatus() == TeamStatus.ONGOING)
+                    ? "ONGOING"
+                    : "CLOSED";
+
+            return ProjectParticipationResponse.from(p, teamId, statusGroup);
                 }
         );
     }
