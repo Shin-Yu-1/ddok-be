@@ -35,11 +35,11 @@ public class TeamLifecycleService {
         if (me == null || me.getUser() == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);
 
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
 
         // 리더만 종료 가능: Team.user (리더 FK)
         if (!team.getUser().getId().equals(me.getUser().getId())) {
-            throw new GlobalException(ErrorCode.FORBIDDEN);
+            throw new GlobalException(ErrorCode.FORBIDDEN_LEADER_ONLY);
         }
 
 
