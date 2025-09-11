@@ -1,15 +1,20 @@
 package goorm.ddok.evaluation.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.evaluation.domain.TeamEvaluation;
+import goorm.ddok.evaluation.domain.TeamEvaluationScore;
 import goorm.ddok.evaluation.domain.*;
 import goorm.ddok.evaluation.dto.EvaluationItemDto;
 import goorm.ddok.evaluation.dto.EvaluationMemberItem;
 import goorm.ddok.evaluation.dto.ScoreItem;
 import goorm.ddok.evaluation.dto.SimpleUserDto;
-import goorm.ddok.evaluation.dto.response.*;
-import goorm.ddok.evaluation.repository.*;
+import goorm.ddok.evaluation.dto.response.EvaluationModalResponse;
+import goorm.ddok.evaluation.repository.TeamEvaluationRepository;
+import goorm.ddok.evaluation.repository.TeamEvaluationScoreRepository;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.reputation.domain.UserReputation;
+import goorm.ddok.reputation.repository.UserReputationRepository;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamMember;
 import goorm.ddok.team.domain.TeamMemberRole;
@@ -19,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,6 +38,11 @@ public class EvaluationQueryService {
     private final TeamEvaluationRepository evaluationRepository;
     private final TeamEvaluationScoreRepository scoreRepository;
     private final BadgeService badgeService;
+
+
+    // ✅ 온도 조회용
+    private final UserReputationRepository userReputationRepository;
+
 
     public EvaluationModalResponse getModal(Long teamId, Long meUserId) {
         Team team = teamRepository.findById(teamId)
@@ -47,8 +58,7 @@ public class EvaluationQueryService {
         Map<Long, List<TeamEvaluationScore>> givenByTarget =
                 given.stream().collect(Collectors.groupingBy(TeamEvaluationScore::getTargetUserId));
 
-
-        // 모달 멤버 블록
+        // 멤버 블록
         List<EvaluationMemberItem> memberItems = members.stream()
                 .map(m -> {
                     Long targetId = m.getUser().getId();
@@ -62,13 +72,19 @@ public class EvaluationQueryService {
                                     .itemId(s.getItemId())
                                     .score(s.getScore())
                                     .build())
-                            .collect(Collectors.toList());
+                            .toList();
+
+
+                    BigDecimal temperature = userReputationRepository.findByUserId(targetId)
+                            .map(UserReputation::getTemperature) // 이미 BigDecimal
+                            .orElse(null);
 
                     SimpleUserDto simple = SimpleUserDto.builder()
                             .userId(targetId)
                             .nickname(m.getUser().getNickname())
                             .profileImageUrl(m.getUser().getProfileImageUrl())
-                            .role(m.getRole() == TeamMemberRole.LEADER ? "LEADER" : "MEMBER")
+                            .role(m.getRole() == TeamMemberRole.LEADER ? "LEADER" : "MEMBER")       // 탈주 배지
+                            .temperature(temperature)
                             .mainBadge(badgeService.getRepresentativeGoodBadge(m.getUser()))
                             .abandonBadge(badgeService.getAbandonBadge(m.getUser()))
                             .build();
@@ -81,7 +97,7 @@ public class EvaluationQueryService {
                             .scores(myScores)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
 
         return EvaluationModalResponse.builder()
                 .teamId(team.getId())
