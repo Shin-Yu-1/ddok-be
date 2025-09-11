@@ -155,7 +155,13 @@ public class StudyListService {
 
         // 예상 개월 수(정확히 일치)
         if (expectedMonth != null) {
-            spec = spec.and((root, q, cb) -> cb.equal(root.get("expectedMonths"), expectedMonth));
+            spec = spec.and((root, q, cb) -> {
+                if (expectedMonth >= 5) {
+                    return cb.greaterThanOrEqualTo(root.get("expectedMonths"), 5);
+                } else {
+                    return cb.equal(root.get("expectedMonths"), expectedMonth);
+                }
+            });
         }
 
         // 시작일(이후)
