@@ -70,6 +70,7 @@ public enum ErrorCode {
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
     INVALID_REVIEW_TAG(HttpStatus.BAD_REQUEST, "잘못된 리뷰 태그가 포함되어 있습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST,"평점이 올바르지 않습니다."),
+    CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
 
 
     // 401 UNAUTHORIZED
