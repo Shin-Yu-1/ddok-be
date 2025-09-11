@@ -63,6 +63,7 @@ public class TeamMemberQueryController {
                                         "teamId": 2,
                                         "teamType": "PROJECT",
                                         "teamTitle": "똑DDOK!",
+                                        "teamStatus": "RECRUITING"
                                         "recruitmentId": 33,
                                         "isLeader": true,
                                         "items": [
