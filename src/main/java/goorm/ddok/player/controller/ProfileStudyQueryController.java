@@ -54,7 +54,7 @@ public class ProfileStudyQueryController {
                                             "title": "면접 스터디",
                                             "teamStatus": "CLOSED",
                                             "location": {
-                                              "address": "전북 익산시 부송동 망산길 11-17",
+                                              "address": "전북 익산시",
                                               "region1depthName": "전북",
                                               "region2depthName": "익산시",
                                               "region3depthName": "부송동",
