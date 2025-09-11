@@ -133,9 +133,10 @@ public class ProjectRecruitmentQueryService {
         LocationDto location = buildLocationForRead(project);
 
         // 8) 선호 연령 (0/0이면 null)
-        PreferredAgesDto ages = (isZero(project.getAgeMin()) && isZero(project.getAgeMax()))
-                ? null
-                : new PreferredAgesDto(project.getAgeMin(), project.getAgeMax());
+        PreferredAgesDto ages = PreferredAgesDto.builder()
+                .ageMin(isZero(project.getAgeMin()) ? null : project.getAgeMin())
+                .ageMax(isZero(project.getAgeMax()) ? null : project.getAgeMax())
+                .build();
 
         // 9) 응답 조립
         return ProjectDetailResponse.builder()

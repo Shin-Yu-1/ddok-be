@@ -218,12 +218,11 @@ public class ProjectRecruitmentService {
         }
 
         // preferredAges: 0/0(무관) → null 로 응답
-        PreferredAgesDto respAges = (recruitment.getAgeMin() == null && recruitment.getAgeMax() == null)
-                ? null
-                : PreferredAgesDto.builder()
+        PreferredAgesDto respAges = PreferredAgesDto.builder()
                 .ageMin(recruitment.getAgeMin())
                 .ageMax(recruitment.getAgeMax())
                 .build();
+
 
 
         return ProjectRecruitmentResponse.builder()

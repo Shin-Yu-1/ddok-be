@@ -1,7 +1,5 @@
 package goorm.ddok.study.service;
 
-import goorm.ddok.badge.domain.BadgeTier;
-import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
@@ -77,9 +75,10 @@ public class StudyRecruitmentQueryService {
 
         // 6) 주소(online → null), 선호연령(0/0 → null)
         LocationDto location = buildLocationForRead(study);
-        PreferredAgesDto ages = (isZero(study.getAgeMin()) && isZero(study.getAgeMax()))
-                ? null
-                : new PreferredAgesDto(study.getAgeMin(), study.getAgeMax());
+        PreferredAgesDto ages = PreferredAgesDto.builder()
+                .ageMin(isZero(study.getAgeMin()) ? null : study.getAgeMin())
+                .ageMax(isZero(study.getAgeMax()) ? null : study.getAgeMax())
+                .build();
 
         boolean isApplied = false;
         boolean isApproved = false;
