@@ -11,6 +11,8 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
+import goorm.ddok.project.repository.ProjectRecruitmentRepository;
+import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamMember;
 import goorm.ddok.team.domain.TeamType;
@@ -26,7 +28,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -37,6 +38,8 @@ public class TeamMemberQueryService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
+    private final ProjectRecruitmentRepository projectRecruitmentRepository;
+    private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final BadgeService badgeService;
 
     /**
@@ -68,6 +71,8 @@ public class TeamMemberQueryService {
             throw new GlobalException(ErrorCode.FORBIDDEN_TEAM_ACCESS);
         }
 
+        String teamStatus = resolveTeamStatus(team);
+
         Page<TeamMember> members = teamMemberRepository
                 .findByTeam_IdAndDeletedAtIsNull(teamId, PageRequest.of(page, size));
 
@@ -87,6 +92,7 @@ public class TeamMemberQueryService {
                 .teamId(team.getId())
                 .teamType(team.getType())
                 .teamTitle(team.getTitle())
+                .teamStatus(teamStatus)
                 .recruitmentId(team.getRecruitmentId())
                 .IsLeader(team.getUser().getId().equals(currentUserId))
                 .items(items)
@@ -158,5 +164,24 @@ public class TeamMemberQueryService {
             throw new GlobalException(ErrorCode.REPUTATION_NOT_FOUND);
         }
         return user.getReputation().getTemperature();
+    }
+
+    /**
+     * 팀의 상태를 조회합니다.
+     * - 프로젝트 팀 → ProjectRecruitment.teamStatus
+     * - 스터디 팀 → StudyRecruitment.teamStatus
+     */
+    private String resolveTeamStatus(Team team) {
+        if (team.getType() == TeamType.PROJECT) {
+            return projectRecruitmentRepository.findById(team.getRecruitmentId())
+                    .orElseThrow(() -> new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND))
+                    .getTeamStatus()
+                    .name();
+        } else {
+            return studyRecruitmentRepository.findById(team.getRecruitmentId())
+                    .orElseThrow(() -> new GlobalException(ErrorCode.RECRUITMENT_NOT_FOUND))
+                    .getTeamStatus()
+                    .name();
+        }
     }
 }
