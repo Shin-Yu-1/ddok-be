@@ -1,2 +1,24 @@
-package goorm.ddok.reputation.dto.response;public class TemperatureRankResponse {
+package goorm.ddok.reputation.dto.response;
+
+import goorm.ddok.global.dto.AbandonBadgeDto;
+import goorm.ddok.global.dto.BadgeDto;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.math.BigDecimal;
+
+@Getter
+@Builder
+public class TemperatureRankResponse {
+    private int rank;
+    private Long userId;
+    private String nickname;
+    private String mainPosition;
+    private String profileImageUrl;
+    private BigDecimal temperature;
+    private Long chatRoomId;
+    private boolean dmRequestPending;
+    private boolean IsMine;
+    private BadgeDto mainBadge;
+    private AbandonBadgeDto abandonBadge;
 }
