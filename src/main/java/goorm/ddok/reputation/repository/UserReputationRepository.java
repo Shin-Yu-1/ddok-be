@@ -29,8 +29,5 @@ public interface UserReputationRepository extends JpaRepository<UserReputation, 
      *  2) 같은 온도일 경우 updatedAt 오름차순 (가장 최근에 업데이트 된 사람 우선)
      *  LIMIT 10
      */
-//    @Query("SELECT ur FROM UserReputation ur " +
-//            "JOIN FETCH ur.user u " +
-//            "ORDER BY ur.temperature DESC, ur.updatedAt DESC")
     List<UserReputation> findTop10ByOrderByTemperatureDescUpdatedAtDesc();
 }
