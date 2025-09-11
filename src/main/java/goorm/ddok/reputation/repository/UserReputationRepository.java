@@ -21,4 +21,16 @@ public interface UserReputationRepository extends JpaRepository<UserReputation, 
 
     @Query("select ur.user.id, ur.temperature from UserReputation ur where ur.user.id in :userIds")
     List<Object[]> findTempsByUserIds(@Param("userIds") Collection<Long> userIds);
+
+    /**
+     * 온도 TOP10 조회
+     * 정렬 조건 :
+     *  1) temperature 내림차순 (높은 온도 -> 낮은 온도)
+     *  2) 같은 온도일 경우 updatedAt 오름차순 (가장 최근에 업데이트 된 사람 우선)
+     *  LIMIT 10
+     */
+//    @Query("SELECT ur FROM UserReputation ur " +
+//            "JOIN FETCH ur.user u " +
+//            "ORDER BY ur.temperature DESC, ur.updatedAt DESC")
+    List<UserReputation> findTop10ByOrderByTemperatureDescUpdatedAtDesc();
 }
