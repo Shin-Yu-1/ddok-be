@@ -53,7 +53,7 @@ public class StudyParticipationResponse {
     private String title;
 
     @Schema(description = "팀 상태 (ONGOING / CLOSED)", example = "CLOSED")
-    private TeamStatus teamStatus;
+    private String teamStatus;
 
     @Schema(description = "스터디 장소 정보 (offline일 경우만 존재)")
     private StudyLocationResponse location;
@@ -61,14 +61,14 @@ public class StudyParticipationResponse {
     @Schema(description = "진행 기간 (시작일 ~ 종료일)")
     private PeriodResponse period;
 
-    public static StudyParticipationResponse from(StudyParticipant participant, Long teamId) {
+    public static StudyParticipationResponse from(StudyParticipant participant, Long teamId, String statusGroup) {
         StudyRecruitment study = participant.getStudyRecruitment();
 
         return StudyParticipationResponse.builder()
                 .studyId(study.getId())
                 .teamId(teamId)
                 .title(study.getTitle())
-                .teamStatus(study.getTeamStatus())
+                .teamStatus(statusGroup)
                 .location(StudyLocationResponse.from(study))
                 .period(PeriodResponse.from(
                         study.getStartDate(),

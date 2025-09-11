@@ -18,16 +18,43 @@ import java.util.List;
         description = "개인화 설정 요청 DTO",
         requiredProperties = {"mainPosition", "subPosition", "location", "traits", "birthDate", "activeHours"},
         example = """
-    {
-      "mainPosition": "백엔드",
-      "subPosition": ["프론트엔드", "데브옵스"],
-      "techStacks": ["Java", "Spring Boot", "React"],
-      "location": { "latitude": 37.5665, "longitude": 126.9780, "address": "서울특별시 강남구 테헤란로 123" },
-      "traits": ["협업", "문제 해결"],
-      "birthDate": "1997-10-10",
-      "activeHours": { "start": "19", "end": "23" }
-    }
-    """
+        {
+          "mainPosition": "백엔드",
+          "subPosition": [
+            "풀스택",
+            "데브옵스"
+          ],
+          "techStacks": [
+            "Java",
+            "Spring Boot",
+            "MySQL",
+            "Docker",
+            "AWS"
+          ],
+          "location": {
+            "address": "전북 익산시 망산길 11-17",
+            "region1depthName": "전북",
+            "region2depthName": "익산시",
+            "region3depthName": "부송동",
+            "roadName": "망산길",
+            "mainBuildingNo": "11",
+            "subBuildingNo": "17",
+            "zoneNo": "54547",
+            "latitude": 35.976749396987046,
+            "longitude": 126.99599512792346
+          },
+          "traits": [
+            "협업",
+            "문제 해결",
+            "학습 능력"
+          ],
+          "birthDate": "1995-03-15",
+          "activeHours": {
+            "start": "09",
+            "end": "18"
+          }
+        }
+        """
 )
 public class PreferenceRequest {
 

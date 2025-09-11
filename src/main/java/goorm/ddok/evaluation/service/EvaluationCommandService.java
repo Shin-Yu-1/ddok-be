@@ -10,7 +10,6 @@ import goorm.ddok.member.domain.User;
 import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
-import goorm.ddok.team.domain.TeamMember;
 import goorm.ddok.team.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +31,7 @@ public class EvaluationCommandService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final UserReputationRepository userReputationRepository;
+
     /** 온도 누적 가중치 완충값 */
     private static final double REPUTATION_DAMPING_C = 10.0;
 
@@ -39,7 +39,7 @@ public class EvaluationCommandService {
         TeamEvaluation eval = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.EVALUATION_NOT_FOUND));
 
-        // === 자동 마감 처리: closesAt이 지났으면 즉시 CLOSED로 전환 ===
+        // closesAt 경과 시 즉시 CLOSED 전환
         if (eval.getStatus() == EvaluationStatus.OPEN
                 && eval.getClosesAt() != null
                 && eval.getClosesAt().isBefore(Instant.now())) {
@@ -61,12 +61,12 @@ public class EvaluationCommandService {
         teamMemberRepository.findByTeamIdAndUserId(teamId, targetUserId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.EVALUATION_TARGET_NOT_MEMBER));
 
-        // 중복 제출 방지(타겟 기준 1회)
+        // 타겟 기준 1회 제출 제한
         boolean already = scoreRepository.existsByEvaluationIdAndEvaluatorUserIdAndTargetUserId(
                 evaluationId, meUserId, targetUserId);
         if (already) throw new GlobalException(ErrorCode.EVALUATION_ALREADY_SUBMITTED);
 
-        // === 점수 목록 준비: 비어 있으면 모든 항목을 3점으로 자동 채우기 ===
+        // 점수 목록: 비었으면 전 항목 3점으로 자동 채우기
         var incoming = (req.getScores() == null || req.getScores().isEmpty())
                 ? itemRepository.findAll().stream()
                 .map(it -> new SaveScoresRequest.Score(it.getId(), 3))
@@ -98,7 +98,7 @@ public class EvaluationCommandService {
             cnt++;
         }
 
-        // === 온도 갱신 (점진적 누적 가중치 방식) ===
+        // === 온도 갱신(점진적 누적 가중치) ===
         double avg = (cnt == 0) ? 0.0 : (sum / cnt);   // 항목 평균(1~5)
         double targetScore100 = avg * 10.0;            // 0~100 스케일
 
@@ -107,13 +107,10 @@ public class EvaluationCommandService {
 
         UserReputation rep = userReputationRepository.findByUserId(targetUserId)
                 .orElseGet(() -> userReputationRepository.save(
-                        UserReputation.builder()
-                                .user(target)
-                                .temperature(BigDecimal.valueOf(36.5))
-                                .build()
+                        UserReputation.builder().user(target).build()
                 ));
 
-        long n = scoreRepository.countDistinctEvaluatorsByTargetUserId(targetUserId); // 이번 포함 고유 평가자 수
+        long n = scoreRepository.countDistinctEvaluatorsByTargetUserId(targetUserId);
         double alpha = 1.0 / (n + REPUTATION_DAMPING_C);
 
         double current = rep.getTemperature().doubleValue();
