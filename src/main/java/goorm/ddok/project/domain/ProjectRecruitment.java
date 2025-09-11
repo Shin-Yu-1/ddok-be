@@ -89,12 +89,10 @@ public class ProjectRecruitment {
     @Column(precision = 9, scale = 6)
     private BigDecimal longitude;
 
-    /** 최소 연령 (무관이면 0) */
-    @Column(nullable = false)
-    private int ageMin;
-    /** 최대 연령 (무관이면 0) */
-    @Column(nullable = false)
-    private int ageMax;
+    /** 최소 연령 */
+    private Integer ageMin;
+    /** 최대 연령 */
+    private Integer ageMax;
 
     /** 모집 정원 (1-7명) */
     @Column(nullable = false)

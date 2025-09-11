@@ -73,6 +73,8 @@ public enum ErrorCode {
     INVALID_NOTIFICATION_ACTION(HttpStatus.BAD_REQUEST, "이 알림에 대해 허용되지 않은 작업입니다."),
     CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게는 DM요청을 보낼 수 없습니다."),
     DM_REQUEST_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "상대방과 이미 진행 중인 DM 요청이 있습니다."),
+    CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
+
 
     // 401 UNAUTHORIZED
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
@@ -126,6 +128,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
     ALREADY_PROCESSED_APPLICATION(HttpStatus.CONFLICT, "이미 처리된 신청입니다."),
+    ALREADY_CLOSED(HttpStatus.CONFLICT,"이미 종료된 프로젝트/스터디입니다."),
     ALREADY_PROCESSED_NOTIFICATION(HttpStatus.CONFLICT, "이미 처리된 알림입니다."),
 
     // 429 TOO MANY REQUESTS

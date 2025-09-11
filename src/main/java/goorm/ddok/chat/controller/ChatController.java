@@ -29,6 +29,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -160,6 +161,10 @@ public class ChatController {
             @PathVariable Long roomId,
             @Valid @RequestBody ChatMessageRequest request,
             Authentication authentication) {
+
+        if (!StringUtils.hasText(request.getContentText())) {
+            throw new GlobalException(ErrorCode.CHAT_MESSAGE_INVALID);
+        }
 
         String email = authentication.getName();
         ChatMessageResponse response = chatMessageService.sendMessage(email, roomId, request);
