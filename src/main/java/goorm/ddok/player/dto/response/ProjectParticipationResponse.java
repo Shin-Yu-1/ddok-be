@@ -46,7 +46,7 @@ public class ProjectParticipationResponse {
     private String title;
 
     @Schema(description = "팀 상태 (ONGOING / CLOSED)", example = "CLOSED")
-    private TeamStatus teamStatus;
+    private String teamStatus;
 
     @Schema(description = "프로젝트 위치 정보")
     private ProjectLocationResponse location;
@@ -54,14 +54,14 @@ public class ProjectParticipationResponse {
     @Schema(description = "진행 기간 (시작일 ~ 종료일)")
     private ProjectPeriodResponse period;
 
-    public static ProjectParticipationResponse from(ProjectParticipant participant, Long teamId) {
+    public static ProjectParticipationResponse from(ProjectParticipant participant, Long teamId, String statusGroup) {
         ProjectRecruitment project = participant.getPosition().getProjectRecruitment();
 
         return ProjectParticipationResponse.builder()
                 .projectId(project.getId())
                 .teamId(teamId)
                 .title(project.getTitle())
-                .teamStatus(project.getTeamStatus())
+                .teamStatus(statusGroup)
                 .location(ProjectLocationResponse.from(project))
                 .period(ProjectPeriodResponse.from(
                         project.getStartDate(),
