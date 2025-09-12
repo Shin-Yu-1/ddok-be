@@ -44,4 +44,16 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
             Long roomId, Long currentUserId);
 
     boolean existsByRoom_IdAndUser_IdAndDeletedAtIsNull(Long roomId, Long userId);
+
+    @Query(value = """
+        select *
+          from chat_room_member
+         where room_id = :roomId
+           and user_id = :userId
+         order by id desc
+         limit 1
+        """, nativeQuery = true)
+    Optional<ChatRoomMember> findLatestIncludingDeleted(@Param("roomId") Long roomId,
+                                                        @Param("userId") Long userId);
+
 }
