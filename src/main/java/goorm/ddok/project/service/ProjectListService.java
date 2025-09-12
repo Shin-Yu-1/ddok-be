@@ -103,9 +103,9 @@ public class ProjectListService {
                 preds.add(cb.like(cb.lower(posJoin.get("positionName")), pv));
             }
 
-            // 정원 >=
+            // 정원
             if (capacity != null && capacity > 0) {
-                preds.add(cb.greaterThanOrEqualTo(root.get("capacity"), capacity));
+                preds.add(cb.equal(root.get("capacity"), capacity));
             }
 
             // 모드
@@ -140,7 +140,11 @@ public class ProjectListService {
 
             // 예상 개월 수 ==
             if (expectedMonth != null && expectedMonth > 0) {
-                preds.add(cb.equal(root.get("expectedMonths"), expectedMonth));
+                if (expectedMonth >= 5) {
+                    preds.add(cb.greaterThanOrEqualTo(root.get("expectedMonths"), 5));
+                } else {
+                    preds.add(cb.equal(root.get("expectedMonths"), expectedMonth));
+                }
             }
 
             // 시작일 >=

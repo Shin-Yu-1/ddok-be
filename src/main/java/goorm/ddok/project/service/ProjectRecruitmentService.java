@@ -320,6 +320,10 @@ public class ProjectRecruitmentService {
                 }
                 case APPROVED -> throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
                 case REJECTED -> {
+                    if (project.getTeamStatus() != TeamStatus.RECRUITING) {
+                        throw new GlobalException(ErrorCode.RECRUITMENT_CLOSED);
+                    }
+
                     String targetName = (appliedPosition == null || appliedPosition.isBlank())
                             ? existing.getPosition().getPositionName()
                             : appliedPosition;
@@ -338,9 +342,14 @@ public class ProjectRecruitmentService {
             return false;
         }
 
+        if (project.getTeamStatus() != TeamStatus.RECRUITING) {
+            throw new GlobalException(ErrorCode.RECRUITMENT_CLOSED);
+        }
+
         if (appliedPosition == null || appliedPosition.isBlank()) {
             throw new GlobalException(ErrorCode.POSITION_REQUIRED);
         }
+
         ProjectRecruitmentPosition position = projectRecruitmentPositionRepository
                 .findByProjectRecruitmentIdAndPositionName(projectId, appliedPosition)
                 .orElseThrow(() -> new GlobalException(ErrorCode.POSITION_NOT_FOUND));

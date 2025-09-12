@@ -1,5 +1,6 @@
 package goorm.ddok.member.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.global.security.jwt.JwtTokenProvider;
 import goorm.ddok.global.security.token.RefreshTokenService;
 import goorm.ddok.member.domain.User;
@@ -20,6 +21,7 @@ public class SocialSignInService {
 
     private final KakaoOAuthService kakaoOAuthService;
     private final SocialAuthService socialAuthService;
+    private final BadgeService badgeService;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenService refreshTokenService;
 
@@ -32,6 +34,7 @@ public class SocialSignInService {
         KakaoOAuthService.KakaoTokenResponse tokenRes =
                 kakaoOAuthService.exchangeCodeForAccessToken(authorizationCode, redirectUri);
 
+
         String kakaoAccessToken = tokenRes.getAccess_token();
         String kakaoRefreshToken = tokenRes.getRefresh_token(); // 카카오 refresh_token (필요 시 저장/재사용)
 
@@ -42,6 +45,8 @@ public class SocialSignInService {
         User user = socialAuthService.upsertKakaoUser(
                 kuser.kakaoId(), kuser.email(), kuser.nickname(), kuser.profileImageUrl()
         );
+
+        badgeService.grantLoginBadge(user);
 
         // 4) JWT 발급
         String accessToken  = jwtTokenProvider.createToken(user.getId());

@@ -60,22 +60,34 @@ public class ChatRoomManagementService {
     }
 
     @Transactional
-    public void addMemberToTeamChat(Team team, User user, TeamMemberRole role) {
-        ChatRoom room = chatRepository.findByTeam(team)
+    public void addMemberToTeamChat(Team team, User user, TeamMemberRole teamRole) {
+        ChatRoom room = chatRepository.findByTeam_Id(team.getId())
                 .orElseThrow(() -> new GlobalException(ErrorCode.CHAT_ROOM_NOT_FOUND));
 
-        boolean already = chatRoomMemberRepository.existsByRoomAndUser(room, user);
-        if (already) return;
+        Long roomId = room.getId();
+        Long userId = user.getId();
 
-        ChatMemberRole chatRole = (role == TeamMemberRole.LEADER)
-                ? ChatMemberRole.ADMIN
-                : ChatMemberRole.MEMBER;
+        if (chatRoomMemberRepository.existsByRoom_IdAndUser_IdAndDeletedAtIsNull(roomId, userId)) {
+            return;
+        }
 
-        chatRoomMemberRepository.save(ChatRoomMember.builder()
+        Optional<ChatRoomMember> any = chatRoomMemberRepository.findLatestIncludingDeleted(roomId, userId);
+        if (any.isPresent()) {
+            ChatRoomMember m = any.get();
+            m.setRoom(room);
+            m.setUser(user);
+            m.setRole(ChatMemberRole.MEMBER);
+            m.restore();
+            chatRoomMemberRepository.save(m);
+            return;
+        }
+
+        ChatRoomMember created = ChatRoomMember.builder()
                 .room(room)
                 .user(user)
-                .role(chatRole)
-                .build());
+                .role(ChatMemberRole.MEMBER)
+                .build();
+        chatRoomMemberRepository.save(created);
     }
 
     @Transactional
