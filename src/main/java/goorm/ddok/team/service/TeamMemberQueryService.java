@@ -3,6 +3,7 @@ package goorm.ddok.team.service;
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.dto.response.PaginationResponse;
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -44,6 +45,7 @@ public class TeamMemberQueryService {
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
 
     /**
@@ -138,9 +140,12 @@ public class TeamMemberQueryService {
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
 
         Long chatRoomId = null;
+        boolean dmPending = false;
+
         if (currentUserId != null && !Objects.equals(currentUserId, user.getId())) {
             chatRoomId = chatRoomService.findPrivateRoomId(currentUserId, user.getId())
                     .orElse(null);
+            dmPending = dmRequestService.isDmPendingOrAcceptedOrChatExists(currentUserId, user.getId());
         }
 
         return TeamApplicantUserResponse.builder()
@@ -150,7 +155,7 @@ public class TeamMemberQueryService {
                 .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(false)     // TODO: DM 도메인 연동
+                .dmRequestPending(dmPending)
                 .mainBadge(mainBadge)
                 .abandonBadge(abandonBadge)
                 .build();
