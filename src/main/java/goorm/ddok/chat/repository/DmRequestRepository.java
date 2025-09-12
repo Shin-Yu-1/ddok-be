@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.Optional;
 
 public interface DmRequestRepository extends JpaRepository<DmRequest, Long> {
@@ -55,4 +56,17 @@ public interface DmRequestRepository extends JpaRepository<DmRequest, Long> {
     int rejectIfPending(@Param("fromId") Long fromId,
                         @Param("toId") Long toId,
                         @Param("now") java.time.Instant now);
+
+
+
+    boolean existsByFromUser_IdAndToUser_IdAndStatusIn(
+            Long fromUserId, Long toUserId, Collection<DmRequestStatus> statuses
+    );
+
+    default boolean existsEitherDirectionWithStatuses(
+            Long userId1, Long userId2, Collection<DmRequestStatus> statuses
+    ) {
+        return existsByFromUser_IdAndToUser_IdAndStatusIn(userId1, userId2, statuses)
+                || existsByFromUser_IdAndToUser_IdAndStatusIn(userId2, userId1, statuses);
+    }
 }
