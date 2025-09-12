@@ -54,7 +54,7 @@ public class ReputationRankingScheduler {
                     .IsMine(false)
                     .mainBadge(top1.getMainBadge())
                     .abandonBadge(top1.getAbandonBadge())
-                    .updatedAt(now) // 🆕 세팅
+                    .updatedAt(now)
                     .build();
 
             top1Cache.set(withUpdatedAt);
