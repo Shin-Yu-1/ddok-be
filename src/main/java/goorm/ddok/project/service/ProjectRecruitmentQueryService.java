@@ -2,6 +2,7 @@ package goorm.ddok.project.service;
 
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.dto.BadgeDto;
@@ -41,6 +42,7 @@ public class ProjectRecruitmentQueryService {
     private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
 
     /** 프로젝트 모집글 상세 조회 */
@@ -188,9 +190,14 @@ public class ProjectRecruitmentQueryService {
                 .orElse(null);
 
         Long chatRoomId = null;
+        boolean dmPending = false;
+
         if (currentUser != null && !Objects.equals(currentUser.getId(), user.getId())) {
-            chatRoomId = chatRoomService.findPrivateRoomId(currentUser.getId(), user.getId())
-                    .orElse(null);
+            Long meId = currentUser.getId();
+            Long otherId = user.getId();
+
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, otherId).orElse(null);
+            dmPending = (chatRoomId != null) || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, otherId);
         }
 
         return ProjectUserSummaryDto.builder()
@@ -204,7 +211,7 @@ public class ProjectRecruitmentQueryService {
                 .decidedPosition(participant.getPosition().getPositionName())
                 .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(false)
+                .dmRequestPending(dmPending)
                 .build();
     }
 
