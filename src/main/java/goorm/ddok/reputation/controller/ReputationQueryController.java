@@ -71,31 +71,31 @@ public class ReputationQueryController {
                     )
             ),
             @ApiResponse(
-                    responseCode = "401",
-                    description = "인증되지 않은 사용자",
-                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
-                            examples = @ExampleObject(value = """
-                        { "status": 401, "message": "인증이 필요합니다.", "data": null }
-                        """))
-            ),
-            @ApiResponse(
                     responseCode = "404",
-                    description = "사용자 없음",
+                    description = "랭킹 캐시 없음",
                     content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
                             examples = @ExampleObject(value = """
-                        { "status": 404, "message": "사용자를 찾을 수 없습니다.", "data": null }
-                        """))
+                { "status": 404, "message": "아직 랭킹 데이터가 준비되지 않았습니다.", "data": null }
+                """))
             )
     })
     @GetMapping("/top10")
     public ApiResponseDto<List<TemperatureRankResponse>> getTop10TemperatureRank(
             @AuthenticationPrincipal CustomUserDetails currentUser
             ) {
-        return ApiResponseDto.of(
-                200,
-                "요청이 성공적으로 처리되었습니다.",
-                reputationQueryService.getTop10TemperatureRank(currentUser)
-        );
+        List<TemperatureRankResponse> cached = reputationRankingScheduler.getCachedTop10();
+
+        List<TemperatureRankResponse> response = cached.stream()
+                .map(r -> r.toBuilder()
+                        .IsMine(currentUser != null && r.getUserId().equals(currentUser.getId()))
+                        // TODO: DM 채팅방 확인 로직 필요
+                        .dmRequestPending(false)
+                        .chatRoomId(null)
+                        .build()
+                )
+                .toList();
+
+        return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
 
     @Operation(
