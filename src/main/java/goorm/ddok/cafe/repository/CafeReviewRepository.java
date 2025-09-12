@@ -2,6 +2,7 @@ package goorm.ddok.cafe.repository;
 
 import goorm.ddok.cafe.domain.Cafe;
 import goorm.ddok.cafe.domain.CafeReview;
+import goorm.ddok.cafe.domain.CafeReviewStatus;
 import goorm.ddok.member.domain.User;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.domain.Page;
@@ -46,4 +47,6 @@ public interface CafeReviewRepository extends JpaRepository<CafeReview, Long> {
              and r.deletedAt is null
            """)
     Page<CafeReview> findPageActiveByCafeId(@Param("cafeId") Long cafeId, Pageable pageable);
+
+    Optional<CafeReview> findFirstByCafe_IdAndUser_IdAndStatus(Long cafeId, Long userId, CafeReviewStatus status);
 }
