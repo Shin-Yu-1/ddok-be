@@ -6,8 +6,10 @@ import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.project.domain.ProjectParticipant;
+import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
 import goorm.ddok.study.domain.StudyParticipant;
+import goorm.ddok.study.repository.StudyApplicationRepository;
 import goorm.ddok.study.repository.StudyParticipantRepository;
 import goorm.ddok.team.domain.Team;
 import goorm.ddok.team.domain.TeamMember;
@@ -28,6 +30,8 @@ public class TeamCommandService {
     private final TeamMemberRepository teamMemberRepository;
     private final ProjectParticipantRepository projectParticipantRepository;
     private final StudyParticipantRepository studyParticipantRepository;
+    private final ProjectApplicationRepository projectApplicationRepository;
+    private final StudyApplicationRepository studyApplicationRepository;
 
     /**
      * 모집글 기반 팀 생성 (프로젝트 / 스터디 공용)
@@ -94,6 +98,8 @@ public class TeamCommandService {
         // 채팅방 멤버 삭제
         chatRoomManagementService.removeMemberFromTeamChat(teamId, team.getUser().getId());
 
+        openReapplyWindow(team, member.getUser().getId());
+
         // 모집글 참가자 동기화
         if (team.getType() == TeamType.PROJECT) {
             projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndUser_IdAndDeletedAtIsNull(
@@ -148,6 +154,8 @@ public class TeamCommandService {
         // 채팅방 멤버 삭제
         chatRoomManagementService.removeMemberFromTeamChat(teamId, team.getUser().getId());
 
+        openReapplyWindow(team, member.getUser().getId());
+
         if (team.getType() == TeamType.PROJECT) {
             projectParticipantRepository.findByPosition_ProjectRecruitment_IdAndUser_IdAndDeletedAtIsNull(
                     team.getRecruitmentId(), member.getUser().getId()
@@ -156,6 +164,17 @@ public class TeamCommandService {
             studyParticipantRepository.findByStudyRecruitment_IdAndUser_IdAndDeletedAtIsNull(
                     team.getRecruitmentId(), member.getUser().getId()
             ).ifPresent(StudyParticipant::expel);
+        }
+    }
+
+    private void openReapplyWindow(Team team, Long userId) {
+        int changed = 0;
+        if (team.getType() == TeamType.PROJECT) {
+            changed = projectApplicationRepository
+                    .markApprovedAsRejectedByRecruitmentAndUser(team.getRecruitmentId(), userId);
+        } else if (team.getType() == TeamType.STUDY) {
+            changed = studyApplicationRepository
+                    .markApprovedAsRejectedByRecruitmentAndUser(team.getRecruitmentId(), userId);
         }
     }
 

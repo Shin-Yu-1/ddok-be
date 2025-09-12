@@ -29,6 +29,43 @@ import static org.springframework.util.StringUtils.hasText;
 public class StudyListService {
 
     private final StudyRecruitmentRepository studyRecruitmentRepository;
+    private static final Map<String, StudyType> TYPE_ALIAS = createTypeAlias();
+
+    private static Map<String, StudyType> createTypeAlias() {
+        Map<String, StudyType> m = new HashMap<>();
+
+        putAlias(m, "자격증", StudyType.CERTIFICATION);
+        putAlias(m, "자격증 취득", StudyType.CERTIFICATION);
+
+        putAlias(m, "취업", StudyType.JOB_INTERVIEW);
+        putAlias(m, "면접", StudyType.JOB_INTERVIEW);
+        putAlias(m, "취업/면접", StudyType.JOB_INTERVIEW);
+
+        putAlias(m, "자기 개발", StudyType.SELF_DEV);
+        putAlias(m, "자기개발", StudyType.SELF_DEV);
+
+        putAlias(m, "어학", StudyType.LANGUAGE);
+
+        putAlias(m, "생활", StudyType.LIFE);
+
+        putAlias(m, "취미", StudyType.HOBBY);
+        putAlias(m, "교양", StudyType.HOBBY);
+        putAlias(m, "취미/교양", StudyType.HOBBY);
+
+        putAlias(m, "기타", StudyType.ETC);
+
+        return m;
+    }
+
+    private static void putAlias(Map<String, StudyType> m, String key, StudyType val) {
+        m.put(normalizeAlias(key), val);
+    }
+
+    private static String normalizeAlias(String s) {
+        return s == null ? "" : s.toLowerCase(Locale.ROOT).replaceAll("[\\s/_-]+", "");
+    }
+
+
 
     @Transactional(readOnly = true)
     public Page<StudyListResponse> getStudies(int page, int size) {
@@ -78,9 +115,9 @@ public class StudyListService {
             spec = spec.and((root, q, cb) -> root.get("mode").in(modeSet));
         }
 
-        // 정원(이상)
+        // 정원
         if (capacity != null) {
-            spec = spec.and((root, q, cb) -> cb.greaterThanOrEqualTo(root.get("capacity"), capacity));
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("capacity"), capacity));
         }
 
         // 연령 필터
@@ -118,7 +155,13 @@ public class StudyListService {
 
         // 예상 개월 수(정확히 일치)
         if (expectedMonth != null) {
-            spec = spec.and((root, q, cb) -> cb.equal(root.get("expectedMonths"), expectedMonth));
+            spec = spec.and((root, q, cb) -> {
+                if (expectedMonth >= 5) {
+                    return cb.greaterThanOrEqualTo(root.get("expectedMonths"), 5);
+                } else {
+                    return cb.equal(root.get("expectedMonths"), expectedMonth);
+                }
+            });
         }
 
         // 시작일(이후)
@@ -174,14 +217,19 @@ public class StudyListService {
     private Set<StudyType> parseStudyTypes(String csv) {
         if (!hasText(csv)) return Collections.emptySet();
         Set<StudyType> set = EnumSet.noneOf(StudyType.class);
-        for (String token : csv.split(",")) {
-            String t = token.trim();
-            if (t.isEmpty()) continue;
 
-            String candidate = t.replaceAll("[\\s/-]+", "_").toUpperCase();
+        for (String token : csv.split(",")) {
+            String raw = token.trim();
+            if (raw.isEmpty()) continue;
+
+            String enumCandidate = raw.replaceAll("[\\s/-]+", "_").toUpperCase(Locale.ROOT);
             try {
-                set.add(StudyType.valueOf(candidate));
-            } catch (Exception ignored) {}
+                set.add(StudyType.valueOf(enumCandidate));
+                continue;
+            } catch (IllegalArgumentException ignored) {}
+
+            StudyType byAlias = TYPE_ALIAS.get(normalizeAlias(raw));
+            if (byAlias != null) set.add(byAlias);
         }
         return set;
     }

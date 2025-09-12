@@ -6,6 +6,7 @@ import goorm.ddok.team.dto.response.TeamCloseResponse;
 import goorm.ddok.team.service.TeamLifecycleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
+@Tag(name = "Team", description = "팀 관리 API")
 public class TeamLifecycleController {
 
     private final TeamLifecycleService teamLifecycleService;

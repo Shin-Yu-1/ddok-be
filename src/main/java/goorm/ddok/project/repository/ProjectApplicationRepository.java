@@ -87,6 +87,28 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
 
     Optional<ProjectApplication> findByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
             Long userId, Long projectRecruitmentId, goorm.ddok.project.domain.ApplicationStatus status);
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update ProjectApplication a
+           set a.status = :rejected
+         where a.position.projectRecruitment.id = :recruitmentId
+           and a.user.id = :userId
+           and a.status = :approved
+    """)
+    int markApprovedAsRejectedByRecruitmentAndUser(@Param("recruitmentId") Long recruitmentId,
+                                                   @Param("userId") Long userId,
+                                                   @Param("approved") goorm.ddok.project.domain.ApplicationStatus approved,
+                                                   @Param("rejected") goorm.ddok.project.domain.ApplicationStatus rejected);
+
+    default int markApprovedAsRejectedByRecruitmentAndUser(Long recruitmentId, Long userId) {
+        return markApprovedAsRejectedByRecruitmentAndUser(
+                recruitmentId, userId,
+                goorm.ddok.project.domain.ApplicationStatus.APPROVED,
+                goorm.ddok.project.domain.ApplicationStatus.REJECTED
+        );
+    }
 }
 
 

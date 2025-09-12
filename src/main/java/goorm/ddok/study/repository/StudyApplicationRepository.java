@@ -39,4 +39,26 @@ public interface StudyApplicationRepository extends JpaRepository<StudyApplicati
 
     Optional<StudyApplication> findByUser_IdAndStudyRecruitment_IdAndApplicationStatus(
             Long userId, Long studyId, ApplicationStatus status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update StudyApplication a
+           set a.applicationStatus = :rejected
+         where a.studyRecruitment.id = :recruitmentId
+           and a.user.id = :userId
+           and a.applicationStatus = :approved
+    """)
+    int markApprovedAsRejectedByRecruitmentAndUser(@Param("recruitmentId") Long recruitmentId,
+                                                   @Param("userId") Long userId,
+                                                   @Param("approved") goorm.ddok.study.domain.ApplicationStatus approved,
+                                                   @Param("rejected") goorm.ddok.study.domain.ApplicationStatus rejected);
+
+    // 사용 편의를 위한 디폴트 메서드
+    default int markApprovedAsRejectedByRecruitmentAndUser(Long recruitmentId, Long userId) {
+        return markApprovedAsRejectedByRecruitmentAndUser(
+                recruitmentId, userId,
+                goorm.ddok.study.domain.ApplicationStatus.APPROVED,
+                goorm.ddok.study.domain.ApplicationStatus.REJECTED
+        );
+    }
 }

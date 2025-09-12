@@ -74,6 +74,7 @@ public enum ErrorCode {
     CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게는 DM요청을 보낼 수 없습니다."),
     DM_REQUEST_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "상대방과 이미 진행 중인 DM 요청이 있습니다."),
     CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
+    RECRUITMENT_CLOSED(HttpStatus.BAD_REQUEST, "현재 모집 중이 아닙니다."),
 
 
     // 401 UNAUTHORIZED
