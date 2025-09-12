@@ -1,6 +1,7 @@
 package goorm.ddok.study.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -49,6 +50,7 @@ public class StudyRecruitmentEditService {
     private final BannerImageService bannerImageService;
     private final FileService fileService;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
 
 
     /* =========================
@@ -282,6 +284,12 @@ public class StudyRecruitmentEditService {
         BadgeDto mainBadge =  badgeService.getRepresentativeGoodBadge(u);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
+        Long chatRoomId = null;
+        if (me != null && !Objects.equals(me.getId(), u.getId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(me.getId(), u.getId())
+                    .orElse(null);
+        }
+
         return UserSummaryDto.builder()
                 .userId(u.getId())
                 .nickname(u.getNickname())
@@ -291,7 +299,7 @@ public class StudyRecruitmentEditService {
                 .abandonBadge(abandonBadge)     // null
                 .temperature(temperature)       // null 허용
                 .IsMine(me != null && Objects.equals(me.getId(), u.getId()))
-                .chatRoomId(null)
+                .chatRoomId(chatRoomId)
                 .dmRequestPending(false)
                 .build();
     }
