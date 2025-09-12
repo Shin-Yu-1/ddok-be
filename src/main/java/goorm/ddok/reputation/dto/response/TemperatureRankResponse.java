@@ -6,9 +6,10 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 public class TemperatureRankResponse {
     private int rank;
     private Long userId;
@@ -21,4 +22,5 @@ public class TemperatureRankResponse {
     private boolean IsMine;
     private BadgeDto mainBadge;
     private AbandonBadgeDto abandonBadge;
+    private Instant updatedAt;
 }
