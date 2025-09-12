@@ -2,6 +2,7 @@ package goorm.ddok.global.scheduler;
 
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
+import goorm.ddok.member.domain.User;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
 import jakarta.annotation.PostConstruct;
@@ -13,6 +14,8 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Slf4j
 @Component
@@ -22,19 +25,23 @@ public class ReputationRankingScheduler {
     private final ReputationQueryService reputationQueryService;
 
     private final AtomicReference<TemperatureRankResponse> top1Cache = new AtomicReference<>();
+    private final AtomicReference<List<TemperatureRankResponse>> top10Cache = new AtomicReference<>();
     private final AtomicReference<Instant> lastUpdated = new AtomicReference<>();
 
     /** 서버 시작 시 바로 1회 실행 */
     @PostConstruct
     public void init() {
         updateTop1Ranking();
+        updateTop10Ranking();
     }
 
-    /**
-     * 매 시간마다 TOP1 갱신
-     * cron: 매시 정각 실행
-     */
+    /** 매 시간마다 TOP1 + TOP10 갱신 */
     @Scheduled(cron = "0 0 * * * *")
+    public void updateRankings() {
+        updateTop1Ranking();
+        updateTop10Ranking();
+    }
+
     public void updateTop1Ranking() {
         try {
             // currentUser == null
@@ -54,7 +61,7 @@ public class ReputationRankingScheduler {
                     .IsMine(false)
                     .mainBadge(top1.getMainBadge())
                     .abandonBadge(top1.getAbandonBadge())
-                    .updatedAt(now) // 🆕 세팅
+                    .updatedAt(now)
                     .build();
 
             top1Cache.set(withUpdatedAt);
@@ -67,9 +74,44 @@ public class ReputationRankingScheduler {
         }
     }
 
+    private void updateTop10Ranking() {
+        try {
+            List<TemperatureRankResponse> top10 = reputationQueryService.getTop10TemperatureRank(null);
+            Instant now = Instant.now();
+
+            // 각 유저 순위, updatedAt 덮어쓰기
+            List<TemperatureRankResponse> withUpdatedAt =
+                    IntStream.range(0, top10.size())
+                            .mapToObj(i -> top10.get(i).toBuilder()
+                                    .rank(i + 1)
+                                    .IsMine(false)
+                                    .dmRequestPending(false)
+                                    .chatRoomId(null)
+                                    .updatedAt(now)
+                                    .build()
+                            )
+                            .collect(Collectors.toList());
+
+            top10Cache.set(withUpdatedAt);
+            lastUpdated.set(now);
+
+            log.info("✅ TOP10 랭킹 갱신 완료, updatedAt={}", now);
+        } catch (Exception e) {
+            log.error("❌ TOP10 랭킹 갱신 실패", e);
+        }
+    }
+
     /** 컨트롤러에서 캐시 조회용 */
     public TemperatureRankResponse getCachedTop1() {
         TemperatureRankResponse cached = top1Cache.get();
+        if (cached == null) {
+            throw new GlobalException(ErrorCode.RANKING_NOT_READY);
+        }
+        return cached;
+    }
+
+    public List<TemperatureRankResponse> getCachedTop10() {
+        List<TemperatureRankResponse> cached = top10Cache.get();
         if (cached == null) {
             throw new GlobalException(ErrorCode.RANKING_NOT_READY);
         }
