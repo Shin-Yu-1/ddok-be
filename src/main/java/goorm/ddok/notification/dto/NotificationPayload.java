@@ -16,6 +16,9 @@ public class NotificationPayload {
     private boolean IsRead;
     private Instant createdAt;
 
+    private boolean IsProcessed;
+    private Instant processedAt;
+
     private String actorUserId;
     private String actorNickname;
     private BigDecimal actorTemperature;

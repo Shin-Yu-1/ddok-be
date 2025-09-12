@@ -24,6 +24,11 @@ public class NotificationResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     Instant createdAt;
 
+    boolean IsProcessed;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    Instant processedAt;
+
     String actorUserId;
     String actorNickname;
     BigDecimal actorTemperature;
@@ -48,6 +53,8 @@ public class NotificationResponse {
                 .message(n.getMessage())
                 .IsRead(Boolean.TRUE.equals(n.getRead()))
                 .createdAt(n.getCreatedAt())
+                .IsProcessed(Boolean.TRUE.equals(n.getProcessed()))
+                .processedAt(n.getProcessedAt())
                 .actorUserId(actorId)
                 .actorNickname(actorNick)
                 .actorTemperature(temp)

@@ -63,6 +63,8 @@ public class StudyJoinRequestedListener {
                 .type("STUDY_JOIN_REQUEST")
                 .message(msg)
                 .IsRead(false)
+                .IsProcessed(false)
+                .processedAt(null)
                 .createdAt(noti.getCreatedAt())
                 .projectId(String.valueOf(e.getStudyId()))
                 .projectTitle(e.getStudyTitle())

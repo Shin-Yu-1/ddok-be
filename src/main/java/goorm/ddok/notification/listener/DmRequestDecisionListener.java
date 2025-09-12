@@ -61,6 +61,8 @@ public class DmRequestDecisionListener {
                 .message(msg)
                 .IsRead(false)
                 .createdAt(noti.getCreatedAt())
+                .IsProcessed(false)
+                .processedAt(null)
                 .actorUserId(String.valueOf(e.getApproverUserId()))
                 .actorNickname(approver.getNickname())
                 .actorTemperature(approver.getReputation() != null ? approver.getReputation().getTemperature() : null)

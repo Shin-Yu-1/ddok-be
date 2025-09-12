@@ -65,6 +65,8 @@ public class ProjectJoinRequestedListener {
                 .message(msg)
                 .IsRead(false)
                 .createdAt(noti.getCreatedAt())
+                .IsProcessed(false)
+                .processedAt(null)
                 .projectId(String.valueOf(e.getProjectId()))
                 .projectTitle(e.getProjectTitle())
                 .actorUserId(String.valueOf(e.getApplicantUserId()))
