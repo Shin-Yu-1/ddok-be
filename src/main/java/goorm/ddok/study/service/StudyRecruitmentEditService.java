@@ -2,6 +2,7 @@ package goorm.ddok.study.service;
 
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -51,6 +52,7 @@ public class StudyRecruitmentEditService {
     private final FileService fileService;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
 
     /* =========================
@@ -284,10 +286,17 @@ public class StudyRecruitmentEditService {
         BadgeDto mainBadge =  badgeService.getRepresentativeGoodBadge(u);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
+
         Long chatRoomId = null;
+        boolean dmPending = false;
+
         if (me != null && !Objects.equals(me.getId(), u.getId())) {
-            chatRoomId = chatRoomService.findPrivateRoomId(me.getId(), u.getId())
-                    .orElse(null);
+            Long meId = me.getId();
+            Long otherId = u.getId();
+
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, otherId).orElse(null);
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, otherId);
         }
 
         return UserSummaryDto.builder()
@@ -300,7 +309,7 @@ public class StudyRecruitmentEditService {
                 .temperature(temperature)       // null 허용
                 .IsMine(me != null && Objects.equals(me.getId(), u.getId()))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(false)
+                .dmRequestPending(dmPending)
                 .build();
     }
     private LocationDto buildLocationForRead(StudyRecruitment sr) {
