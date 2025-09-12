@@ -66,6 +66,38 @@ public class ReputationQueryService {
     }
 
     @Transactional(readOnly = true)
+    public TemperatureRankResponse getTop1TemperatureRank(CustomUserDetails currentUser) {
+
+        UserReputation top1 = userReputationRepository
+                .findTop1ByOrderByTemperatureDescUpdatedAtDesc()
+                .orElseThrow(() -> new GlobalException(ErrorCode.REPUTATION_NOT_FOUND));
+
+        User target = top1.getUser();
+        if (target == null) {
+            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
+        }
+
+        // TODO: DM 채팅방 확인 로직 필요
+        Long chatRoomId = null;
+        boolean dmRequestPending = false;
+
+        return TemperatureRankResponse.builder()
+                .rank(1)
+                .userId(target.getId())
+                .nickname(target.getNickname())
+                .temperature(top1.getTemperature())
+                .mainPosition(extractMainPosition(target))
+                .profileImageUrl(target.getProfileImageUrl())
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmRequestPending)
+                .IsMine(currentUser != null && target.getId().equals(currentUser.getId()))
+                .mainBadge(badgeService.getRepresentativeGoodBadge(target))
+                .abandonBadge(badgeService.getAbandonBadge(target))
+                .updatedAt(top1.getUpdatedAt())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
     public TemperatureMeResponse getMyTemperature(CustomUserDetails currentUser) {
         if (currentUser == null) {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
