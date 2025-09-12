@@ -69,7 +69,8 @@ public class NotificationResponse {
             case PROJECT_JOIN_REQUEST, STUDY_JOIN_REQUEST, DM_REQUEST ->
                     n.getApplicantUserId() != null ? String.valueOf(n.getApplicantUserId()) : null;
             case PROJECT_JOIN_APPROVED, PROJECT_JOIN_REJECTED,
-                 STUDY_JOIN_APPROVED, STUDY_JOIN_REJECTED ->
+                 STUDY_JOIN_APPROVED, STUDY_JOIN_REJECTED,
+                 DM_APPROVED, DM_REJECTED ->
                     n.getRequesterUserId() != null ? String.valueOf(n.getRequesterUserId()) : null;
             default -> null;
         };
