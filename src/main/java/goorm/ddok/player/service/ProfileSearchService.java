@@ -2,6 +2,7 @@ package goorm.ddok.player.service;
 
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.member.domain.User;
@@ -38,6 +39,7 @@ public class ProfileSearchService {
     private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     @Transactional(readOnly = true)
     public Page<ProfileSearchResponse> searchPlayers(String keyword, int page, int size, Long currentUserId) {
@@ -197,10 +199,13 @@ public class ProfileSearchService {
                         .build();
 
         Long chatRoomId = null;
+        boolean dmPending = false;
         if (!isMine && currentUserId != null) {
-            chatRoomId = chatRoomService.findPrivateRoomId(currentUserId, u.getId())
-                    .orElse(null);
+            chatRoomId = chatRoomService.findPrivateRoomId(currentUserId, u.getId()).orElse(null);
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(currentUserId, u.getId());
         }
+
 
         return ProfileSearchResponse.builder()
                 .userId(u.getId())
@@ -214,7 +219,7 @@ public class ProfileSearchService {
                 .temperature(temp)
                 .IsMine(currentUserId != null && currentUserId.equals(u.getId()))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(false) // TODO: DM 도메인 연동
+                .dmRequestPending(dmPending)
                 .build();
     }
 
