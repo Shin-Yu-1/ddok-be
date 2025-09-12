@@ -1,9 +1,8 @@
 package goorm.ddok.notification.service;
 
-import goorm.ddok.chat.domain.DmRequest;
-import goorm.ddok.chat.domain.DmRequestStatus;
 import goorm.ddok.chat.repository.DmRequestRepository;
 import goorm.ddok.chat.service.ChatRoomManagementService;
+import goorm.ddok.chat.service.ChatRoomTxHelper;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -39,8 +38,9 @@ public class NotificationActionService {
     private final ProjectApplicationRepository projectApplicationRepository;
     private final DmRequestRepository dmRequestRepository;
     private final TeamApplicantCommandService teamApplicantCommandService;
-    private final UserRepository userRepository;
     private final ChatRoomManagementService chatRoomManagementService;
+    private final UserRepository userRepository;
+    private final ChatRoomTxHelper chatRoomTxHelper;
     private final ApplicationEventPublisher eventPublisher;
 
 
@@ -115,17 +115,14 @@ public class NotificationActionService {
         User from = userRepository.getReferenceById(fromUserId);
         User to   = userRepository.getReferenceById(toUserId);
 
-        var dmRequest = dmRequestRepository
-                .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
-                .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
-
-        dmRequest.accept();
-        dmRequestRepository.save(dmRequest);
+        int updated = dmRequestRepository.acceptIfPending(fromUserId, toUserId, Instant.now());
+        if (updated == 0) throw new GlobalException(ErrorCode.ALREADY_PROCESSED_NOTIFICATION);
 
         try {
-            chatRoomManagementService.createPrivateChatRoom(from, to);
-        } catch (GlobalException ex) {
-            if (ex.getErrorCode() != ErrorCode.CHAT_ROOM_ALREADY_EXISTS) throw ex;
+            chatRoomTxHelper.createPrivateRoomSafely(from, to);
+        } catch (org.springframework.transaction.UnexpectedRollbackException ex) {
+            boolean exists = chatRoomManagementService.existsPrivateRoomBetween(from.getId(), to.getId());
+            if (!exists) throw ex;
         }
 
         eventPublisher.publishEvent(
@@ -142,12 +139,10 @@ public class NotificationActionService {
         Long fromUserId = n.getApplicantUserId();
         Long toUserId = currentUser.getId();
 
-        var dmRequest = dmRequestRepository
-                .findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(fromUserId, toUserId, DmRequestStatus.PENDING)
-                .orElseThrow(() -> new GlobalException(ErrorCode.NOTIFICATION_NOT_FOUND));
-
-        dmRequest.reject();
-        dmRequestRepository.save(dmRequest);
+        int updated = dmRequestRepository.rejectIfPending(fromUserId, toUserId, Instant.now());
+        if (updated == 0) {
+            throw new GlobalException(ErrorCode.ALREADY_PROCESSED_NOTIFICATION);
+        }
 
         eventPublisher.publishEvent(
                 goorm.ddok.notification.event.DmRequestDecisionEvent.builder()

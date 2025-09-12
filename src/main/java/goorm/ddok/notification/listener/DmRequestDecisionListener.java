@@ -33,43 +33,46 @@ public class DmRequestDecisionListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(DmRequestDecisionEvent e) {
-        User requester = em.getReference(User.class, e.getRequesterUserId()); // DM 원요청자(수신자)
-        User approver  = em.getReference(User.class, e.getApproverUserId());  // 수락/거절한 사람(액터)
+        try {
+            User requester = em.getReference(User.class, e.getRequesterUserId());
+            User approver  = em.getReference(User.class, e.getApproverUserId());
 
-        boolean accepted = "accept".equalsIgnoreCase(e.getDecision());
-        NotificationType type = accepted ? NotificationType.DM_APPROVED : NotificationType.DM_REJECTED;
+            boolean accepted = "accept".equalsIgnoreCase(e.getDecision());
+            NotificationType type = accepted ? NotificationType.DM_APPROVED : NotificationType.DM_REJECTED;
 
-        String base = approver.getNickname() + (accepted ? "님이 DM 요청을 수락했습니다." : "님이 DM 요청을 거절했습니다.");
-        String msg  = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base);
+            String base = approver.getNickname() + (accepted ? "님이 DM 요청을 수락했습니다." : "님이 DM 요청을 거절했습니다.");
+            String msg  = messageHelper.withTemperatureSuffix(e.getApproverUserId(), base);
 
-        Notification noti = Notification.builder()
-                .receiver(requester)
-                .type(type)
-                .message(msg)
-                .read(false)
-                .processed(false)
-                .applicantUserId(e.getRequesterUserId())
-                .requesterUserId(e.getApproverUserId())
-                .createdAt(Instant.now())
-                .build();
+            Notification noti = notificationRepository.save(
+                    Notification.builder()
+                            .receiver(requester)
+                            .type(type)
+                            .message(msg)
+                            .read(false)
+                            .processed(false)
+                            .applicantUserId(e.getRequesterUserId())
+                            .requesterUserId(e.getApproverUserId())
+                            .createdAt(Instant.now())
+                            .build()
+            );
 
-        noti = notificationRepository.save(noti);
+            NotificationPayload payload = NotificationPayload.builder()
+                    .id(String.valueOf(noti.getId()))
+                    .type(noti.getType().name())
+                    .message(msg)
+                    .IsRead(false)
+                    .createdAt(noti.getCreatedAt())
+                    .IsProcessed(false)
+                    .actorUserId(String.valueOf(e.getApproverUserId()))
+                    .actorNickname(approver.getNickname())
+                    .actorTemperature(approver.getReputation() != null ? approver.getReputation().getTemperature() : null)
+                    .userId(String.valueOf(e.getApproverUserId()))
+                    .userNickname(approver.getNickname())
+                    .build();
 
-        NotificationPayload payload = NotificationPayload.builder()
-                .id(String.valueOf(noti.getId()))
-                .type(noti.getType().name())
-                .message(msg)
-                .IsRead(false)
-                .createdAt(noti.getCreatedAt())
-                .IsProcessed(false)
-                .processedAt(null)
-                .actorUserId(String.valueOf(e.getApproverUserId()))
-                .actorNickname(approver.getNickname())
-                .actorTemperature(approver.getReputation() != null ? approver.getReputation().getTemperature() : null)
-                .userId(String.valueOf(e.getApproverUserId()))
-                .userNickname(approver.getNickname())
-                .build();
-
-        pushService.pushToUser(e.getRequesterUserId(), payload);
+            pushService.pushToUser(e.getRequesterUserId(), payload);
+        } catch (Exception ex) {
+            // log.error("DM decision listener failed", ex);
+        }
     }
 }

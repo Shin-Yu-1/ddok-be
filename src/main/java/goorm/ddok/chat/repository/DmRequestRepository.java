@@ -3,6 +3,7 @@ package goorm.ddok.chat.repository;
 import goorm.ddok.chat.domain.DmRequest;
 import goorm.ddok.chat.domain.DmRequestStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,4 +29,30 @@ public interface DmRequestRepository extends JpaRepository<DmRequest, Long> {
 
     Optional<DmRequest> findTopByFromUser_IdAndToUser_IdAndStatusOrderByCreatedAtDesc(
             Long fromUserId, Long toUserId, DmRequestStatus status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update DmRequest d
+           set d.status = goorm.ddok.chat.domain.DmRequestStatus.ACCEPTED,
+               d.respondedAt = :now
+         where d.fromUser.id = :fromId
+           and d.toUser.id   = :toId
+           and d.status      = goorm.ddok.chat.domain.DmRequestStatus.PENDING
+        """)
+    int acceptIfPending(@Param("fromId") Long fromId,
+                        @Param("toId") Long toId,
+                        @Param("now") java.time.Instant now);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update DmRequest d
+           set d.status = goorm.ddok.chat.domain.DmRequestStatus.REJECTED,
+               d.respondedAt = :now
+         where d.fromUser.id = :fromId
+           and d.toUser.id   = :toId
+           and d.status      = goorm.ddok.chat.domain.DmRequestStatus.PENDING
+        """)
+    int rejectIfPending(@Param("fromId") Long fromId,
+                        @Param("toId") Long toId,
+                        @Param("now") java.time.Instant now);
 }
