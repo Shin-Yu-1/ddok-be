@@ -11,12 +11,14 @@ import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
+import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
 import goorm.ddok.reputation.repository.UserReputationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 @Service
@@ -80,6 +82,54 @@ public class ReputationQueryService {
                 .updatedAt(top1.getUpdatedAt())
                 .build();
     }
+
+    @Transactional(readOnly = true)
+    public List<TemperatureRegionResponse> getRegionTop1Rank(CustomUserDetails currentUser) {
+        List<String> mainRegions = List.of("서울", "경기", "강원", "충청", "경상", "전라", "제주");
+
+        return mainRegions.stream()
+                .map(mainRegion -> {
+                    List<String> rawRegions = getRawRegionsForMain(mainRegion);
+
+                    UserReputation top1 = userReputationRepository.findFirstByUser_Location_Region1DepthNameInOrderByTemperatureDescUpdatedAtDesc(rawRegions)
+                            .orElse(null);
+
+                    if (top1 == null) return null;
+
+                    User target = top1.getUser();
+
+                    return TemperatureRegionResponse.builder()
+                            .region(mainRegion)
+                            .userId(target.getId())
+                            .nickname(target.getNickname())
+                            .temperature(top1.getTemperature())
+                            .mainPosition(extractMainPosition(target))
+                            .profileImageUrl(target.getProfileImageUrl())
+                            .chatRoomId(null)          // 캐싱 단계에서는 DM 정보 없음
+                            .dmRequestPending(false)   // 캐싱 단계에서는 DM 정보 없음
+                            .IsMine(currentUser != null && target.getId().equals(currentUser.getId()))
+                            .mainBadge(badgeService.getRepresentativeGoodBadge(target))
+                            .abandonBadge(badgeService.getAbandonBadge(target))
+                            .build();
+                })
+                .filter(Objects::nonNull)
+                .toList();
+    }
+
+    private List<String> getRawRegionsForMain(String mainRegion) {
+        return switch (mainRegion) {
+            case "서울" -> List.of("서울특별시");
+            case "경기" -> List.of("경기도", "인천광역시");
+            case "강원" -> List.of("강원도");
+            case "충청" -> List.of("충청북도", "충청남도", "대전광역시", "세종특별자치시", "충북", "충남", "세종시");
+            case "경상" -> List.of("경상북도", "경상남도", "대구광역시", "부산광역시", "울산광역시", "경북", "경남", "대구");
+            case "전라" -> List.of("전라북도", "전라남도", "광주광역시", "전남", "전북", "광주");
+            case "제주" -> List.of("제주특별자치도");
+            default -> List.of();
+        };
+    }
+
+
 
     @Transactional(readOnly = true)
     public TemperatureMeResponse getMyTemperature(CustomUserDetails currentUser) {

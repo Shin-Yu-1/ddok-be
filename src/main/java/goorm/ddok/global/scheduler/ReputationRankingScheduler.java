@@ -4,6 +4,7 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
+import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,8 @@ public class ReputationRankingScheduler {
 
     private final AtomicReference<TemperatureRankResponse> top1Cache = new AtomicReference<>();
     private final AtomicReference<List<TemperatureRankResponse>> top10Cache = new AtomicReference<>();
+    private final AtomicReference<List<TemperatureRegionResponse>> regionTop1Cache = new AtomicReference<>();
+
     private final AtomicReference<Instant> lastUpdated = new AtomicReference<>();
 
     /** 서버 시작 시 바로 1회 실행 */
@@ -33,6 +36,7 @@ public class ReputationRankingScheduler {
     public void init() {
         updateTop1Ranking();
         updateTop10Ranking();
+        updateRegionTop1Ranking();
     }
 
     /** 매 시간마다 TOP1 + TOP10 갱신 */
@@ -40,6 +44,7 @@ public class ReputationRankingScheduler {
     public void updateRankings() {
         updateTop1Ranking();
         updateTop10Ranking();
+        updateRegionTop1Ranking();
     }
 
     public void updateTop1Ranking() {
@@ -101,6 +106,30 @@ public class ReputationRankingScheduler {
         }
     }
 
+    private void updateRegionTop1Ranking() {
+        try {
+            List<TemperatureRegionResponse> regionTop1 = reputationQueryService.getRegionTop1Rank(null);
+            Instant now = Instant.now();
+
+            // updatedAt 덮어쓰기
+            List<TemperatureRegionResponse> withUpdatedAt = regionTop1.stream()
+                    .map(r -> r.toBuilder()
+                            .dmRequestPending(false)
+                            .chatRoomId(null)
+                            .IsMine(false)
+                            .updatedAt(now)
+                            .build())
+                    .toList();
+
+            regionTop1Cache.set(withUpdatedAt);
+            lastUpdated.set(now);
+
+            log.info("✅ 지역별 TOP1 랭킹 갱신 완료, updatedAt={}", now);
+        } catch (Exception e) {
+            log.error("❌ 지역별 TOP1 랭킹 갱신 실패", e);
+        }
+    }
+
     /** 컨트롤러에서 캐시 조회용 */
     public TemperatureRankResponse getCachedTop1() {
         TemperatureRankResponse cached = top1Cache.get();
@@ -112,6 +141,14 @@ public class ReputationRankingScheduler {
 
     public List<TemperatureRankResponse> getCachedTop10() {
         List<TemperatureRankResponse> cached = top10Cache.get();
+        if (cached == null) {
+            throw new GlobalException(ErrorCode.RANKING_NOT_READY);
+        }
+        return cached;
+    }
+
+    public List<TemperatureRegionResponse> getCachedRegionTop1() {
+        List<TemperatureRegionResponse> cached = regionTop1Cache.get();
         if (cached == null) {
             throw new GlobalException(ErrorCode.RANKING_NOT_READY);
         }
