@@ -1,6 +1,7 @@
 package goorm.ddok.project.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
 import goorm.ddok.global.dto.LocationDto;
 import goorm.ddok.global.dto.PreferredAgesDto;
 import goorm.ddok.global.dto.BadgeDto;
@@ -39,6 +40,7 @@ public class ProjectRecruitmentQueryService {
     private final ProjectApplicationRepository projectApplicationRepository;
     private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
 
 
     /** 프로젝트 모집글 상세 조회 */
@@ -185,11 +187,11 @@ public class ProjectRecruitmentQueryService {
                 .findFirst()
                 .orElse(null);
 
-        Long meId = (currentUser != null) ? currentUser.getId() : null;
-        Long otherId = user.getId();
-
-        Long chatRoomId = resolveChatRoomId(meId, otherId);
-        boolean dmPending = resolveDmPending(meId, otherId);
+        Long chatRoomId = null;
+        if (currentUser != null && !Objects.equals(currentUser.getId(), user.getId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(currentUser.getId(), user.getId())
+                    .orElse(null);
+        }
 
         return ProjectUserSummaryDto.builder()
                 .userId(user.getId())
@@ -202,7 +204,7 @@ public class ProjectRecruitmentQueryService {
                 .decidedPosition(participant.getPosition().getPositionName())
                 .IsMine(currentUser != null && user.getId().equals(currentUser.getId()))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(dmPending)
+                .dmRequestPending(false)
                 .build();
     }
 
@@ -239,10 +241,6 @@ public class ProjectRecruitmentQueryService {
         String s = sb.toString().trim().replaceAll("\\s+", " ");
         return s.isBlank() ? null : s;
     }
-
-    // ==== 배지/DM/채팅방 기본 구현 (실서비스 연동 지점; 현재는 null 폴백) ====
-    private Long resolveChatRoomId(Long meId, Long otherId) { return null; }
-    private boolean resolveDmPending(Long meId, Long otherId) { return false; }
 
     private boolean isZero(Integer v) { return v == null || v == 0; }
 }
