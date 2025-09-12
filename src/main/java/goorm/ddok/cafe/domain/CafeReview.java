@@ -14,7 +14,7 @@ import java.time.Instant;
 @Table(name = "cafe_review",
         uniqueConstraints = {
                 @UniqueConstraint(name = "uk_cafe_review_cafe_user_status",
-                        columnNames = {"cafe_id","user_id","status"})
+                        columnNames = {"cafe_id","user_id","status","created_at"})
         },
         indexes = {
                 @Index(name = "idx_cafe_review_cafe_id", columnList = "cafe_id"),
