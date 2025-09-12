@@ -33,8 +33,8 @@ public class DmRequestDecisionListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(DmRequestDecisionEvent e) {
-        User requester = em.getReference(User.class, e.getRequesterUserId());
-        User approver  = em.getReference(User.class, e.getApproverUserId());
+        User requester = em.getReference(User.class, e.getRequesterUserId()); // DM 원요청자(수신자)
+        User approver  = em.getReference(User.class, e.getApproverUserId());  // 수락/거절한 사람(액터)
 
         boolean accepted = "accept".equalsIgnoreCase(e.getDecision());
         NotificationType type = accepted ? NotificationType.DM_APPROVED : NotificationType.DM_REJECTED;
@@ -48,8 +48,8 @@ public class DmRequestDecisionListener {
                 .message(msg)
                 .read(false)
                 .processed(false)
-                .applicantUserId(e.getApproverUserId())
-                .requesterUserId(e.getRequesterUserId())
+                .applicantUserId(e.getRequesterUserId())
+                .requesterUserId(e.getApproverUserId())
                 .createdAt(Instant.now())
                 .build();
 
