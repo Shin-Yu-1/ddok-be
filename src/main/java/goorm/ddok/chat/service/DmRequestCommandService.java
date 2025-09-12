@@ -17,6 +17,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Set;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -26,6 +30,10 @@ public class DmRequestCommandService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final ChatRepository chatRepository;
+    private final ChatRoomService chatRoomService;
+
+    private static final Set<DmRequestStatus> ACTIVE_STATUSES =
+            EnumSet.of(DmRequestStatus.PENDING, DmRequestStatus.ACCEPTED);
 
     public DmRequestDto create(Long toUserId, CustomUserDetails loginUser) {
         if (loginUser == null || loginUser.getUser() == null) {
@@ -71,5 +79,15 @@ public class DmRequestCommandService {
         );
 
         return DmRequestDto.from(saved);
+    }
+
+    public boolean isDmPendingOrAcceptedOrChatExists(Long meId, Long otherId) {
+        if (meId == null || otherId == null || Objects.equals(meId, otherId)) return false;
+
+        if (chatRoomService.findPrivateRoomId(meId, otherId).isPresent()) {
+            return true;
+        }
+
+        return dmRequestRepository.existsEitherDirectionWithStatuses(meId, otherId, ACTIVE_STATUSES);
     }
 }
