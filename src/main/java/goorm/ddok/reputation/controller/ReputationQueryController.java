@@ -1,6 +1,7 @@
 package goorm.ddok.reputation.controller;
 
 import goorm.ddok.global.response.ApiResponseDto;
+import goorm.ddok.global.scheduler.ReputationRankingScheduler;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
@@ -27,6 +28,7 @@ import java.util.List;
 public class ReputationQueryController {
 
     private final ReputationQueryService reputationQueryService;
+    private final ReputationRankingScheduler reputationRankingScheduler;
 
     @Operation(
             summary = "전체 온도 랭킹 TOP10 조회",
@@ -95,6 +97,71 @@ public class ReputationQueryController {
                 reputationQueryService.getTop10TemperatureRank(currentUser)
         );
     }
+
+    @Operation(
+            summary = "전체 온도 랭킹 TOP1 조회",
+            description = "온도를 기준으로 1등 사용자 정보를 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "요청 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                        {
+                          "status": 200,
+                          "message": "요청이 성공적으로 처리되었습니다.",
+                          "data": {
+                            "rank": 1,
+                            "userId": 1,
+                            "nickname": "캐구리",
+                            "temperature": 76.0,
+                            "mainPosition": "풀스택",
+                            "profileImageUrl": "https://cdn.example.com/images/players/1.jpg",
+                            "chatRoomId": null,
+                            "dmRequestPending": false,
+                            "isMine": false,
+                            "mainBadge": { "type": "login", "tier": "gold" },
+                            "abandonBadge": { "isGranted": false, "count": 0 },
+                            "updatedAt": "2025-09-12T11:00:00+09:00"
+                          }
+                        }
+                        """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "사용자 또는 온도 정보 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                    { "status": 404, "message": "사용자 온도 정보를 찾을 수 없습니다.", "data": null }
+                    """))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "랭킹 캐시 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                { "status": 404, "message": "아직 랭킹 데이터가 준비되지 않았습니다.", "data": null }
+                """))
+            )
+    })
+    @GetMapping("/top1")
+    public ApiResponseDto<TemperatureRankResponse> getTop1TemperatureRank(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        TemperatureRankResponse cached = reputationRankingScheduler.getCachedTop1();
+        TemperatureRankResponse response = cached.toBuilder()
+                .IsMine(currentUser != null && cached.getUserId().equals(currentUser.getId()))
+                // TODO: DM 채팅방 확인 로직 필요
+                .dmRequestPending(false)
+                .chatRoomId(null)
+                .build();
+        return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
+    }
+
 
     @Operation(
             summary = "내 온도 조회",
