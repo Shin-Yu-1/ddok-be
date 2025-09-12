@@ -112,7 +112,7 @@ public class TeamApplicantCommandService {
 
         long participantCount =
                 studyParticipantRepository.countByStudyRecruitment_IdAndDeletedAtIsNull(recruitment.getId());
-        if (participantCount >= recruitment.getCapacity()) {
+        if (participantCount >= recruitment.getCapacity() + 1) {
             throw new GlobalException(ErrorCode.CAPACITY_EXCEEDED);
         }
 
@@ -163,7 +163,7 @@ public class TeamApplicantCommandService {
         long participantCount =
                 projectParticipantRepository.countByPosition_ProjectRecruitment_IdAndDeletedAtIsNull(recruitment.getId());
 
-        if (participantCount >= recruitment.getCapacity()) {
+        if (participantCount >= recruitment.getCapacity() + 1) {
             throw new GlobalException(ErrorCode.CAPACITY_EXCEEDED);
         }
 
