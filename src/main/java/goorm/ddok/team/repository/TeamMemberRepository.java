@@ -24,4 +24,6 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
      * - deletedAt 이 null 이어야 함 (탈퇴/추방 안 된 상태)
      */
     Page<TeamMember> findByTeam_IdAndDeletedAtIsNull(Long teamId, Pageable pageable);
+    List<TeamMember> findByTeam_IdAndDeletedAtIsNull(Long teamId);
+
 }
