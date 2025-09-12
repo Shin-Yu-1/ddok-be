@@ -31,23 +31,11 @@ public class ReputationQueryService {
     public List<TemperatureRankResponse> getTop10TemperatureRank(
             CustomUserDetails currentUser
     ) {
-        if (currentUser == null) {
-            throw new GlobalException(ErrorCode.UNAUTHORIZED);
-        }
-
         List<UserReputation> top10 = userReputationRepository.findTop10ByOrderByTemperatureDescUpdatedAtDesc();
 
         return IntStream.range(0, top10.size())
                 .mapToObj(i -> {
                     User target = top10.get(i).getUser();
-                    if (target == null) {
-                        throw new GlobalException(ErrorCode.USER_NOT_FOUND);
-                    }
-
-                    // TODO: DM 채팅방 확인 로직 필요
-                    Long chatRoomId = null;
-                    boolean dmRequestPending = false;
-
                     return TemperatureRankResponse.builder()
                             .rank(i + 1)
                             .userId(target.getId())
@@ -55,9 +43,9 @@ public class ReputationQueryService {
                             .temperature(top10.get(i).getTemperature())
                             .mainPosition(extractMainPosition(target))
                             .profileImageUrl(target.getProfileImageUrl())
-                            .chatRoomId(chatRoomId)
-                            .dmRequestPending(dmRequestPending)
-                            .IsMine(target.getId().equals(currentUser.getId()))
+                            .chatRoomId(null)          // 캐싱 단계에서는 DM 정보 없음
+                            .dmRequestPending(false)   // 캐싱 단계에서는 DM 정보 없음
+                            .IsMine(currentUser != null && target.getId().equals(currentUser.getId()))
                             .mainBadge(badgeService.getRepresentativeGoodBadge(target))
                             .abandonBadge(badgeService.getAbandonBadge(target))
                             .build();
@@ -77,10 +65,6 @@ public class ReputationQueryService {
             throw new GlobalException(ErrorCode.USER_NOT_FOUND);
         }
 
-        // TODO: DM 채팅방 확인 로직 필요
-        Long chatRoomId = null;
-        boolean dmRequestPending = false;
-
         return TemperatureRankResponse.builder()
                 .rank(1)
                 .userId(target.getId())
@@ -88,8 +72,8 @@ public class ReputationQueryService {
                 .temperature(top1.getTemperature())
                 .mainPosition(extractMainPosition(target))
                 .profileImageUrl(target.getProfileImageUrl())
-                .chatRoomId(chatRoomId)
-                .dmRequestPending(dmRequestPending)
+                .chatRoomId(null)          // 캐싱 단계에서는 DM 정보 없음
+                .dmRequestPending(false)   // 캐싱 단계에서는 DM 정보 없음
                 .IsMine(currentUser != null && target.getId().equals(currentUser.getId()))
                 .mainBadge(badgeService.getRepresentativeGoodBadge(target))
                 .abandonBadge(badgeService.getAbandonBadge(target))
