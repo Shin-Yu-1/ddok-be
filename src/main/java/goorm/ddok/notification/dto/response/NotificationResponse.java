@@ -73,7 +73,7 @@ public class NotificationResponse {
 
     private static String resolveActorId(Notification n) {
         return switch (n.getType()) {
-            case PROJECT_JOIN_REQUEST, STUDY_JOIN_REQUEST, DM_REQUEST ->
+            case PROJECT_JOIN_REQUEST, STUDY_JOIN_REQUEST, DM_REQUEST, TEAM_MEMBER_VIOLATION ->
                     n.getApplicantUserId() != null ? String.valueOf(n.getApplicantUserId()) : null;
             case PROJECT_JOIN_APPROVED, PROJECT_JOIN_REJECTED,
                  STUDY_JOIN_APPROVED, STUDY_JOIN_REJECTED,
