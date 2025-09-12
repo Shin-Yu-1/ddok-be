@@ -1,5 +1,6 @@
 package goorm.ddok.team.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.evaluation.domain.EvaluationStatus;
 import goorm.ddok.evaluation.domain.TeamEvaluation;
 import goorm.ddok.evaluation.repository.TeamEvaluationRepository;
@@ -11,8 +12,10 @@ import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.domain.StudyRecruitment;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import goorm.ddok.team.domain.Team;
+import goorm.ddok.team.domain.TeamMember;
 import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.dto.response.TeamCloseResponse;
+import goorm.ddok.team.repository.TeamMemberRepository;
 import goorm.ddok.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +34,8 @@ public class TeamLifecycleService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final TeamEvaluationRepository teamEvaluationRepository;
+    private final TeamMemberRepository teamMemberRepository;
+    private final BadgeService badgeService;
 
     public TeamCloseResponse closeTeamAndOpenEvaluation(Long teamId, CustomUserDetails me) {
         if (me == null || me.getUser() == null) throw new GlobalException(ErrorCode.UNAUTHORIZED);
@@ -42,8 +48,6 @@ public class TeamLifecycleService {
             throw new GlobalException(ErrorCode.FORBIDDEN_LEADER_ONLY);
         }
 
-
-
         // 1) 타입 판별 → 해당 모집 teamStatus 를 CLOSED 로
         if (team.getType() == TeamType.PROJECT) {
             closeProjectRecruitment(team.getRecruitmentId());
@@ -51,6 +55,12 @@ public class TeamLifecycleService {
             closeStudyRecruitment(team.getRecruitmentId());
         } else {
             throw new GlobalException(ErrorCode.NOT_SUPPORT_CATEGORY);
+        }
+
+        List<TeamMember> members = teamMemberRepository.findByTeam_IdAndDeletedAtIsNull(team.getId());
+        for (TeamMember member : members) {
+            boolean isLeader = member.getUser().getId().equals(team.getUser().getId());
+            badgeService.grantCompleteBadge(member.getUser(), isLeader);
         }
 
         // 2) 열린 평가 라운드가 없으면 새 OPEN 라운드 생성 (closesAt 은 엔티티 @PrePersist 로 +7일)
