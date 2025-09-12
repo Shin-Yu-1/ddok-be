@@ -12,4 +12,6 @@ public interface TeamEvaluationRepository extends JpaRepository<TeamEvaluation, 
 
     Optional<TeamEvaluation> findTopByTeam_IdOrderByIdDesc(Long teamId);
     List<TeamEvaluation> findAllByStatusAndClosesAtBefore(EvaluationStatus status, Instant before);
+
+    boolean existsByTeam_IdAndStatus(Long teamId, EvaluationStatus status);
 }

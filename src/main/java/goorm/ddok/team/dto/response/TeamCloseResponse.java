@@ -1,0 +1,11 @@
+package goorm.ddok.team.dto.response;
+
+import lombok.Builder;
+import lombok.Getter;
+
+@Getter
+@Builder
+public class TeamCloseResponse {
+    private Long teamId;
+    private String status; // "CLOSED"
+}

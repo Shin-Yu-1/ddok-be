@@ -68,6 +68,8 @@ public enum ErrorCode {
     ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
     LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
+    CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
+    RECRUITMENT_CLOSED(HttpStatus.BAD_REQUEST, "현재 모집 중이 아닙니다."),
 
 
     // 401 UNAUTHORIZED
@@ -121,6 +123,7 @@ public enum ErrorCode {
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
     ALREADY_PROCESSED_APPLICATION(HttpStatus.CONFLICT, "이미 처리된 신청입니다."),
+    ALREADY_CLOSED(HttpStatus.CONFLICT,"이미 종료된 프로젝트/스터디입니다."),
 
     // 429 TOO MANY REQUESTS
     KAKAO_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "카카오 토큰 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),

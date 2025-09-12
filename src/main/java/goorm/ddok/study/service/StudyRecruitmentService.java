@@ -223,13 +223,19 @@ public class StudyRecruitmentService {
                 }
                 case APPROVED -> throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
                 case REJECTED -> {
+                    if (study.getTeamStatus() != TeamStatus.RECRUITING) {
+                        throw new GlobalException(ErrorCode.RECRUITMENT_CLOSED);
+                    }
                     int updated = studyApplicationRepository.reapplyIfRejected(existing.getId());
                     if (updated == 0) throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
                     return true;
                 }
-
             }
             return false;
+        }
+
+        if (study.getTeamStatus() != TeamStatus.RECRUITING) {
+            throw new GlobalException(ErrorCode.RECRUITMENT_CLOSED);
         }
 
         studyApplicationRepository.save(StudyApplication.builder()
