@@ -112,6 +112,7 @@ public enum ErrorCode {
     REPUTATION_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 온도 정보를 찾을 수 없습니다."),
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "참여 신청 내역을 찾을 수 없습니다."),
     TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀원을 찾을 수 없습니다."),
+    RANKING_NOT_READY(HttpStatus.NOT_FOUND, "아직 랭킹 데이터가 준비되지 않았습니다."),
 
 
     // 409 CONFLICT
