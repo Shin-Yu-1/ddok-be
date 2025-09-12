@@ -1,6 +1,7 @@
 package goorm.ddok.project.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -47,6 +48,7 @@ public class ProjectRecruitmentEditService {
     private final FileService fileService;
     private final BannerImageService bannerImageService;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
 
 
     /* =========================
@@ -543,6 +545,13 @@ public class ProjectRecruitmentEditService {
                     BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
                     AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
+                    Long chatRoomId = null;
+                    if (meId != null && !Objects.equals(meId, u.getId())) {
+                        chatRoomId = chatRoomService.findPrivateRoomId(meId, u.getId())
+                                .orElse(null);
+                    }
+
+
                     return ProjectUpdateResultResponse.ParticipantBlock.builder()
                             .userId(u.getId())
                             .nickname(u.getNickname())
@@ -553,7 +562,7 @@ public class ProjectRecruitmentEditService {
                             .temperature(temperature)
                             .decidedPosition(p.getPosition() != null ? p.getPosition().getPositionName() : null)
                             .IsMine(meId != null && Objects.equals(meId, u.getId()))
-                            .chatRoomId(null)
+                            .chatRoomId(chatRoomId)
                             .dmRequestPending(false)
                             .build();
                 })
@@ -577,6 +586,12 @@ public class ProjectRecruitmentEditService {
         BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(u);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(u);
 
+        Long chatRoomId = null;
+        if (currentUser != null && !Objects.equals(currentUser.getId(), u.getId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(currentUser.getId(), u.getId())
+                    .orElse(null);
+        }
+
         return ProjectUserSummaryDto.builder()
                 .userId(u.getId())
                 .nickname(u.getNickname())
@@ -587,7 +602,7 @@ public class ProjectRecruitmentEditService {
                 .temperature(temperature)
                 .decidedPosition(participant.getPosition() != null ? participant.getPosition().getPositionName() : null)
                 .IsMine(currentUser != null && Objects.equals(currentUser.getId(), u.getId()))
-                .chatRoomId(null)
+                .chatRoomId(chatRoomId)
                 .dmRequestPending(false)
                 .build();
     }
