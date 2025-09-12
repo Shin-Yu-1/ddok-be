@@ -2,6 +2,7 @@ package goorm.ddok.reputation.controller;
 
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -92,6 +93,68 @@ public class ReputationQueryController {
                 200,
                 "요청이 성공적으로 처리되었습니다.",
                 reputationQueryService.getTop10TemperatureRank(currentUser)
+        );
+    }
+
+    @Operation(
+            summary = "내 온도 조회",
+            description = "현재 로그인한 사용자의 온도를 조회합니다."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "요청이 성공적으로 처리되었습니다.",
+                    content = @Content(
+                            mediaType = "application/json",
+                            schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                            {
+                              "status": 200,
+                              "message": "요청이 성공적으로 처리되었습니다.",
+                              "data": {
+                                "userId": 15,
+                                "nickname": "똑똑한 똑똑이",
+                                "temperature": 68.5,
+                                "mainPosition": "백엔드",
+                                "profileImageUrl": "https://cdn.example.com/images/players/15.jpg",
+                                "mainBadge": {
+                                  "type": "login",
+                                  "tier": "gold"
+                                },
+                                "abandonBadge": {
+                                  "isGranted": false,
+                                  "count": 0
+                                }
+                              }
+                            }
+                            """)
+                    )
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증되지 않은 사용자",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                        { "status": 401, "message": "인증이 필요합니다.", "data": null }
+                        """))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "온도 정보 없음",
+                    content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                            examples = @ExampleObject(value = """
+                        { "status": 404, "message": "사용자 온도 정보를 찾을 수 없습니다.", "data": null }
+                        """))
+            )
+    })
+    @GetMapping("/me")
+    public ApiResponseDto<TemperatureMeResponse> getMyTemperature(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        return ApiResponseDto.of(
+                200,
+                "요청이 성공적으로 처리되었습니다.",
+                reputationQueryService.getMyTemperature(currentUser)
         );
     }
 }
