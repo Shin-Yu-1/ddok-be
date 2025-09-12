@@ -203,22 +203,18 @@ public class StudyRecruitmentService {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
         Long userId = userDetails.getUser().getId();
-        String nickname = userDetails.getUser().getNickname(); // 닉네임 필드명에 맞게
+        String nickname = userDetails.getUser().getNickname();
 
         StudyRecruitment study = studyRecruitmentRepository.findById(studyId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.STUDY_NOT_FOUND));
         if (study.getDeletedAt() != null) throw new GlobalException(ErrorCode.STUDY_NOT_FOUND);
-
-        if (study.getUser().getId().equals(userId)) {
-            throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
-        }
+        if (study.getUser().getId().equals(userId)) throw new GlobalException(ErrorCode.FORBIDDEN_ACTION);
 
         Optional<StudyApplication> existingOpt =
                 studyApplicationRepository.findByUser_IdAndStudyRecruitment_Id(userId, studyId);
 
         if (existingOpt.isPresent()) {
             StudyApplication existing = existingOpt.get();
-
             switch (existing.getApplicationStatus()) {
                 case PENDING -> {
                     int deleted = studyApplicationRepository.deleteIfPending(existing.getId());
@@ -239,7 +235,7 @@ public class StudyRecruitmentService {
                                     .applicantUserId(userId)
                                     .applicantNickname(nickname)
                                     .studyId(study.getId())
-                                    .studyTitle(study.getTitle())   // 필드명 맞게
+                                    .studyTitle(study.getTitle())
                                     .ownerUserId(study.getUser().getId())
                                     .build()
                     );
@@ -249,22 +245,18 @@ public class StudyRecruitmentService {
             return false;
         }
 
+        // 신규 신청
         if (study.getTeamStatus() != TeamStatus.RECRUITING) {
             throw new GlobalException(ErrorCode.RECRUITMENT_CLOSED);
         }
 
-        studyApplicationRepository.save(StudyApplication.builder()
+        StudyApplication newApp = StudyApplication.builder()
                 .user(userDetails.getUser())
                 .studyRecruitment(study)
                 .applicationStatus(ApplicationStatus.PENDING)
-                .build());
-        StudyApplication newApp = studyApplicationRepository.save(
-                StudyApplication.builder()
-                        .user(userDetails.getUser())
-                        .studyRecruitment(study)
-                        .applicationStatus(ApplicationStatus.PENDING)
-                        .build()
-        );
+                .build();
+
+        studyApplicationRepository.save(newApp);
 
         eventPublisher.publishEvent(
                 StudyJoinRequestedEvent.builder()
@@ -277,7 +269,7 @@ public class StudyRecruitmentService {
                         .build()
         );
 
-        return true;
+        return true; // 신청됨
     }
 
     private LocationDto buildLocationForRead(StudyRecruitment sr) {
