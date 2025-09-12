@@ -7,7 +7,9 @@ import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
 import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
+import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.reputation.domain.UserReputation;
+import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
 import goorm.ddok.reputation.repository.UserReputationRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class ReputationQueryService {
 
     private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
     public List<TemperatureRankResponse> getTop10TemperatureRank(
@@ -60,6 +63,34 @@ public class ReputationQueryService {
                             .build();
                 })
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public TemperatureMeResponse getMyTemperature(CustomUserDetails currentUser) {
+        if (currentUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+//        User user = currentUser.getUser();
+//        if(user == null) {
+//            throw new GlobalException(ErrorCode.USER_NOT_FOUND);
+//        }
+        User user = userRepository.findByUserId(currentUser.getId())
+                .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
+
+        UserReputation reputation = userReputationRepository.findByUser(user)
+                .orElseThrow(() -> new GlobalException(ErrorCode.REPUTATION_NOT_FOUND));
+
+        return TemperatureMeResponse.builder()
+                .userId(user.getId())
+                .nickname(user.getNickname())
+                .temperature(reputation.getTemperature())
+                .mainPosition(extractMainPosition(user))
+                .profileImageUrl(user.getProfileImageUrl())
+                .mainBadge(badgeService.getRepresentativeGoodBadge(user))
+                .abandonBadgeDto(badgeService.getAbandonBadge(user))
+                .build();
+
     }
 
     /**
