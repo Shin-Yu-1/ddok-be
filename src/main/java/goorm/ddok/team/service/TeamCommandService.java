@@ -1,5 +1,6 @@
 package goorm.ddok.team.service;
 
+import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -32,6 +33,7 @@ public class TeamCommandService {
     private final StudyParticipantRepository studyParticipantRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final StudyApplicationRepository studyApplicationRepository;
+    private final BadgeService badgeService;
 
     /**
      * 모집글 기반 팀 생성 (프로젝트 / 스터디 공용)
@@ -151,6 +153,10 @@ public class TeamCommandService {
 
         // Soft Delete
         member.expel();
+
+        // 탈주 배지 부여
+        badgeService.grantAbandonBadge(member.getUser());
+
         // 채팅방 멤버 삭제
         chatRoomManagementService.removeMemberFromTeamChat(teamId, team.getUser().getId());
 
