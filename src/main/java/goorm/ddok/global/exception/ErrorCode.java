@@ -73,6 +73,8 @@ public enum ErrorCode {
     INVALID_NOTIFICATION_ACTION(HttpStatus.BAD_REQUEST, "이 알림에 대해 허용되지 않은 작업입니다."),
     CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게는 DM요청을 보낼 수 없습니다."),
     DM_REQUEST_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "상대방과 이미 진행 중인 DM 요청이 있습니다."),
+    INVALID_REVIEW_TAG(HttpStatus.BAD_REQUEST, "잘못된 리뷰 태그가 포함되어 있습니다."),
+    INVALID_RATING(HttpStatus.BAD_REQUEST,"평점이 올바르지 않습니다."),
     CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
     RECRUITMENT_CLOSED(HttpStatus.BAD_REQUEST, "현재 모집 중이 아닙니다."),
 
