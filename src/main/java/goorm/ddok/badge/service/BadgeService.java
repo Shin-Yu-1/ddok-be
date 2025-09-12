@@ -87,6 +87,19 @@ public class BadgeService {
     }
 
     /**
+     * 프로젝트/스터디 중도 하차 배지 부여
+     *
+     * - 중도 하차 시 abandon 배지를 +1 증가.
+     *
+     * @param user 중도 하차한 사용자
+     */
+    @Transactional
+    public void grantAbandonBadge(User user) {
+        increaseBadge(user, BadgeType.abandon);
+    }
+
+
+    /**
      * 착한 배지 변환
      *
      * UserBadge 엔티티를 BadgeDto로 변환하면서,
