@@ -1,6 +1,7 @@
 package goorm.ddok.reputation.controller;
 
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.scheduler.ReputationRankingScheduler;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -32,6 +33,7 @@ public class ReputationQueryController {
     private final ReputationQueryService reputationQueryService;
     private final ReputationRankingScheduler reputationRankingScheduler;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     @Operation(
             summary = "전체 온도 랭킹 TOP10 조회",
@@ -93,16 +95,22 @@ public class ReputationQueryController {
         List<TemperatureRankResponse> response = cached.stream()
                 .map(r -> {
                     Long chatRoomId = null;
+                    boolean dmPending = false;
+
                     if (meId != null && !meId.equals(r.getUserId())) {
-                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null); // ✅ 인라인 조회
+                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null);
+                        dmPending = (chatRoomId != null)
+                                || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, r.getUserId());
                     }
+
                     return r.toBuilder()
                             .IsMine(meId != null && r.getUserId().equals(meId))
-                            .dmRequestPending(false)
-                            .chatRoomId(chatRoomId) // ✅ 반영
+                            .chatRoomId(chatRoomId)
+                            .dmRequestPending(dmPending) // ✅ 실제 값
                             .build();
                 })
                 .toList();
+
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
@@ -164,15 +172,20 @@ public class ReputationQueryController {
         TemperatureRankResponse cached = reputationRankingScheduler.getCachedTop1();
 
         Long meId = (currentUser != null) ? currentUser.getId() : null;
+
         Long chatRoomId = null;
+        boolean dmPending = false;
+
         if (meId != null && !meId.equals(cached.getUserId())) {
-            chatRoomId = chatRoomService.findPrivateRoomId(meId, cached.getUserId()).orElse(null); // ✅
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, cached.getUserId()).orElse(null);
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, cached.getUserId());
         }
 
         TemperatureRankResponse response = cached.toBuilder()
                 .IsMine(meId != null && cached.getUserId().equals(meId))
-                .dmRequestPending(false)
                 .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending) // ✅ 실제 값
                 .build();
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
@@ -190,13 +203,18 @@ public class ReputationQueryController {
         List<TemperatureRegionResponse> response = cached.stream()
                 .map(r -> {
                     Long chatRoomId = null;
+                    boolean dmPending = false;
+
                     if (meId != null && !meId.equals(r.getUserId())) {
-                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null); // ✅
+                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null);
+                        dmPending = (chatRoomId != null)
+                                || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, r.getUserId());
                     }
+
                     return r.toBuilder()
                             .IsMine(meId != null && r.getUserId().equals(meId))
-                            .dmRequestPending(false)
                             .chatRoomId(chatRoomId)
+                            .dmRequestPending(dmPending) // ✅ 실제 값
                             .build();
                 })
                 .toList();
