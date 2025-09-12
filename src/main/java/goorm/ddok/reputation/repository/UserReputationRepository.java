@@ -30,4 +30,11 @@ public interface UserReputationRepository extends JpaRepository<UserReputation, 
      *  LIMIT 10
      */
     List<UserReputation> findTop10ByOrderByTemperatureDescUpdatedAtDesc();
+
+    /**
+     * 온도 TOP1 조회
+     * 정렬 조건은 TOP10 과 같다.
+     */
+    Optional<UserReputation> findTop1ByOrderByTemperatureDescUpdatedAtDesc();
+
 }
