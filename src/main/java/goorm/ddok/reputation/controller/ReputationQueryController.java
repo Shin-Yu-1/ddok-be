@@ -5,6 +5,7 @@ import goorm.ddok.global.scheduler.ReputationRankingScheduler;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
+import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -161,6 +162,27 @@ public class ReputationQueryController {
                 .build();
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
+
+    @Operation(summary = "지역별 온도 랭킹 TOP1 조회", description = "서울, 경기, 강원, 충청, 경상, 전라, 제주 지역별 1위 사용자 조회")
+    @GetMapping("/region")
+    public ApiResponseDto<List<TemperatureRegionResponse>> getRegionTop1Rank(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        List<TemperatureRegionResponse> cached = reputationRankingScheduler.getCachedRegionTop1();
+
+        List<TemperatureRegionResponse> response = cached.stream()
+                .map(r -> r.toBuilder()
+                        .IsMine(currentUser != null && r.getUserId().equals(currentUser.getId()))
+                        // TODO: DM 채팅방 확인 로직 필요
+                        .dmRequestPending(false)
+                        .chatRoomId(null)
+                        .build()
+                )
+                .toList();
+
+        return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
+    }
+
 
 
     @Operation(
