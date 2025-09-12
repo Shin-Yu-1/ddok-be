@@ -4,6 +4,7 @@ package goorm.ddok.chat.service;
 import goorm.ddok.chat.domain.DmRequest;
 import goorm.ddok.chat.domain.DmRequestStatus;
 import goorm.ddok.chat.dto.request.DmRequestDto;
+import goorm.ddok.chat.repository.ChatRepository;
 import goorm.ddok.chat.repository.DmRequestRepository;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
@@ -16,15 +17,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@RequiredArgsConstructor
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class DmRequestCommandService {
 
     private final DmRequestRepository dmRequestRepository;
     private final UserRepository userRepository;
     private final ApplicationEventPublisher eventPublisher;
-
+    private final ChatRepository chatRepository;
 
     public DmRequestDto create(Long toUserId, CustomUserDetails loginUser) {
         if (loginUser == null || loginUser.getUser() == null) {
@@ -33,6 +34,14 @@ public class DmRequestCommandService {
         Long fromUserId = loginUser.getUser().getId();
         if (fromUserId.equals(toUserId)) {
             throw new GlobalException(ErrorCode.CANNOT_DM_SELF);
+        }
+
+        boolean hasPrivateRoom =
+                chatRepository.existsPrivateRoomByUserIds(fromUserId, toUserId)
+        || chatRepository.existsPrivateRoomByUserIds(toUserId, fromUserId);
+
+        if (hasPrivateRoom) {
+            throw new GlobalException(ErrorCode.CHAT_ROOM_ALREADY_EXISTS);
         }
 
         User from = userRepository.findById(fromUserId)
@@ -52,7 +61,6 @@ public class DmRequestCommandService {
                         .build()
         );
 
-        // 알림 이벤트 발행 (받는 사람에게 DM_REQUEST)
         eventPublisher.publishEvent(
                 DmRequestCreatedEvent.builder()
                         .dmRequestId(saved.getId())
