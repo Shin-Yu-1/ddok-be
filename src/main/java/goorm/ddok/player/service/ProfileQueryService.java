@@ -6,6 +6,7 @@ import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.badge.repository.BadgeTierRuleRepository;
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -34,6 +35,7 @@ public class ProfileQueryService {
     private final BadgeTierRuleRepository badgeTierRuleRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     public ProfileDetailResponse getProfile(Long targetUserId, Long loginUserId) {
         User user = userRepository.findById(targetUserId)
@@ -46,6 +48,12 @@ public class ProfileQueryService {
             chatRoomId = chatRoomService.findPrivateRoomId(loginUserId, targetUserId).orElse(null);
         }
 
+        boolean dmPending = false;
+        if (!isMine && loginUserId != null) {
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(loginUserId, targetUserId);
+        }
+
 
         // 프로필 공개 여부 확인
         if (!isMine && !user.isPublic()) {
@@ -54,6 +62,7 @@ public class ProfileQueryService {
                     .IsMine(isMine)
                     .IsPublic(user.isPublic())
                     .chatRoomId(chatRoomId)
+                    .dmRequestPending(dmPending)
                     .profileImageUrl(user.getProfileImageUrl())
                     .nickname(user.getNickname())
                     .temperature(findTemperature(user))
@@ -70,7 +79,7 @@ public class ProfileQueryService {
                 .IsMine(isMine)
                 .IsPublic(user.isPublic())
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(false) // TODO: DM 요청 여부 확인 로직 추가
+                .dmRequestPending(dmPending)
                 .profileImageUrl(user.getProfileImageUrl())
                 .nickname(user.getNickname())
                 .temperature(findTemperature(user))
