@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/teams")
-@Tag(name = "Team", description = "팀 관리 API")
+@Tag(name = "Main", description = "메인페이지 API")
 public class TeamCountController {
 
     private final TeamCountService teamCountService;
