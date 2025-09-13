@@ -342,7 +342,6 @@ public class ProjectRecruitmentService {
                     existing.setStatus(ApplicationStatus.PENDING);
                     projectApplicationRepository.save(existing);
 
-                    // 🔔 이벤트 발행 (AFTER_COMMIT에서 푸시)
                     eventPublisher.publishEvent(
                             ProjectJoinRequestedEvent.builder()
                                     .applicationId(existing.getId())
