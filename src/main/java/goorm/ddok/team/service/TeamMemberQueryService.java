@@ -2,6 +2,8 @@ package goorm.ddok.team.service;
 
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.dto.response.PaginationResponse;
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,9 @@ public class TeamMemberQueryService {
     private final ProjectRecruitmentRepository projectRecruitmentRepository;
     private final StudyRecruitmentRepository studyRecruitmentRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
+
 
     /**
      * 특정 팀(teamId)의 확정된 팀원 목록을 조회합니다.
@@ -83,7 +89,7 @@ public class TeamMemberQueryService {
                         .role(m.getRole().name())
                         .joinedAt(m.getCreatedAt())
                         .IsMine(m.getUser().getId().equals(currentUserId))
-                        .user(toUserResponse(m.getUser()))
+                        .user(toUserResponse(m.getUser(), currentUserId))
                         .build())
                 .toList();
 
@@ -129,9 +135,18 @@ public class TeamMemberQueryService {
      * @param user 변환할 사용자
      * @return {@link TeamApplicantUserResponse} 사용자 요약 정보
      */
-    private TeamApplicantUserResponse toUserResponse(User user) {
+    private TeamApplicantUserResponse toUserResponse(User user, Long currentUserId) {
         BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(user);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
+
+        Long chatRoomId = null;
+        boolean dmPending = false;
+
+        if (currentUserId != null && !Objects.equals(currentUserId, user.getId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(currentUserId, user.getId())
+                    .orElse(null);
+            dmPending = dmRequestService.isDmPendingOrAcceptedOrChatExists(currentUserId, user.getId());
+        }
 
         return TeamApplicantUserResponse.builder()
                 .userId(user.getId())
@@ -139,8 +154,8 @@ public class TeamMemberQueryService {
                 .profileImageUrl(user.getProfileImageUrl())
                 .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
-                .chatRoomId(null)
-                .dmRequestPending(false)
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .mainBadge(mainBadge)
                 .abandonBadge(abandonBadge)
                 .build();

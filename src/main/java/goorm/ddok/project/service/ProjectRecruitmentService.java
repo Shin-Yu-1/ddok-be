@@ -8,6 +8,8 @@ import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.notification.event.ProjectJoinRequestDecisionEvent;
+import goorm.ddok.notification.event.ProjectJoinRequestedEvent;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
 import goorm.ddok.project.dto.response.ProjectRecruitmentResponse;
@@ -18,6 +20,7 @@ import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.service.TeamCommandService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,6 +43,7 @@ public class ProjectRecruitmentService {
     private final BannerImageService bannerImageService;
     private final FileService fileService;
     private final TeamCommandService teamCommandService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public ProjectRecruitmentResponse createProject(
             ProjectRecruitmentCreateRequest request,
@@ -282,6 +286,7 @@ public class ProjectRecruitmentService {
             throw new GlobalException(ErrorCode.UNAUTHORIZED);
         }
         Long userId = userDetails.getUser().getId();
+        String nickname = userDetails.getUser().getNickname(); // 닉네임 필드명에 맞게
 
         ProjectRecruitment project = projectRecruitmentRepository.findById(projectId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.PROJECT_NOT_FOUND));
@@ -298,6 +303,7 @@ public class ProjectRecruitmentService {
 
             switch (existing.getStatus()) {
                 case PENDING -> {
+                    // ✅ 취소: 알림 발송 안 함
                     if (appliedPosition == null
                             || existing.getPosition().getPositionName().equals(appliedPosition)) {
 
@@ -313,7 +319,7 @@ public class ProjectRecruitmentService {
                                 throw new GlobalException(ErrorCode.APPLICATION_ALREADY_APPROVED);
                             }
                         }
-                        return false;
+                        return false; // isApplied = false
                     } else {
                         throw new GlobalException(ErrorCode.ALREADY_APPLIED);
                     }
@@ -336,7 +342,20 @@ public class ProjectRecruitmentService {
                     existing.setStatus(ApplicationStatus.PENDING);
                     projectApplicationRepository.save(existing);
 
-                    return true;
+                    // 🔔 이벤트 발행 (AFTER_COMMIT에서 푸시)
+                    eventPublisher.publishEvent(
+                            ProjectJoinRequestedEvent.builder()
+                                    .applicationId(existing.getId())
+                                    .applicantUserId(userId)
+                                    .applicantNickname(nickname)
+                                    .projectId(project.getId())
+                                    .projectTitle(project.getTitle()) // 필드명에 맞게
+                                    .appliedPosition(targetPos.getPositionName())
+                                    .ownerUserId(project.getUser().getId())
+                                    .build()
+                    );
+
+                    return true; // isApplied = true
                 }
             }
             return false;
@@ -360,6 +379,20 @@ public class ProjectRecruitmentService {
                 .status(ApplicationStatus.PENDING)
                 .build();
         projectApplicationRepository.save(newApp);
+
+        eventPublisher.publishEvent(
+                ProjectJoinRequestedEvent.builder()
+                        .applicationId(newApp.getId())
+                        .applicantUserId(userId)
+                        .applicantNickname(nickname)
+                        .projectId(project.getId())
+                        .projectTitle(project.getTitle())
+                        .appliedPosition(position.getPositionName())
+                        .ownerUserId(project.getUser().getId())
+                        .build()
+        );
+
+
         return true;
     }
 

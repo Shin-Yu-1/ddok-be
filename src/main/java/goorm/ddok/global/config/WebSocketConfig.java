@@ -1,6 +1,5 @@
 package goorm.ddok.global.config;
 
-import goorm.ddok.global.websocket.StompAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
@@ -29,7 +28,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/sub");
+        registry.enableSimpleBroker("/sub", "/queue");
         registry.setApplicationDestinationPrefixes("/pub");
         registry.setUserDestinationPrefix("/user");
     }

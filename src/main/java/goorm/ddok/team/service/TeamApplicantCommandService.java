@@ -4,6 +4,12 @@ import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.notification.domain.NotificationType;
+import goorm.ddok.notification.event.ProjectJoinApprovedEvent;
+import goorm.ddok.notification.event.ProjectJoinRejectedEvent;
+import goorm.ddok.notification.event.StudyJoinApprovedEvent;
+import goorm.ddok.notification.event.StudyJoinRejectedEvent;
+import goorm.ddok.notification.repository.NotificationRepository;
 import goorm.ddok.project.domain.ProjectApplication;
 import goorm.ddok.project.domain.ProjectParticipant;
 import goorm.ddok.project.domain.ProjectRecruitment;
@@ -20,8 +26,11 @@ import goorm.ddok.team.domain.TeamMemberRole;
 import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +43,8 @@ public class TeamApplicantCommandService {
     private final ProjectParticipantRepository projectParticipantRepository;
     private final TeamRepository teamRepository;
     private final ChatRoomManagementService chatRoomManagementService;
+    private final ApplicationEventPublisher eventPublisher;
+    private final NotificationRepository notificationRepository;
 
     /**
      * 신청 승인 처리
@@ -46,9 +57,48 @@ public class TeamApplicantCommandService {
         Team team = validateLeader(teamId, user);
 
         if (team.getType() == TeamType.STUDY) {
+            // 0) 이벤트/알림에 쓸 신청 엔티티 사전 로드 (approveStudyApplication은 void)
+            StudyApplication app = studyApplicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
+
+            // 1) 도메인 승인 처리 (기존 메서드 그대로 사용)
             approveStudyApplication(team, applicationId);
+
+            // 2) 승인 이벤트 발행 → 신청자에게 "STUDY_JOIN_APPROVED" 푸시
+            eventPublisher.publishEvent(
+                    StudyJoinApprovedEvent.builder()
+                            .applicantUserId(app.getUser().getId())
+                            .studyId(app.getStudyRecruitment().getId())
+                            .studyTitle(app.getStudyRecruitment().getTitle())
+                            .approverUserId(user.getUser().getId())
+                            .build()
+            );
+
+            // 3) 리더에게 도착해 있던 STUDY_JOIN_REQUEST 알림 processed 처리
+            markRequestNotificationProcessedForStudy(team, app);
+
         } else if (team.getType() == TeamType.PROJECT) {
+            // 0) 이벤트/알림에 쓸 신청 엔티티 사전 로드
+            ProjectApplication app = projectApplicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
+
+            // 1) 도메인 승인 처리
             approveProjectApplication(team, applicationId);
+
+            // 2) 승인 이벤트 발행 → 신청자에게 "PROJECT_JOIN_APPROVED" 푸시
+            eventPublisher.publishEvent(
+                    ProjectJoinApprovedEvent.builder()
+                            .applicantUserId(app.getUser().getId())
+                            .projectId(app.getPosition().getProjectRecruitment().getId())
+                            .projectTitle(app.getPosition().getProjectRecruitment().getTitle())
+                            .approverUserId(user.getUser().getId())
+                            .applicationId(app.getId())
+                            .build()
+            );
+
+            // 3) 리더에게 도착해 있던 PROJECT_JOIN_REQUEST 알림 processed 처리
+            markRequestNotificationProcessedForProject(team, app);
+
         } else {
             throw new GlobalException(ErrorCode.INVALID_TEAM_TYPE);
         }
@@ -65,12 +115,68 @@ public class TeamApplicantCommandService {
         Team team = validateLeader(teamId, user);
 
         if (team.getType() == TeamType.STUDY) {
+            StudyApplication app = studyApplicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
+
             rejectStudyApplication(applicationId);
+
+            eventPublisher.publishEvent(
+                    StudyJoinRejectedEvent.builder()
+                            .applicantUserId(app.getUser().getId())
+                            .studyId(app.getStudyRecruitment().getId())
+                            .studyTitle(app.getStudyRecruitment().getTitle())
+                            .rejectorUserId(user.getUser().getId())
+                            .applicationId(app.getId())
+                            .build()
+            );
+
+            markRequestNotificationProcessedForStudy(team, app);
+
         } else if (team.getType() == TeamType.PROJECT) {
+            ProjectApplication app = projectApplicationRepository.findById(applicationId)
+                    .orElseThrow(() -> new GlobalException(ErrorCode.NOT_FOUND));
+
             rejectProjectApplication(applicationId);
+
+            eventPublisher.publishEvent(
+                    ProjectJoinRejectedEvent.builder()
+                            .applicantUserId(app.getUser().getId())
+                            .projectId(app.getPosition().getProjectRecruitment().getId())
+                            .projectTitle(app.getPosition().getProjectRecruitment().getTitle())
+                            .rejectorUserId(user.getUser().getId())
+                            .applicationId(app.getId())
+                            .build()
+            );
+
+            markRequestNotificationProcessedForProject(team, app);
+
         } else {
             throw new GlobalException(ErrorCode.INVALID_TEAM_TYPE);
         }
+    }
+
+    @Transactional
+    protected void markRequestNotificationProcessedForStudy(Team team, StudyApplication app) {
+        notificationRepository.markProcessedByContext(
+                team.getUser().getId(),
+                NotificationType.STUDY_JOIN_REQUEST,
+                null,
+                app.getStudyRecruitment().getId(),
+                app.getUser().getId(),
+                Instant.now()
+        );
+    }
+
+    @Transactional
+    protected void markRequestNotificationProcessedForProject(Team team, ProjectApplication app) {
+        notificationRepository.markProcessedByContext(
+                team.getUser().getId(),
+                NotificationType.PROJECT_JOIN_REQUEST,
+                app.getPosition().getProjectRecruitment().getId(),
+                null,
+                app.getUser().getId(),
+                Instant.now()
+        );
     }
 
     /**

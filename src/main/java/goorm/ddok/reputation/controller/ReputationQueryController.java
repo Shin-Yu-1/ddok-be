@@ -1,5 +1,7 @@
 package goorm.ddok.reputation.controller;
 
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.scheduler.ReputationRankingScheduler;
 import goorm.ddok.global.security.auth.CustomUserDetails;
@@ -30,6 +32,8 @@ public class ReputationQueryController {
 
     private final ReputationQueryService reputationQueryService;
     private final ReputationRankingScheduler reputationRankingScheduler;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     @Operation(
             summary = "전체 온도 랭킹 TOP10 조회",
@@ -86,15 +90,27 @@ public class ReputationQueryController {
             ) {
         List<TemperatureRankResponse> cached = reputationRankingScheduler.getCachedTop10();
 
+        Long meId = (currentUser != null) ? currentUser.getId() : null;
+
         List<TemperatureRankResponse> response = cached.stream()
-                .map(r -> r.toBuilder()
-                        .IsMine(currentUser != null && r.getUserId().equals(currentUser.getId()))
-                        // TODO: DM 채팅방 확인 로직 필요
-                        .dmRequestPending(false)
-                        .chatRoomId(null)
-                        .build()
-                )
+                .map(r -> {
+                    Long chatRoomId = null;
+                    boolean dmPending = false;
+
+                    if (meId != null && !meId.equals(r.getUserId())) {
+                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null);
+                        dmPending = (chatRoomId != null)
+                                || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, r.getUserId());
+                    }
+
+                    return r.toBuilder()
+                            .IsMine(meId != null && r.getUserId().equals(meId))
+                            .chatRoomId(chatRoomId)
+                            .dmRequestPending(dmPending) // ✅ 실제 값
+                            .build();
+                })
                 .toList();
+
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
@@ -154,12 +170,24 @@ public class ReputationQueryController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         TemperatureRankResponse cached = reputationRankingScheduler.getCachedTop1();
+
+        Long meId = (currentUser != null) ? currentUser.getId() : null;
+
+        Long chatRoomId = null;
+        boolean dmPending = false;
+
+        if (meId != null && !meId.equals(cached.getUserId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, cached.getUserId()).orElse(null);
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, cached.getUserId());
+        }
+
         TemperatureRankResponse response = cached.toBuilder()
-                .IsMine(currentUser != null && cached.getUserId().equals(currentUser.getId()))
-                // TODO: DM 채팅방 확인 로직 필요
-                .dmRequestPending(false)
-                .chatRoomId(null)
+                .IsMine(meId != null && cached.getUserId().equals(meId))
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending) // ✅ 실제 값
                 .build();
+
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
 
@@ -170,14 +198,25 @@ public class ReputationQueryController {
     ) {
         List<TemperatureRegionResponse> cached = reputationRankingScheduler.getCachedRegionTop1();
 
+        Long meId = (currentUser != null) ? currentUser.getId() : null;
+
         List<TemperatureRegionResponse> response = cached.stream()
-                .map(r -> r.toBuilder()
-                        .IsMine(currentUser != null && r.getUserId().equals(currentUser.getId()))
-                        // TODO: DM 채팅방 확인 로직 필요
-                        .dmRequestPending(false)
-                        .chatRoomId(null)
-                        .build()
-                )
+                .map(r -> {
+                    Long chatRoomId = null;
+                    boolean dmPending = false;
+
+                    if (meId != null && !meId.equals(r.getUserId())) {
+                        chatRoomId = chatRoomService.findPrivateRoomId(meId, r.getUserId()).orElse(null);
+                        dmPending = (chatRoomId != null)
+                                || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, r.getUserId());
+                    }
+
+                    return r.toBuilder()
+                            .IsMine(meId != null && r.getUserId().equals(meId))
+                            .chatRoomId(chatRoomId)
+                            .dmRequestPending(dmPending) // ✅ 실제 값
+                            .build();
+                })
                 .toList();
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);

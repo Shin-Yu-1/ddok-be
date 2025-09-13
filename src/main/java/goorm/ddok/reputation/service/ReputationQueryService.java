@@ -120,7 +120,7 @@ public class ReputationQueryService {
         return switch (mainRegion) {
             case "서울" -> List.of("서울특별시");
             case "경기" -> List.of("경기도", "인천광역시");
-            case "강원" -> List.of("강원도");
+            case "강원" -> List.of("강원도", "강원특별자치도");
             case "충청" -> List.of("충청북도", "충청남도", "대전광역시", "세종특별자치시", "충북", "충남", "세종시");
             case "경상" -> List.of("경상북도", "경상남도", "대구광역시", "부산광역시", "울산광역시", "경북", "경남", "대구");
             case "전라" -> List.of("전라북도", "전라남도", "광주광역시", "전남", "전북", "광주");

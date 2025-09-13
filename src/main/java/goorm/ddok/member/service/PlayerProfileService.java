@@ -1,6 +1,8 @@
 package goorm.ddok.member.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -36,6 +38,8 @@ public class PlayerProfileService {
     private final UserReputationRepository userReputationRepository;
     private final UserPortfolioRepository userPortfolioRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     /* -------- 포지션 수정 -------- */
     public ProfileDto updatePositions(PositionsUpdateRequest req, CustomUserDetails me) {
@@ -281,6 +285,18 @@ public class PlayerProfileService {
 
         Long meId = (me != null && me.getUser() != null) ? me.getUser().getId() : null;
 
+        boolean isMine = meId != null && Objects.equals(meId, fresh.getId());
+
+        Long chatRoomId = null;
+        if (!isMine && meId != null) {
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, fresh.getId()).orElse(null);
+        }
+
+        boolean dmPending = false;
+        if (!isMine && meId != null) {
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, fresh.getId());
+        }
         BadgeDto mainBadge = badgeService.getRepresentativeGoodBadge(fresh);
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(fresh);
 
@@ -332,9 +348,9 @@ public class PlayerProfileService {
 
         return ProfileDto.builder()
                 .userId(fresh.getId())
-                .IsMine(meId != null && Objects.equals(meId, fresh.getId()))
-                .chatRoomId(null)
-                .dmRequestPending(false)
+                .IsMine(isMine)
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .IsPublic(fresh.isPublic())
                 .profileImageUrl(fresh.getProfileImageUrl())
                 .nickname(fresh.getNickname())

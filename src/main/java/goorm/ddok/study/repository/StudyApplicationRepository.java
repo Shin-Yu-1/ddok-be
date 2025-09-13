@@ -37,6 +37,9 @@ public interface StudyApplicationRepository extends JpaRepository<StudyApplicati
             "where a.id = :id and a.applicationStatus = 'REJECTED'")
     int reapplyIfRejected(@Param("id") Long id);
 
+    Optional<StudyApplication> findByUser_IdAndStudyRecruitment_IdAndApplicationStatus(
+            Long userId, Long studyId, ApplicationStatus status);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         update StudyApplication a
