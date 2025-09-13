@@ -5,6 +5,7 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.member.dto.response.PlayerProfileMapItemResponse;
 import goorm.ddok.member.repository.UserRepository;
+import goorm.ddok.project.domain.TeamStatus;
 import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 import goorm.ddok.study.repository.StudyRecruitmentRepository;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +44,7 @@ public class PlayerProfileMapService {
                     .category("project")
                     .projectId(r.getId())
                     .title(r.getTitle())
-                    .teamStatus(r.getTeamStatus().toString())
+                    .teamStatus(normalizeProjectTeamStatus(r.getTeamStatus()))
                     .location(LocationDto.builder()
                             .address(composeRoadAddress(
                                     r.getRegion1depthName(),
@@ -72,7 +73,7 @@ public class PlayerProfileMapService {
                     .category("study")
                     .studyId(r.getId())
                     .title(r.getTitle())
-                    .teamStatus(r.getTeamStatus().toString())
+                    .teamStatus(normalizeStudyTeamStatus(r.getTeamStatus()))
                     .location(LocationDto.builder()
                             .address(composeRoadAddress(
                                     r.getRegion1depthName(),
@@ -153,6 +154,16 @@ public class PlayerProfileMapService {
         if (hasAll && (swLat.compareTo(neLat) > 0 || swLng.compareTo(neLng) > 0)) {
             throw new GlobalException(ErrorCode.INVALID_MAP_BOUNDS);
         }
+    }
+
+    private String normalizeProjectTeamStatus(goorm.ddok.project.domain.TeamStatus status) {
+        if (status == null) return "ONGOING";
+        return (status == TeamStatus.RECRUITING) ? "ONGOING" : status.name();
+    }
+
+    private String normalizeStudyTeamStatus(goorm.ddok.study.domain.TeamStatus status) {
+        if (status == null) return "ONGOING";
+        return (status == goorm.ddok.study.domain.TeamStatus.RECRUITING) ? "ONGOING" : status.name();
     }
 
 }

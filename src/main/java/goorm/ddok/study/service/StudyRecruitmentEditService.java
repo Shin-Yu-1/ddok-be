@@ -12,11 +12,7 @@ import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.BannerImageService;
-import goorm.ddok.study.domain.ParticipantRole;
-import goorm.ddok.study.domain.StudyMode;
-import goorm.ddok.study.domain.StudyParticipant;
-import goorm.ddok.study.domain.StudyRecruitment;
-import goorm.ddok.study.domain.StudyRecruitmentTrait;
+import goorm.ddok.study.domain.*;
 import goorm.ddok.study.dto.UserSummaryDto;
 import goorm.ddok.study.dto.request.StudyRecruitmentUpdateRequest;
 import goorm.ddok.study.dto.response.StudyRecruitmentDetailResponse;
@@ -173,7 +169,8 @@ public class StudyRecruitmentEditService {
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
                 .toList();
 
-        int applicantCount = (int) studyApplicationRepository.countByStudyRecruitment(study);
+        int applicantCount = (int) studyApplicationRepository
+                .countByStudyRecruitmentAndApplicationStatusNot(study, ApplicationStatus.REJECTED);
         int participantsCount = members.size();
 
         UserSummaryDto leaderDto = toUserSummaryDto(leader, me);

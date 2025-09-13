@@ -8,7 +8,6 @@ import goorm.ddok.global.file.FileService;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.global.util.BannerImageService;
 import goorm.ddok.member.domain.User;
-import goorm.ddok.notification.event.ProjectJoinRequestDecisionEvent;
 import goorm.ddok.notification.event.ProjectJoinRequestedEvent;
 import goorm.ddok.project.domain.*;
 import goorm.ddok.project.dto.request.ProjectRecruitmentCreateRequest;
@@ -342,7 +341,6 @@ public class ProjectRecruitmentService {
                     existing.setStatus(ApplicationStatus.PENDING);
                     projectApplicationRepository.save(existing);
 
-                    // 🔔 이벤트 발행 (AFTER_COMMIT에서 푸시)
                     eventPublisher.publishEvent(
                             ProjectJoinRequestedEvent.builder()
                                     .applicationId(existing.getId())

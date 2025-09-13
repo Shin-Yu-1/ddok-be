@@ -31,9 +31,6 @@ public class MapService {
     private final CafeRepository cafeRepository;
     private final BadgeService badgeService;
 
-
-    private static final Double DEFAULT_TEMPERATURE = 36.5;
-
     public List<AllMapItemResponse> getAllInBounds(
             BigDecimal swLat, BigDecimal swLng,
             BigDecimal neLat, BigDecimal neLng,

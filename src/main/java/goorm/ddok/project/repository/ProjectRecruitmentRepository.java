@@ -84,8 +84,6 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
     where pp.deletedAt is null
       and pr.deletedAt is null
       and pp.user.id = :userId
-      and pr.teamStatus in (goorm.ddok.project.domain.TeamStatus.ONGOING,
-                            goorm.ddok.project.domain.TeamStatus.CLOSED)
       and pr.latitude  is not null
       and pr.longitude is not null
       and pr.latitude  between :swLat and :neLat
@@ -142,5 +140,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
 
     @EntityGraph(attributePaths = "positions")
     Page<ProjectRecruitment> findAll(Specification<ProjectRecruitment> spec, Pageable pageable);
+
+    long countByTeamStatusAndDeletedAtIsNull(goorm.ddok.project.domain.TeamStatus teamStatus);
 }
 
