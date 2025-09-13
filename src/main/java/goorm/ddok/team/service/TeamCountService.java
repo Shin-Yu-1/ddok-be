@@ -18,7 +18,13 @@ public class TeamCountService {
         Long projectTeamCount = projectRecruitmentRepository.countByTeamStatusAndDeletedAtIsNull(goorm.ddok.project.domain.TeamStatus.ONGOING);
         Long studyTeamCount = studyRecruitmentRepository.countByTeamStatusAndDeletedAtIsNull(goorm.ddok.study.domain.TeamStatus.ONGOING);
 
+        Long projectCount = projectRecruitmentRepository.countByTeamStatusAndDeletedAtIsNull(goorm.ddok.project.domain.TeamStatus.RECRUITING);
+        Long studyCount = studyRecruitmentRepository.countByTeamStatusAndDeletedAtIsNull(goorm.ddok.study.domain.TeamStatus.RECRUITING);
+
         return TeamCountResponse.builder()
-                .count(projectTeamCount+studyTeamCount).build();
+                .projectCount(projectCount)
+                .studyCount(studyCount)
+                .teamCount(projectTeamCount+studyTeamCount)
+                .build();
     }
 }

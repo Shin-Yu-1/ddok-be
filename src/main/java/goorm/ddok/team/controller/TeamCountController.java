@@ -22,11 +22,11 @@ public class TeamCountController {
 
     @Operation(
             summary = "팀 카운트 조회",
-            description = "진행 중인 프로젝트 팀과 스터디 팀의 개수를 조회합니다."
+            description = "모집 중인 프로젝트 팀, 모집 중인 스터디 팀, 진행 중인 전체 팀 개수를 조회합니다."
     )
     @GetMapping("/count")
     public ResponseEntity<ApiResponseDto<TeamCountResponse>> getTeamCount() {
         TeamCountResponse response = teamCountService.getTeamCountResponse();
-        return ResponseEntity.ok(ApiResponseDto.of(200, "팀 카운트 조회 성공", response));
+        return ResponseEntity.ok(ApiResponseDto.of(200, "프로젝트/스터디/팀 카운트 조회 성공", response));
     }
 }
