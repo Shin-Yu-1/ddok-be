@@ -59,7 +59,7 @@ public class PlayerProfileService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        if (subs.size() != 2) {
+        if (subsRaw.size() != 2) {
             throw new GlobalException(ErrorCode.PROFILE_POSITION_TOTAL_MUST_BE_TWO);
         }
 
