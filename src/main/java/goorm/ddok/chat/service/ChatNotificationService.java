@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -20,6 +21,7 @@ public class ChatNotificationService {
 
         Long roomId = saved.getRoomId();
         Long senderId = saved.getSenderId();
+        Instant createdAt = saved.getCreatedAt();
 
         // 멤버 조회
         List<ChatRoomMember> members =
@@ -30,7 +32,8 @@ public class ChatNotificationService {
 
             Map<String, Object> payload = Map.of(
                     "type", "NEW_MESSAGE_FLAG",
-                    "roomId", roomId
+                    "roomId", roomId,
+                    "lastRead", createdAt
             );
 
             String destination = "/sub/users/" + userId + "/notifications";
