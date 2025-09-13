@@ -33,14 +33,14 @@ public class ChatRoomQueryService {
     private final UserRepository userRepository;
     private final ChatMapper chatMapper;
 
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+    private User getUserById(Long id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
     }
 
     // 1:1 채팅 목록 조회
-    public ChatListResponse getPrivateChats(String email, Pageable pageable) {
-        User me = getUserByEmail(email);
+    public ChatListResponse getPrivateChats(Long userId, Pageable pageable) {
+        User me = getUserById(userId);
         Page<ChatRoom> page = chatRepository.pageRoomsByMemberAndTypeOrderByRecent(
                 me, ChatRoomType.PRIVATE, pageable);
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
@@ -52,8 +52,8 @@ public class ChatRoomQueryService {
     }
 
     // 팀 채팅 목록 조회
-    public ChatListResponse getTeamChats(String email, Pageable pageable) {
-        User me = getUserByEmail(email);
+    public ChatListResponse getTeamChats(Long userId, Pageable pageable) {
+        User me = getUserById(userId);
         Page<ChatRoom> page = chatRepository.pageRoomsByMemberAndTypeOrderByRecent(
                 me, ChatRoomType.GROUP, pageable);
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
@@ -65,8 +65,8 @@ public class ChatRoomQueryService {
     }
 
     // 1:1 채팅 목록 검색
-    public ChatListResponse searchPrivateChats(String email, String search, Pageable pageable) {
-        User me = getUserByEmail(email);
+    public ChatListResponse searchPrivateChats(Long userId, String search, Pageable pageable) {
+        User me = getUserById(userId);
         Page<ChatRoom> page = chatRepository.pagePrivateRoomsByMemberAndPeerNickname(
                 me, search, pageable);
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
@@ -78,8 +78,8 @@ public class ChatRoomQueryService {
     }
 
     // 팀 채팅 목록 검색
-    public ChatListResponse searchTeamChats(String email, String search, Pageable pageable) {
-        User me = getUserByEmail(email);
+    public ChatListResponse searchTeamChats(Long userId, String search, Pageable pageable) {
+        User me = getUserById(userId);
         Page<ChatRoom> page = chatRepository.pageGroupRoomsByMemberAndRoomOrMemberName(
                 me, search, pageable);
         List<ChatRoomResponse> chats = chatMapper.toChatRoomDtoList(page.getContent(), me.getId());
@@ -91,8 +91,8 @@ public class ChatRoomQueryService {
     }
 
     // 채팅 멤버 조회
-    public ChatMembersResponse getRoomMembers(Long roomId, String email) {
-        User me = getUserByEmail(email);
+    public ChatMembersResponse getRoomMembers(Long roomId, Long userId) {
+        User me = getUserById(userId);
         ChatRoom roomRef = chatRepository.getReferenceById(roomId);
 
         boolean isMember = chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(roomRef, me);

@@ -39,13 +39,12 @@ public class ChatWsController {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
-        String email = user.getEmail();
 
         if (payload.getContentType() == null) {
             payload.setContentType(ChatContentType.TEXT);
         }
 
-        ChatMessageResponse saved = chatMessageService.sendMessage(email, roomId, payload);
+        ChatMessageResponse saved = chatMessageService.sendMessage(userId, roomId, payload);
 
         messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
     }
@@ -67,9 +66,8 @@ public class ChatWsController {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
-        String email = user.getEmail();
 
-        ChatMessageResponse saved = chatMessageService.sendMessage(email, roomId, payload);
+        ChatMessageResponse saved = chatMessageService.sendMessage(userId, roomId, payload);
         messagingTemplate.convertAndSend("/sub/chats/" + roomId, saved);
     }
 }

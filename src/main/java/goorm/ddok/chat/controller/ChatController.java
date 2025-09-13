@@ -48,20 +48,27 @@ public class ChatController {
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
+
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = loginUser.getId();
+
         if (size > 100) size = 100;
 
         Pageable pageable = PageRequest.of(page, size);
-        String email = authentication.getName();
 
         ChatListResponse response =
                 (search == null)
-                        ? chatRoomQueryService.getPrivateChats(email, pageable)
-                        : chatRoomQueryService.searchPrivateChats(email, search.trim(), pageable);
+                        ? chatRoomQueryService.getPrivateChats(userId, pageable)
+                        : chatRoomQueryService.searchPrivateChats(userId, search.trim(), pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "개인 채팅 목록 조회 성공", response));
     }
@@ -87,20 +94,27 @@ public class ChatController {
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
+
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
         if (size > 100) size = 100;
 
+        Long userId = loginUser.getId();
+
         Pageable pageable = PageRequest.of(page, size);
-        String email = authentication.getName();
 
         ChatListResponse response =
                 (search == null)
-                        ? chatRoomQueryService.getTeamChats(email, pageable)
-                        : chatRoomQueryService.searchTeamChats(email, search.trim(), pageable);
+                        ? chatRoomQueryService.getTeamChats(userId, pageable)
+                        : chatRoomQueryService.searchTeamChats(userId, search.trim(), pageable);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "팀 채팅 목록 조회 성공", response));
     }
@@ -128,13 +142,20 @@ public class ChatController {
     public ResponseEntity<ApiResponseDto<ChatMembersResponse>> getMembers(
             @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
         if (roomId == null || roomId <= 0) {
             throw new GlobalException(ErrorCode.INVALID_ROOM_ID);
         }
-        String email = authentication.getName();
-        ChatMembersResponse response = chatRoomQueryService.getRoomMembers(roomId, email);
+
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = loginUser.getId();
+
+        ChatMembersResponse response = chatRoomQueryService.getRoomMembers(roomId, userId);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 인원 조회 성공", response));
     }
@@ -160,14 +181,20 @@ public class ChatController {
             @Parameter(description = "채팅방 ID", example = "1", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
             @Valid @RequestBody ChatMessageRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
         if (!StringUtils.hasText(request.getContentText())) {
             throw new GlobalException(ErrorCode.CHAT_MESSAGE_INVALID);
         }
 
-        String email = authentication.getName();
-        ChatMessageResponse response = chatMessageService.sendMessage(email, roomId, request);
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = loginUser.getId();
+
+        ChatMessageResponse response = chatMessageService.sendMessage(userId, roomId, request);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "메시지 전송 성공", response));
     }
@@ -180,18 +207,24 @@ public class ChatController {
             @RequestParam(value = "search", required = false) String search,
             @Parameter(description = "페이지 번호 (0부터 시작)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (최대 100)") @RequestParam(defaultValue = "10") int size,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
         if (search != null && search.trim().isEmpty()) {
             throw new GlobalException(ErrorCode.INVALID_SEARCH_KEYWORD);
         }
+
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
         if (size > 100) size = 100;
 
+        Long userId = loginUser.getId();
+
         Pageable pageable = PageRequest.of(page, size);
-        String email = authentication.getName();
 
         ChatMessageListResponse response =
-                chatMessageService.getChatMessages(email, roomId, pageable, search);
+                chatMessageService.getChatMessages(userId, roomId, pageable, search);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "채팅방 메세지 조회 성공", response));
     }
@@ -202,10 +235,16 @@ public class ChatController {
             @Parameter(description = "채팅방 ID", example = "123", required = true, in = ParameterIn.PATH)
             @PathVariable Long roomId,
             @Valid @RequestBody LastReadMessageRequest request,
-            Authentication authentication) {
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
 
-        String email = authentication.getName();
-        ChatReadResponse response = chatMessageService.lastReadMessage(email, roomId, request);
+        if (loginUser == null) {
+            throw new GlobalException(ErrorCode.UNAUTHORIZED);
+        }
+
+        Long userId = loginUser.getId();
+
+        ChatReadResponse response = chatMessageService.lastReadMessage(userId, roomId, request);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", response));
     }

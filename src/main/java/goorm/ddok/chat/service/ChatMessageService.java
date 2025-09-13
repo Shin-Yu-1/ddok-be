@@ -32,8 +32,8 @@ public class ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
 
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
     }
 
@@ -44,8 +44,8 @@ public class ChatMessageService {
 
     // 메시지 전송
     @Transactional
-    public ChatMessageResponse sendMessage(String email, Long roomId, ChatMessageRequest request) {
-        User sender = getUserByEmail(email);
+    public ChatMessageResponse sendMessage(Long userId, Long roomId, ChatMessageRequest request) {
+        User sender = getUserById(userId);
         ChatRoom room = getRoomById(roomId);
 
         if (!chatRoomMemberRepository.existsByRoomAndUser(room, sender)) {
@@ -80,8 +80,8 @@ public class ChatMessageService {
 
     // 채팅 메시지 목록/검색
     @Transactional
-    public ChatMessageListResponse getChatMessages(String email, Long roomId, Pageable pageable, String search) {
-        User me = getUserByEmail(email);
+    public ChatMessageListResponse getChatMessages(Long userId, Long roomId, Pageable pageable, String search) {
+        User me = getUserById(userId);
         ChatRoom room = getRoomById(roomId);
 
         if (!chatRoomMemberRepository.existsByRoomAndUserAndDeletedAtIsNull(room, me)) {
@@ -114,8 +114,8 @@ public class ChatMessageService {
 
     // 마지막 읽은 메시지 처리
     @Transactional
-    public ChatReadResponse lastReadMessage(String email, Long roomId, LastReadMessageRequest request) {
-        User me = getUserByEmail(email);
+    public ChatReadResponse lastReadMessage(Long userId, Long roomId, LastReadMessageRequest request) {
+        User me = getUserById(userId);
         ChatRoom roomRef = chatRepository.getReferenceById(roomId);
 
         ChatRoomMember member = chatRoomMemberRepository.findByRoomAndUser(roomRef, me)
