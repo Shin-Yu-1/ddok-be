@@ -65,7 +65,8 @@ public class ProjectRecruitmentQueryService {
                 .orElseThrow(() -> new GlobalException(ErrorCode.LEADER_NOT_FOUND));
 
         // 4) 총 지원자 수
-        int applicantCount = projectApplicationRepository.countByPosition_ProjectRecruitment(project);
+        int applicantCount = projectApplicationRepository
+                .countByPosition_ProjectRecruitmentAndStatusNot(project, ApplicationStatus.REJECTED);
 
         // 5) 포지션별 현황
         List<ProjectPositionDto> positionDtos = project.getPositions().stream()
@@ -74,7 +75,8 @@ public class ProjectRecruitmentQueryService {
                             .filter(p -> p.getRole() == ParticipantRole.MEMBER && Objects.equals(p.getPosition(), position))
                             .count();
 
-                    int appliedCountForPos = projectApplicationRepository.countByPosition(position);
+                    int appliedCountForPos =
+                            projectApplicationRepository.countByPositionAndStatusNot(position, ApplicationStatus.REJECTED);
 
                     boolean isApplied =
                             (me != null) &&
@@ -88,7 +90,8 @@ public class ProjectRecruitmentQueryService {
                                     me.getId(), position.getId(), ParticipantRole.MEMBER);
 
                     boolean alreadyAppliedOtherPos = (me != null) &&
-                            projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_Id(me.getId(), project.getId())
+                            (projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(me.getId(), project.getId(), ApplicationStatus.PENDING) ||
+                            projectApplicationRepository.existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(me.getId(), project.getId(), ApplicationStatus.APPROVED))
                             && !isApplied;
 
                     boolean hasPendingInProject =

@@ -19,8 +19,8 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     /**
      * 특정 모집글(ProjectRecruitment)에 대한 전체 지원자 수 조회
      */
-    int countByPosition_ProjectRecruitment(ProjectRecruitment recruitment);
-
+    int countByPosition_ProjectRecruitmentAndStatusNot(
+            ProjectRecruitment recruitment, ApplicationStatus status);
 
     /** 프로젝트 기준 전체 지원 수 */
     @Query("""
@@ -55,7 +55,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     /**
      * 특정 포지션(ProjectRecruitmentPosition)에 대한 지원자 수 조회
      */
-    int countByPosition(ProjectRecruitmentPosition position);
+    int countByPositionAndStatusNot(ProjectRecruitmentPosition position, ApplicationStatus status);
 
     /**
      * 특정 유저(userId)가 특정 모집글(projectId)에 지원했는지 여부 확인
@@ -109,6 +109,7 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
                 goorm.ddok.project.domain.ApplicationStatus.REJECTED
         );
     }
+
 }
 
 
