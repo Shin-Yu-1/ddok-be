@@ -33,7 +33,7 @@ public class ChatNotificationService {
             Map<String, Object> payload = Map.of(
                     "type", "NEW_MESSAGE_FLAG",
                     "roomId", roomId,
-                    "lastRead", createdAt
+                    "createdAt", createdAt
             );
 
             String destination = "/sub/users/" + userId + "/notifications";
