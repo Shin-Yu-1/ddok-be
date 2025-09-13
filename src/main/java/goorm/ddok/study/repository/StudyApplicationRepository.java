@@ -15,7 +15,8 @@ import java.util.Optional;
 public interface StudyApplicationRepository extends JpaRepository<StudyApplication, Long> {
 
     /** 특정 모집글(StudyRecruitment)에 대한 전체 지원자 수 조회 */
-    long countByStudyRecruitment(StudyRecruitment study);
+    long countByStudyRecruitmentAndApplicationStatusNot(
+            StudyRecruitment study, goorm.ddok.study.domain.ApplicationStatus status);
 
     /** 특정 유저(userId)가 특정 스터디 모집글(studyId)에 지원했는지 여부 확인 */
     Optional<StudyApplication> findByUser_IdAndStudyRecruitment_Id(Long userId, Long studyId);
