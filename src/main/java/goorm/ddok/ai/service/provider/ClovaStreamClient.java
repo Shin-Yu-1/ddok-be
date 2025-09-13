@@ -1,26 +1,18 @@
 package goorm.ddok.ai.service.provider;
 
 import lombok.RequiredArgsConstructor;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
+import okhttp3.*;
 import okio.BufferedSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-/**
- * 네이버 클로바 스튜디오 스트리밍 엔드포인트(SSE) 호출 클라이언트
- * - host: https://clovastudio.stream.ntruss.com
- * - path: /v3/chat-completions/{model}  (예: HCX-005)
- * - 인증: Authorization: Bearer {studio-api-key}
- */
 @Component
+@Primary
 @RequiredArgsConstructor
 public class ClovaStreamClient implements AiModelClient {
 
@@ -47,13 +39,12 @@ public class ClovaStreamClient implements AiModelClient {
             return "[CLOVA STREAM 비활성화] studio-api-key 미설정";
         }
 
-        final String url = streamUrl.replaceAll("/+$", "") + "/v3/chat-completions/" + model;
+        String url = streamUrl.replaceAll("/+$", "") + "/v3/chat-completions/" + model;
 
-        // 요청 바디
         JSONObject body = new JSONObject()
                 .put("messages", new JSONArray()
-                        .put(new JSONObject().put("role", "system").put("content", ""))
-                        .put(new JSONObject().put("role", "user").put("content", prompt)))
+                        .put(new JSONObject().put("role","system").put("content",""))
+                        .put(new JSONObject().put("role","user").put("content", prompt)))
                 .put("topP", topP)
                 .put("topK", topK)
                 .put("maxTokens", maxTokens > 0 ? maxTokens : defaultMaxTokens)
@@ -73,22 +64,16 @@ public class ClovaStreamClient implements AiModelClient {
                 .build();
 
         StringBuilder combined = new StringBuilder();
-        String lastFull = ""; // 누적(full) 조각 방지용
 
         try (Response res = http.newCall(req).execute()) {
             if (!res.isSuccessful()) {
                 throw new RuntimeException("Clova STREAM error: HTTP " + res.code());
             }
-
             BufferedSource source = res.body().source();
 
-            // readUtf8Line()은 EOF에서 null을 리턴 → while(true) + null 체크
-            while (true) {
-                String line = source.readUtf8Line();
-                if (line == null) break;             // 스트림 종료
-                if (line.isBlank()) continue;         // keep-alive 공백 라인
-
-                // SSE 포맷: "data: {...}"
+            while (!source.exhausted()) {
+                String line = source.readUtf8Line(); // null 허용
+                if (line == null || line.isBlank()) continue;
                 if (!line.startsWith("data:")) continue;
 
                 String json = line.substring("data:".length()).trim();
@@ -97,54 +82,51 @@ public class ClovaStreamClient implements AiModelClient {
                 try {
                     JSONObject chunk = new JSONObject(json);
 
-                    // event 필드가 있으면 message/delta만 처리, 그 외(meta 등)는 무시
-                    String event = chunk.optString("event", "message");
-                    if (!event.equalsIgnoreCase("message") && !event.equalsIgnoreCase("delta")) {
+                    // 우선 message/finishReason 중심으로 판단
+                    JSONObject msg = chunk.optJSONObject("message");
+                    String finish = chunk.has("finishReason")
+                            ? chunk.optString("finishReason", null)
+                            : (chunk.optJSONObject("result") != null
+                            ? chunk.optJSONObject("result").optString("finishReason", null)
+                            : null);
+
+                    if (msg != null) {
+                        String content = msg.optString("content", "");
+                        if (finish == null || finish.isBlank()) {
+                            // delta: 누적
+                            if (!content.isBlank()) combined.append(content);
+                        } else {
+                            // final: 완성본으로 교체 후 종료
+                            if (!content.isBlank()) {
+                                combined.setLength(0);
+                                combined.append(content);
+                            }
+                            break;
+                        }
                         continue;
                     }
 
-                    // delta 우선, 없으면 message.content
-                    String incoming = null;
-
-                    JSONObject delta = chunk.optJSONObject("delta");
-                    if (delta != null) {
-                        incoming = delta.optString("content", "");
-                    }
-
-                    if (incoming == null || incoming.isBlank()) {
-                        JSONObject msg = chunk.optJSONObject("message");
-                        if (msg != null) {
-                            incoming = msg.optString("content", "");
+                    // event=result 류 스키마 대응(최종 한 번에 도착)
+                    String event = chunk.optString("event", "");
+                    if ("result".equalsIgnoreCase(event) || chunk.optJSONObject("result") != null) {
+                        JSONObject result = chunk.optJSONObject("result");
+                        String content = null;
+                        if (result != null && result.optJSONObject("message") != null) {
+                            content = result.getJSONObject("message").optString("content", null);
+                        } else {
+                            // 특수 스키마(문자열로 담기는 경우) 방지
+                            content = chunk.optString("output", chunk.optString("result", null));
                         }
+                        if (content != null && !content.isBlank()) {
+                            combined.setLength(0);
+                            combined.append(content);
+                        }
+                        break;
                     }
 
-                    if (incoming == null || incoming.isBlank()) {
-                        // 다른 스키마 대비: result/output/message.content 등
-                        String fallback = chunk.optString("result",
-                                chunk.optString("output",
-                                        chunk.optJSONObject("message") != null
-                                                ? chunk.optJSONObject("message").optString("content", "")
-                                                : ""));
-                        incoming = fallback;
-                    }
-
-                    if (incoming == null || incoming.isBlank()) continue;
-
-                    // ===== 핵심: 누적(full) vs 증분(delta) 구분 =====
-                    String current = combined.toString();
-
-                    if (incoming.length() >= current.length() && incoming.startsWith(current)) {
-                        // 누적(full) 조각 → 전체 대체 (중복 방지)
-                        combined.setLength(0);
-                        combined.append(incoming);
-                        lastFull = incoming;
-                    } else if (!incoming.equals(lastFull) && !current.endsWith(incoming)) {
-                        // 진짜 증분(delta)로 판단 → append
-                        combined.append(incoming);
-                    }
-
+                    // 그 외 keepalive 등은 무시
                 } catch (Exception ignore) {
-                    // keepalive 등 JSON 아닐 수 있으므로 무시
+                    // 비 JSON 라인 무시
                 }
             }
         } catch (Exception e) {
