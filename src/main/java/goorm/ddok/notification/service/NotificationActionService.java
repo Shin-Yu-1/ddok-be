@@ -102,7 +102,7 @@ public class NotificationActionService {
 
     private Long resolveTeamId(Notification n, TeamType type, Long recruitmentId) {
         if (n.getTeamId() != null) return n.getTeamId();
-        Team team = teamRepository.findByTypeAndRecruitmentId(type, recruitmentId)
+        Team team = teamRepository.findByRecruitmentIdAndType(recruitmentId, type)
                 .orElseThrow(() -> new GlobalException(ErrorCode.TEAM_NOT_FOUND));
         return team.getId();
     }
