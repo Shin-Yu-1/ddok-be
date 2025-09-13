@@ -6,6 +6,7 @@ import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.member.domain.User;
+import goorm.ddok.notification.event.TeamMemberExitEvent;
 import goorm.ddok.project.domain.ProjectParticipant;
 import goorm.ddok.project.repository.ProjectApplicationRepository;
 import goorm.ddok.project.repository.ProjectParticipantRepository;
@@ -19,6 +20,7 @@ import goorm.ddok.team.domain.TeamType;
 import goorm.ddok.team.repository.TeamMemberRepository;
 import goorm.ddok.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class TeamCommandService {
     private final ProjectApplicationRepository projectApplicationRepository;
     private final StudyApplicationRepository studyApplicationRepository;
     private final BadgeService badgeService;
+    private final ApplicationEventPublisher publisher;
 
     /**
      * 모집글 기반 팀 생성 (프로젝트 / 스터디 공용)
@@ -112,6 +115,15 @@ public class TeamCommandService {
                     team.getRecruitmentId(), member.getUser().getId()
             ).ifPresent(StudyParticipant::expel);
         }
+
+        publisher.publishEvent(new TeamMemberExitEvent(
+                team.getId(),
+                member.getUser().getId(),
+                team.getType(),
+                team.getRecruitmentId(),
+                team.getTitle(),
+                TeamMemberExitEvent.Reason.WITHDRAWN
+        ));
     }
 
     /**
@@ -171,6 +183,15 @@ public class TeamCommandService {
                     team.getRecruitmentId(), member.getUser().getId()
             ).ifPresent(StudyParticipant::expel);
         }
+
+        publisher.publishEvent(new TeamMemberExitEvent(
+                team.getId(),
+                member.getUser().getId(),
+                team.getType(),
+                team.getRecruitmentId(),
+                team.getTitle(),
+                TeamMemberExitEvent.Reason.EXPELLED
+        ));
     }
 
     private void openReapplyWindow(Team team, Long userId) {

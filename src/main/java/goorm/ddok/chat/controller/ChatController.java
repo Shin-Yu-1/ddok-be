@@ -1,14 +1,17 @@
 package goorm.ddok.chat.controller;
 
 import goorm.ddok.chat.dto.request.ChatMessageRequest;
+import goorm.ddok.chat.dto.request.DmRequestDto;
 import goorm.ddok.chat.dto.request.LastReadMessageRequest;
 import goorm.ddok.chat.dto.response.*;
 import goorm.ddok.chat.service.ChatMessageService;
 import goorm.ddok.chat.service.ChatRoomManagementService;
 import goorm.ddok.chat.service.ChatRoomQueryService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
 import goorm.ddok.global.response.ApiResponseDto;
+import goorm.ddok.global.security.auth.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -16,13 +19,16 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +40,7 @@ public class ChatController {
 
     private final ChatMessageService chatMessageService;
     private final ChatRoomQueryService chatRoomQueryService;
+    private final DmRequestCommandService dmRequestCommandService;
 
     @GetMapping("/private")
     @Operation(summary = "개인 채팅 목록 조회", description = "사용자의 1:1 개인 채팅 목록을 조회합니다.")
@@ -201,5 +208,52 @@ public class ChatController {
         ChatReadResponse response = chatMessageService.lastReadMessage(email, roomId, request);
 
         return ResponseEntity.ok(ApiResponseDto.of(200, "메세지 읽음 처리 완료", response));
+    }
+
+    @Operation(
+            summary = "플레이어 DM 요청 만들기",
+            description = "특정 사용자에게 DM 요청을 생성합니다.",
+            security = @SecurityRequirement(name = "Authorization"),
+            parameters = {
+                    @Parameter(
+                            name = "Authorization", in = ParameterIn.HEADER, required = true,
+                            description = "Bearer {accessToken}",
+                            examples = @ExampleObject(value = "Bearer eyJhbGciOi...")
+                    ),
+                    @Parameter(name = "userId", in = ParameterIn.PATH, required = true, description = "DM을 받는 사용자 ID")
+            }
+    )
+    @ApiResponse(
+            responseCode = "201",
+            description = "DM 요청 생성 성공",
+            content = @Content(schema = @Schema(implementation = ApiResponseDto.class),
+                    examples = @ExampleObject(value = """
+                        {
+                          "status": 201,
+                          "message": "플레이어 DM 요청이 생성되었습니다.",
+                          "data": {
+                            "dmRequestId": 301,
+                            "fromUserId": 10,
+                            "toUserId": 1,
+                            "status": "PENDING",
+                            "chatRoomId": null,
+                            "dmRequestPending": true,
+                            "createdAt": "2025-08-20T01:55:00Z"
+                          }
+                        }
+                    """))
+    )
+    @PostMapping("/{userId}/dm-requests")
+    public ResponseEntity<ApiResponseDto<DmRequestCreateResponse>> createDmRequest(
+            @PathVariable Long userId,
+            @AuthenticationPrincipal CustomUserDetails loginUser
+    ) {
+        DmRequestDto dto = dmRequestCommandService.create(userId, loginUser);
+
+        return ResponseEntity.ok(ApiResponseDto.of(
+                        201,
+                        "플레이어 DM 요청이 생성되었습니다.",
+                        DmRequestCreateResponse.from(dto)
+                ));
     }
 }

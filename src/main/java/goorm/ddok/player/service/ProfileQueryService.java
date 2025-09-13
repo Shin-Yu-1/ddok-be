@@ -5,6 +5,8 @@ import goorm.ddok.badge.domain.BadgeTierRule;
 import goorm.ddok.badge.domain.BadgeType;
 import goorm.ddok.badge.repository.BadgeTierRuleRepository;
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -17,8 +19,6 @@ import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.player.dto.response.ProfileDetailResponse;
 import goorm.ddok.player.dto.response.UserPortfolioResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +34,8 @@ public class ProfileQueryService {
     private final UserPortfolioRepository userPortfolioRepository;
     private final BadgeTierRuleRepository badgeTierRuleRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     public ProfileDetailResponse getProfile(Long targetUserId, Long loginUserId) {
         User user = userRepository.findById(targetUserId)
@@ -41,12 +43,26 @@ public class ProfileQueryService {
 
         boolean isMine = targetUserId.equals(loginUserId);
 
+        Long chatRoomId = null;
+        if (!isMine && loginUserId != null) {
+            chatRoomId = chatRoomService.findPrivateRoomId(loginUserId, targetUserId).orElse(null);
+        }
+
+        boolean dmPending = false;
+        if (!isMine && loginUserId != null) {
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(loginUserId, targetUserId);
+        }
+
+
         // 프로필 공개 여부 확인
         if (!isMine && !user.isPublic()) {
             return ProfileDetailResponse.builder()
                     .userId(user.getId())
                     .IsMine(isMine)
                     .IsPublic(user.isPublic())
+                    .chatRoomId(chatRoomId)
+                    .dmRequestPending(dmPending)
                     .profileImageUrl(user.getProfileImageUrl())
                     .nickname(user.getNickname())
                     .temperature(findTemperature(user))
@@ -62,8 +78,8 @@ public class ProfileQueryService {
                 .userId(user.getId())
                 .IsMine(isMine)
                 .IsPublic(user.isPublic())
-                .chatRoomId(null) // TODO: DM 기능 구현 시 교체
-                .dmRequestPending(false) // TODO: DM 요청 여부 확인 로직 추가
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .profileImageUrl(user.getProfileImageUrl())
                 .nickname(user.getNickname())
                 .temperature(findTemperature(user))

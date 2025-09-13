@@ -1,6 +1,8 @@
 package goorm.ddok.study.service;
 
 import goorm.ddok.badge.service.BadgeService;
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.dto.LocationDto;
@@ -39,6 +41,8 @@ public class StudyRecruitmentQueryService {
     private final StudyApplicationRepository studyApplicationRepository;
     private final UserReputationRepository userReputationRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
 
     /** 스터디 상세 조회 (수정페이지와 동일 스키마) */
@@ -155,6 +159,19 @@ public class StudyRecruitmentQueryService {
                 .map(UserReputation::getTemperature)
                 .orElse(null);
 
+        Long chatRoomId = null;
+        boolean dmPending = false;
+
+        if (me != null && !Objects.equals(me.getId(), u.getId())) {
+            Long meId = me.getId();
+            Long otherId = u.getId();
+
+            chatRoomId = chatRoomService.findPrivateRoomId(meId, otherId).orElse(null);
+
+            dmPending = (chatRoomId != null)
+                    || dmRequestService.isDmPendingOrAcceptedOrChatExists(meId, otherId);
+        }
+
         return UserSummaryDto.builder()
                 .userId(u.getId())
                 .nickname(u.getNickname())
@@ -164,8 +181,8 @@ public class StudyRecruitmentQueryService {
                 .abandonBadge(abandonBadge)
                 .temperature(temperature)      // null 허용
                 .IsMine(me != null && Objects.equals(me.getId(), u.getId()))
-                .chatRoomId(null)
-                .dmRequestPending(false)
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .build();
     }
 

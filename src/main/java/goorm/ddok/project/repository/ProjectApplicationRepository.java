@@ -85,6 +85,9 @@ public interface ProjectApplicationRepository extends JpaRepository<ProjectAppli
     boolean existsByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
             Long userId, Long projectId, ApplicationStatus status);
 
+    Optional<ProjectApplication> findByUser_IdAndPosition_ProjectRecruitment_IdAndStatus(
+            Long userId, Long projectRecruitmentId, goorm.ddok.project.domain.ApplicationStatus status);
+
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

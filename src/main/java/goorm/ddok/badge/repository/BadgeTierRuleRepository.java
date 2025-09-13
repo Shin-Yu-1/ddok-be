@@ -13,4 +13,8 @@ public interface BadgeTierRuleRepository extends JpaRepository<BadgeTierRule, Lo
             BadgeType badgeType,
             int requiredCnt
     );
+
+    Optional<BadgeTierRule> findTopByBadgeTypeAndRequiredCntLessThanEqualOrderByRequiredCntDesc(
+            BadgeType badgeType, Integer totalCnt
+    );
 }

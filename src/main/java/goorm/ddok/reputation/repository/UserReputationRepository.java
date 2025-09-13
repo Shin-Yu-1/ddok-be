@@ -22,6 +22,8 @@ public interface UserReputationRepository extends JpaRepository<UserReputation, 
     @Query("select ur.user.id, ur.temperature from UserReputation ur where ur.user.id in :userIds")
     List<Object[]> findTempsByUserIds(@Param("userIds") Collection<Long> userIds);
 
+    List<UserReputation> findAllByUser_IdIn(Collection<Long> userIds);
+
     /**
      * 온도 TOP10 조회
      * 정렬 조건 :

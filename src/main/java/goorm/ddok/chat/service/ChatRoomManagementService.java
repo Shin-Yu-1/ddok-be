@@ -101,4 +101,9 @@ public class ChatRoomManagementService {
 
         chatMember.expel();
     }
+
+    @Transactional(readOnly = true)
+    public boolean existsPrivateRoomBetween(Long u1, Long u2) {
+        return chatRepository.existsPrivateRoomByUserIds(u1, u2);
+    }
 }

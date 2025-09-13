@@ -2,6 +2,8 @@ package goorm.ddok.team.service;
 
 import goorm.ddok.badge.service.BadgeService;
 import goorm.ddok.chat.dto.response.PaginationResponse;
+import goorm.ddok.chat.service.ChatRoomService;
+import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.global.exception.ErrorCode;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +42,8 @@ public class TeamApplicantQueryService {
     private final TeamMemberRepository teamMemberRepository;
     private final TeamRepository teamRepository;
     private final BadgeService badgeService;
+    private final ChatRoomService chatRoomService;
+    private final DmRequestCommandService dmRequestService;
 
     public TeamApplicantsResponse getApplicants(
             Long teamId,
@@ -84,7 +89,7 @@ public class TeamApplicantQueryService {
                             .status(goorm.ddok.team.domain.ApplicantStatus.from(app.getApplicationStatus()))
                             .appliedAt(app.getCreatedAt())
                             .IsMine(app.getUser().getId().equals(currentUserId))
-                            .user(toUserResponse(app.getUser()))
+                            .user(toUserResponse(app.getUser(), currentUserId))
                             .build()
                     ).toList();
 
@@ -113,7 +118,7 @@ public class TeamApplicantQueryService {
                             .status(goorm.ddok.team.domain.ApplicantStatus.from(app.getStatus()))
                             .appliedAt(app.getCreatedAt())
                             .IsMine(app.getUser().getId().equals(currentUserId))
-                            .user(toUserResponse(app.getUser()))
+                            .user(toUserResponse(app.getUser(), currentUserId))
                             .build()
                     ).toList();
 
@@ -133,7 +138,7 @@ public class TeamApplicantQueryService {
     /**
      * User -> TeamApplicantUserResponse 변환
      */
-    private TeamApplicantUserResponse toUserResponse(goorm.ddok.member.domain.User user) {
+    private TeamApplicantUserResponse toUserResponse(goorm.ddok.member.domain.User user, Long currentUserId) {
         // 대표 배지: 착한 배지들 중 tier 가장 높은 것
         BadgeDto mainBadge = badgeService.getGoodBadges(user).stream()
                 .max(Comparator.comparingInt(b -> b.getTier().ordinal()))
@@ -142,14 +147,25 @@ public class TeamApplicantQueryService {
         // 탈주 배지
         AbandonBadgeDto abandonBadge = badgeService.getAbandonBadge(user);
 
+        Long chatRoomId = null;
+        if (currentUserId != null && !Objects.equals(currentUserId, user.getId())) {
+            chatRoomId = chatRoomService.findPrivateRoomId(currentUserId, user.getId())
+                    .orElse(null);
+        }
+
+        boolean dmPending = false;
+        if (currentUserId != null && !Objects.equals(currentUserId, user.getId())) {
+            dmPending = dmRequestService.isDmPendingOrAcceptedOrChatExists(currentUserId, user.getId());
+        }
+
         return TeamApplicantUserResponse.builder()
                 .userId(user.getId())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .temperature(findTemperature(user))
                 .mainPosition(resolvePrimaryPosition(user))
-                .chatRoomId(null)
-                .dmRequestPending(false)
+                .chatRoomId(chatRoomId)
+                .dmRequestPending(dmPending)
                 .mainBadge(mainBadge)
                 .abandonBadge(abandonBadge)
                 .build();

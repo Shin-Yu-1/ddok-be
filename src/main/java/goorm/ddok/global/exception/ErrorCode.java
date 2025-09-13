@@ -68,6 +68,11 @@ public enum ErrorCode {
     ALREADY_EXPELLED(HttpStatus.BAD_REQUEST, "이미 추방되었거나 탈퇴한 팀원입니다."),
     LEADER_CANNOT_BE_EXPELLED(HttpStatus.BAD_REQUEST, "리더는 추방할 수 없습니다."),
     LEADER_CANNOT_WITHDRAW(HttpStatus.BAD_REQUEST, "리더는 하차할 수 없습니다."),
+    NOT_ACTIONABLE(HttpStatus.BAD_REQUEST, "현재 상태에서 허용되지 않는 작업입니다."),
+    INVALID_NOTIFICATION_TYPE(HttpStatus.BAD_REQUEST, "유효하지 않은 알림 타입입니다."),
+    INVALID_NOTIFICATION_ACTION(HttpStatus.BAD_REQUEST, "이 알림에 대해 허용되지 않은 작업입니다."),
+    CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "자기 자신에게는 DM요청을 보낼 수 없습니다."),
+    DM_REQUEST_ALREADY_PENDING(HttpStatus.BAD_REQUEST, "상대방과 이미 진행 중인 DM 요청이 있습니다."),
     INVALID_REVIEW_TAG(HttpStatus.BAD_REQUEST, "잘못된 리뷰 태그가 포함되어 있습니다."),
     INVALID_RATING(HttpStatus.BAD_REQUEST,"평점이 올바르지 않습니다."),
     CHAT_MESSAGE_INVALID(HttpStatus.BAD_REQUEST, "메세지 내용이 없습니다."),
@@ -113,6 +118,7 @@ public enum ErrorCode {
     APPLICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "참여 신청 내역을 찾을 수 없습니다."),
     TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀원을 찾을 수 없습니다."),
     RANKING_NOT_READY(HttpStatus.NOT_FOUND, "아직 랭킹 데이터가 준비되지 않았습니다."),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
 
 
     // 409 CONFLICT
@@ -127,6 +133,7 @@ public enum ErrorCode {
     DUPLICATE_PHONE_NUMBER(HttpStatus.CONFLICT, "이미 사용 중인 전화번호입니다."),
     ALREADY_PROCESSED_APPLICATION(HttpStatus.CONFLICT, "이미 처리된 신청입니다."),
     ALREADY_CLOSED(HttpStatus.CONFLICT,"이미 종료된 프로젝트/스터디입니다."),
+    ALREADY_PROCESSED_NOTIFICATION(HttpStatus.CONFLICT, "이미 처리된 알림입니다."),
 
     // 429 TOO MANY REQUESTS
     KAKAO_RATE_LIMIT(HttpStatus.TOO_MANY_REQUESTS, "카카오 토큰 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요."),
