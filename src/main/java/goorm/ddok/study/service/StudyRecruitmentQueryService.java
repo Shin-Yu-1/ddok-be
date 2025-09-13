@@ -21,6 +21,9 @@ import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
+import goorm.ddok.team.domain.Team;
+import goorm.ddok.team.domain.TeamType;
+import goorm.ddok.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +43,7 @@ public class StudyRecruitmentQueryService {
     private final StudyParticipantRepository studyParticipantRepository;
     private final StudyApplicationRepository studyApplicationRepository;
     private final UserReputationRepository userReputationRepository;
+    private final TeamRepository teamRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
     private final DmRequestCommandService dmRequestService;
@@ -111,10 +115,19 @@ public class StudyRecruitmentQueryService {
             }
         }
 
+        Optional<Team> team = teamRepository.findByRecruitmentIdAndType(study.getId(), TeamType.STUDY);
+
+        if (team.isEmpty()) {
+            throw new GlobalException(ErrorCode.TEAM_NOT_FOUND);
+        }
+
         // 7) 응답
         return StudyRecruitmentDetailResponse.builder()
                 .studyId(study.getId())
                 .title(study.getTitle())
+                .teamId(team.get().getId())
+                .IsTeamMember(me != null && team.get().getMembers().stream()
+                        .anyMatch(p -> p.getUser().getId().equals(me.getId()) && p.getDeletedAt() == null))
                 .studyType(study.getStudyType())
                 .IsMine(me != null && Objects.equals(study.getUser().getId(), me.getId()))
                 .teamStatus(study.getTeamStatus())
