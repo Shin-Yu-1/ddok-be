@@ -141,4 +141,6 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
 
     Page<StudyRecruitment> findByDeletedAtIsNull(Pageable pageable);
 
+    long countByTeamStatusAndDeletedAtIsNull(goorm.ddok.study.domain.TeamStatus teamStatus);
+
 }
