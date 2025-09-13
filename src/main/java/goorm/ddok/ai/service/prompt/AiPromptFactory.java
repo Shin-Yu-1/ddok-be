@@ -88,7 +88,8 @@ public final class AiPromptFactory {
             LocationDto loc,
             Integer cap,
             List<String> traits,
-            String studyType
+            String studyType,
+            String detail
     ) {
         String address = (loc == null) ? null : loc.getAddress();
         String scheduleStart = orDash(expectedStart);
@@ -116,6 +117,7 @@ public final class AiPromptFactory {
             - 모집 정원: %s명
             - 팀 특성: %s
             - 스터디 유형: %s
+            - 작성자 메모(선택): %s
             """
                 .formatted(
                         orDash(title),
@@ -125,7 +127,8 @@ public final class AiPromptFactory {
                         orDash(address),
                         (cap == null ? "-" : String.valueOf(cap)),
                         joinComma(traits),
-                        orDash(studyType)
+                        orDash(studyType),
+                        orDash(detail)
                 );
     }
 

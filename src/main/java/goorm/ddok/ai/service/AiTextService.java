@@ -43,7 +43,8 @@ public class AiTextService {
                 toLocation(req.getLocation()),
                 req.getCapacity(),
                 safeList(req.getTraits()),
-                safe(req.getStudyType())
+                safe(req.getStudyType()),
+                safe(req.getDetail())
         );
         return model.generate(prompt, 800);
     }
