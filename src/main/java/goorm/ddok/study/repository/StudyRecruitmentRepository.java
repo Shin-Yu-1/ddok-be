@@ -89,8 +89,6 @@ public interface StudyRecruitmentRepository extends JpaRepository<StudyRecruitme
     where sp.deletedAt is null
       and sr.deletedAt is null
       and sp.user.id = :userId
-      and sr.teamStatus in (goorm.ddok.study.domain.TeamStatus.ONGOING,
-                            goorm.ddok.study.domain.TeamStatus.CLOSED)
       and sr.latitude  is not null
       and sr.longitude is not null
       and sr.latitude  between :swLat and :neLat

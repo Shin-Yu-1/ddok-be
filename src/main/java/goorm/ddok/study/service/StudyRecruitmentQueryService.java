@@ -68,7 +68,8 @@ public class StudyRecruitmentQueryService {
                 .filter(p -> p.getRole() == ParticipantRole.MEMBER)
                 .toList();
         int participantsCount = members.size();
-        int applicantCount = (int) studyApplicationRepository.countByStudyRecruitment(study);
+        int applicantCount = (int) studyApplicationRepository
+                .countByStudyRecruitmentAndApplicationStatusNot(study, ApplicationStatus.REJECTED);
 
         // 5) 리더/멤버 요약 (온도/뱃지 없으면 null)
         UserSummaryDto leaderDto = toUserSummaryDto(leader, me);
