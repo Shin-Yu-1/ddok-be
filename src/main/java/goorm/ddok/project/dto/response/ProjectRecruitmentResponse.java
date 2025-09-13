@@ -24,6 +24,8 @@ import java.util.List;
         {
           "projectId": 1,
           "userId": 11,
+          "teamId": 5,
+          "isTeamMember": true,
           "nickname": "고라니",
           "leaderPosition": "백엔드",
           "title": "구지라지",
@@ -59,6 +61,12 @@ public class ProjectRecruitmentResponse {
 
     @Schema(description = "리더 사용자 ID", example = "11")
     private Long userId;
+
+    @Schema(description = "팀 ID", example = "5")
+    private Long teamId;
+
+    @Schema(description = "내가 팀 멤버인지 여부", example = "true")
+    private boolean IsTeamMember;
 
     @Schema(description = "리더 닉네임", example = "고라니")
     private String nickname;

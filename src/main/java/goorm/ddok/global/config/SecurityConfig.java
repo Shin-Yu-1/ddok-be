@@ -101,6 +101,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/studies", "/api/studies/*").permitAll()
                         .requestMatchers(HttpMethod.GET , "/api/players/**").permitAll()
                         .requestMatchers(HttpMethod.GET , "/api/map/**").permitAll()
+                        .requestMatchers(HttpMethod.GET , "/api/teams/count").permitAll()
                         .requestMatchers(SWAGGER_WHITELIST).permitAll()
                         .requestMatchers(
                                 new AntPathRequestMatcher("/h2-console/**"),

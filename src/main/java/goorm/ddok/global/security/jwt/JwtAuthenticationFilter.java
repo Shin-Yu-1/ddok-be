@@ -63,7 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/auth/phone/send-code",
             "/api/auth/phone/verify-code",
             "/api/auth/password/verify-user",
-            "/api/auth/password/reset"
+            "/api/auth/password/reset",
+            "/api/teams/count"
     );
 
 

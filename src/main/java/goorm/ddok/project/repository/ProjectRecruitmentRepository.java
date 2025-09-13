@@ -140,5 +140,7 @@ public interface ProjectRecruitmentRepository extends JpaRepository<ProjectRecru
 
     @EntityGraph(attributePaths = "positions")
     Page<ProjectRecruitment> findAll(Specification<ProjectRecruitment> spec, Pageable pageable);
+
+    long countByTeamStatusAndDeletedAtIsNull(goorm.ddok.project.domain.TeamStatus teamStatus);
 }
 
