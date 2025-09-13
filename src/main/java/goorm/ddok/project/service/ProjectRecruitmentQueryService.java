@@ -23,6 +23,9 @@ import goorm.ddok.project.repository.ProjectRecruitmentRepository;
 
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
+import goorm.ddok.team.domain.Team;
+import goorm.ddok.team.domain.TeamType;
+import goorm.ddok.team.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,6 +44,7 @@ public class ProjectRecruitmentQueryService {
     private final ProjectParticipantRepository projectParticipantRepository;
     private final ProjectApplicationRepository projectApplicationRepository;
     private final UserReputationRepository userReputationRepository;
+    private final TeamRepository teamRepository;
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
     private final DmRequestCommandService dmRequestService;
@@ -145,12 +150,20 @@ public class ProjectRecruitmentQueryService {
                         .ageMax(project.getAgeMax())
                         .build();
 
+        Optional<Team> team = teamRepository.findByRecruitmentIdAndType(project.getId(), TeamType.PROJECT);
+
+        if (team.isEmpty()) {
+            throw new GlobalException(ErrorCode.TEAM_NOT_FOUND);
+        }
 
         // 9) 응답 조립
         return ProjectDetailResponse.builder()
                 .projectId(project.getId())
                 .IsMine(me != null && project.getUser().getId().equals(me.getId()))
                 .title(project.getTitle())
+                .teamId(team.get().getId())
+                .IsTeamMember(me != null && participants.stream()
+                        .anyMatch(p -> p.getUser().getId().equals(me.getId()) && p.getDeletedAt() == null))
                 .teamStatus(project.getTeamStatus())
                 .bannerImageUrl(project.getBannerImageUrl())
                 .traits(project.getTraits().stream().map(ProjectRecruitmentTrait::getTraitName).toList())
