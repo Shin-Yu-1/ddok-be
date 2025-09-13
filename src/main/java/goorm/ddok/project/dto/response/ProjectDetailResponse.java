@@ -24,6 +24,8 @@ import java.util.List;
           "projectId": 2,
           "title": "구라라지 프로젝트",
           "isMine": true,
+          "teamId": 5,
+          "isTeamMember": true,
           "teamStatus": "RECRUITING",
           "bannerImageUrl": "https://cdn.example.com/images/default.png",
           "traits": ["정리의 신","실행력 갓","내향인"],
@@ -85,6 +87,12 @@ public class ProjectDetailResponse {
 
     @Schema(description = "내가 작성한 글인지 여부", example = "true")
     private boolean IsMine;
+
+    @Schema(description = "팀 ID", example = "5")
+    private Long teamId;
+
+    @Schema(description = "내가 팀 멤버인지 여부", example = "true")
+    private boolean IsTeamMember;
 
     @Schema(description = "프로젝트 제목", example = "구라라지 프로젝트")
     private String title;
