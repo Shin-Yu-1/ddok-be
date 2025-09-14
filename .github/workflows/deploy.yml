@@ -58,6 +58,7 @@ jobs:
             export COOLSMS_KEY="${{ secrets.COOLSMS_KEY }}"
             export COOLSMS_SECRET="${{ secrets.COOLSMS_SECRET }}"
             export COOLSMS_NUMBER="${{ secrets.COOLSMS_NUMBER }}"
+            export CLOVA_STUDIO_API_KEY="${{ secrets.CLOVA_STUDIO_API_KEY }}"
           
             cd ~/app
             bash deploy.sh
