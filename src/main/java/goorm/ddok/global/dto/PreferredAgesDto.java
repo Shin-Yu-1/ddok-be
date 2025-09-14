@@ -18,10 +18,12 @@ public class PreferredAgesDto {
     private Integer ageMax;
 
     public static PreferredAgesDto of(Integer min, Integer max) {
-        if (min == null && max == null) return null;
+        Integer normalizedMin = (min == null || min == 0) ? null : min;
+        Integer normalizedMax = (max == null || max == 0) ? null : max;
+        if (normalizedMin == null && normalizedMax == null) return null;
         return PreferredAgesDto.builder()
-                .ageMin(min)
-                .ageMax(max)
+                .ageMin(normalizedMin)
+                .ageMax(normalizedMax)
                 .build();
     }
 }

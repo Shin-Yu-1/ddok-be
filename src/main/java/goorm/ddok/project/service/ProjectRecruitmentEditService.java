@@ -129,8 +129,8 @@ public class ProjectRecruitmentEditService {
                 .toList();
 
         PreferredAgesDto ages = PreferredAgesDto.of(
-                (pr.getAgeMin() == 0 ? null : pr.getAgeMin()),
-                (pr.getAgeMax() == 0 ? null : pr.getAgeMax())
+                (pr.getAgeMin() == null || pr.getAgeMin() == 0 ? null : pr.getAgeMin()),
+                (pr.getAgeMax() == null || pr.getAgeMax() == 0 ? null : pr.getAgeMax())
         );
 
         return ProjectDetailResponse.builder()
@@ -208,15 +208,16 @@ public class ProjectRecruitmentEditService {
         }
 
         // 연령 무관(null) 또는 10단위 강제
-        int ageMin;
-        int ageMax;
-        if (req.getPreferredAges() == null) {
-            ageMin = 0;
-            ageMax = 0;
-        } else {
+        Integer ageMin = null;
+        Integer ageMax = null;
+
+        if (req.getPreferredAges() != null) {
             ageMin = req.getPreferredAges().getAgeMin();
             ageMax = req.getPreferredAges().getAgeMax();
-            if (ageMin > ageMax) throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+
+            if (ageMin > ageMax) {
+                throw new GlobalException(ErrorCode.INVALID_AGE_RANGE);
+            }
             if (ageMin % 10 != 0 || ageMax % 10 != 0) {
                 throw new GlobalException(ErrorCode.INVALID_AGE_BUCKET);
             }
@@ -452,8 +453,8 @@ public class ProjectRecruitmentEditService {
 
         // 무관(0/0)일 때 null
         PreferredAgesDto prefAges = PreferredAgesDto.of(
-                (pr.getAgeMin() == 0 ? null : pr.getAgeMin()),
-                (pr.getAgeMax() == 0 ? null : pr.getAgeMax())
+                (pr.getAgeMin() == null || pr.getAgeMin() == 0 ? null : pr.getAgeMin()),
+                (pr.getAgeMax() == null || pr.getAgeMax() == 0 ? null : pr.getAgeMax())
         );
 
         // 리더/참여자 조회
