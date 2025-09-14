@@ -169,7 +169,11 @@ public class ReputationQueryController {
     public ApiResponseDto<TemperatureRankResponse> getTop1TemperatureRank(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        TemperatureRankResponse cached = reputationRankingScheduler.getCachedTop1();
+        TemperatureRankResponse cached = reputationRankingScheduler.peekCachedTop1();
+
+        if (cached == null) {
+            return ApiResponseDto.of(200, "조회 결과가 없습니다.", null);
+        }
 
         Long meId = (currentUser != null) ? currentUser.getId() : null;
 

@@ -2,7 +2,6 @@ package goorm.ddok.global.scheduler;
 
 import goorm.ddok.global.exception.ErrorCode;
 import goorm.ddok.global.exception.GlobalException;
-import goorm.ddok.member.domain.User;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
@@ -52,6 +51,14 @@ public class ReputationRankingScheduler {
             // currentUser == null
             TemperatureRankResponse top1 = reputationQueryService.getTop1TemperatureRank(null);
             Instant now = Instant.now();
+
+            if (top1.getUserId() == null) {
+                top1Cache.set(null);
+                lastUpdated.set(now);
+                log.info("ℹ️ TOP1 없음(사용자/온도 데이터 미존재), updatedAt={}", now);
+                return;
+            }
+
 
             // 캐시에 저장 (updatedAt 덮어쓰기)
             TemperatureRankResponse withUpdatedAt = TemperatureRankResponse.builder()
@@ -153,5 +160,9 @@ public class ReputationRankingScheduler {
             throw new GlobalException(ErrorCode.RANKING_NOT_READY);
         }
         return cached;
+    }
+
+    public TemperatureRankResponse peekCachedTop1() {
+        return top1Cache.get();
     }
 }
