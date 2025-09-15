@@ -15,13 +15,9 @@ import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.query.NullPrecedence;
-import org.hibernate.query.criteria.HibernateCriteriaBuilder;
-import org.hibernate.query.criteria.JpaOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,25 +43,22 @@ public class ProfileSearchService {
         page = Math.max(page, 0);
         size = (size <= 0) ? 10 : size;
 
-        Sort sort = Sort.by(
-                Sort.Order.asc("nickname"),
-                Sort.Order.asc("id")
-        );
-        Pageable pageable = PageRequest.of(page, size, sort);
+        // Sort 제거하고 Pageable만 생성
+        Pageable pageable = PageRequest.of(page, size);
 
         Specification<User> spec = hasText(keyword)
-                ? keywordSpec(keyword)
-                : (r, q, cb) -> cb.isTrue(r.get("isPublic"));
+                ? keywordSpecWithSort(keyword)
+                : publicUsersWithSort();
 
         Page<User> rows = userRepository.findAll(spec, pageable);
         return rows.map(u -> toResponse(u, currentUserId));
     }
 
-    private Specification<User> keywordSpec(String raw) {
+    private Specification<User> keywordSpecWithSort(String raw) {
         List<String> tokens = splitTokens(raw);
 
         return (root, query, cb) -> {
-            
+            // 기존 검색 로직
             Join<User, UserLocation> locJoin = root.join("location", JoinType.LEFT);
 
             List<Predicate> andPerToken = new ArrayList<>();
@@ -110,7 +103,29 @@ public class ProfileSearchService {
 
                 andPerToken.add(cb.or(ors.toArray(new Predicate[0])));
             }
+
+            // 정렬 추가
+            if (query != null) {
+                query.orderBy(
+                        cb.asc(root.get("nickname")),
+                        cb.asc(root.get("id"))
+                );
+            }
+
             return cb.and(andPerToken.toArray(new Predicate[0]));
+        };
+    }
+
+    private Specification<User> publicUsersWithSort() {
+        return (root, query, cb) -> {
+            // 정렬 추가
+            if (query != null) {
+                query.orderBy(
+                        cb.asc(root.get("nickname")),
+                        cb.asc(root.get("id"))
+                );
+            }
+            return cb.isTrue(root.get("isPublic"));
         };
     }
 
