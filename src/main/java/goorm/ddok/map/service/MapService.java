@@ -413,24 +413,20 @@ public class MapService {
             int page, int size,
             String filterCsv
     ) {
-        // 1) 검증
         validateBounds(swLat, swLng, neLat, neLng);
 
-        // 2) 파싱
-        Set<String> categories = parseCategories(categoryCsv);
-        // 기본: project,study,player
+        Set<String> categories = parseCategories(categoryCsv); // 기본 project,study,player,cafe
         Set<goorm.ddok.project.domain.TeamStatus> projectStatusFilter = parseProjectTeamStatusFilter(filterCsv);
-        Set<goorm.ddok.study.domain.TeamStatus> studyStatusFilter = parseStudyTeamStatusFilter(filterCsv);
+        Set<goorm.ddok.study.domain.TeamStatus>   studyStatusFilter   = parseStudyTeamStatusFilter(filterCsv);
 
-        // 3) 페이지 파라미터+페치상한
         page = Math.max(0, page);
         size = (size <= 0) ? 20 : size;
 
         final List<AllMapItemSearchResponse> items = new ArrayList<>();
 
+        // --- project ---
         if (categories.contains("project")) {
             var rows = projectRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
-
             if (rows != null) {
                 rows.stream()
                         .filter(r -> projectStatusFilter.isEmpty() || projectStatusFilter.contains(r.getTeamStatus()))
@@ -464,7 +460,6 @@ public class MapService {
 
         if (categories.contains("study")) {
             var rows = studyRecruitmentRepository.findAllInBounds(swLat, neLat, swLng, neLng);
-
             if (rows != null) {
                 rows.stream()
                         .filter(r -> studyStatusFilter.isEmpty() || studyStatusFilter.contains(r.getTeamStatus()))
@@ -498,7 +493,6 @@ public class MapService {
 
         if (categories.contains("player")) {
             var rows = userRepository.findPublicPlayersInBounds(swLat, neLat, swLng, neLng);
-
             if (rows != null) {
                 rows.forEach(r -> {
                     User user = userRepository.findById(r.getId())
@@ -556,7 +550,6 @@ public class MapService {
 
         if (categories.contains("cafe")) {
             var rows = cafeRepository.findAllInBounds(swLat, neLat, swLng, neLng);
-
             if (rows != null) {
                 rows.forEach(r -> items.add(AllMapItemSearchResponse.builder()
                         .category("cafe")
@@ -583,35 +576,45 @@ public class MapService {
                                 .build())
                         .build()));
             }
-
         }
 
-            if (centerLat != null && centerLng != null && !items.isEmpty()) {
+        final String kw = (keyword == null) ? "" : keyword.trim().toLowerCase();
+        List<AllMapItemSearchResponse> filtered = items.stream()
+                .filter(it -> {
+                    if (kw.isEmpty()) return true;
+                    String title = it.getTitle() == null ? "" : it.getTitle().toLowerCase();
+                    String nick  = it.getNickname() == null ? "" : it.getNickname().toLowerCase();
+                    return title.contains(kw) || nick.contains(kw);
+                })
+                .toList();
+
+        if (centerLat != null && centerLng != null && !filtered.isEmpty()) {
             final double cLat = centerLat.doubleValue();
             final double cLng = centerLng.doubleValue();
-            items.sort(Comparator.comparingDouble(it -> {
-                var loc = it.getLocation();
-                if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
-                    return Double.MAX_VALUE;
-                }
-                return haversineKm(cLat, cLng, loc.getLatitude().doubleValue(), loc.getLongitude().doubleValue());
-            }));
+
+            filtered = filtered.stream()
+                    .sorted(Comparator.comparingDouble(it -> {
+                        var loc = it.getLocation();
+                        if (loc == null || loc.getLatitude() == null || loc.getLongitude() == null) {
+                            return Double.MAX_VALUE;
+                        }
+                        return haversineKm(
+                                cLat, cLng,
+                                loc.getLatitude().doubleValue(),
+                                loc.getLongitude().doubleValue()
+                        );
+                    }))
+                    .toList();
         }
 
         Pageable pageable = PageRequest.of(page, size);
+        int total = filtered.size();
+        int fromIndex = Math.min(page * size, total);
+        int toIndex   = Math.min(fromIndex + size, total);
+        List<AllMapItemSearchResponse> pageItems =
+                (fromIndex >= toIndex) ? List.of() : filtered.subList(fromIndex, toIndex);
 
-        return PageResponse.of(new PageImpl<>(
-                items.stream()
-                        .filter(it -> keyword == null || keyword.isBlank()
-                                || (it.getTitle() != null && it.getTitle().toLowerCase().contains(keyword.toLowerCase()))
-                                || (it.getNickname() != null && it.getNickname().toLowerCase().contains(keyword.toLowerCase()))
-                        )
-                        .skip((long) pageable.getPageNumber() * pageable.getPageSize())
-                        .limit(pageable.getPageSize())
-                        .toList(),
-                pageable,
-                items.size()
-        ));
+        return PageResponse.of(new PageImpl<>(pageItems, pageable, total));
     }
 
     private Set<String> parseCategories(String categoryCsv) {
@@ -625,36 +628,26 @@ public class MapService {
     }
 
     private Set<goorm.ddok.project.domain.TeamStatus> parseProjectTeamStatusFilter(String filterCsv) {
-        if (filterCsv == null || filterCsv.isBlank()) {
-            return Collections.emptySet();
-        }
+        if (filterCsv == null || filterCsv.isBlank()) return Collections.emptySet();
         return Arrays.stream(filterCsv.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(s -> {
-                    try {
-                        return goorm.ddok.project.domain.TeamStatus.valueOf(s.toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        return null;
-                    }
+                    try { return goorm.ddok.project.domain.TeamStatus.valueOf(s.toUpperCase()); }
+                    catch (IllegalArgumentException e) { return null; }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
     }
 
     private Set<goorm.ddok.study.domain.TeamStatus> parseStudyTeamStatusFilter(String filterCsv) {
-        if (filterCsv == null || filterCsv.isBlank()) {
-            return Collections.emptySet();
-        }
+        if (filterCsv == null || filterCsv.isBlank()) return Collections.emptySet();
         return Arrays.stream(filterCsv.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .map(s -> {
-                    try {
-                        return goorm.ddok.study.domain.TeamStatus.valueOf(s.toUpperCase());
-                    } catch (IllegalArgumentException e) {
-                        return null;
-                    }
+                    try { return goorm.ddok.study.domain.TeamStatus.valueOf(s.toUpperCase()); }
+                    catch (IllegalArgumentException e) { return null; }
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());

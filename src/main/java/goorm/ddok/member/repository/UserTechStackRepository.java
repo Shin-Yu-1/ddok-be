@@ -22,4 +22,7 @@ public interface UserTechStackRepository extends JpaRepository<UserTechStack, Lo
 
     // 다건 + 페이징 조회용
     Page<UserTechStack> findByUserId(Long userId, Pageable pageable);
+
+    // userTechStack 테이블에 이미 존재하는지 확인
+    boolean existsByUserIdAndTechStackId(Long userId, Long techStackId);
 }
