@@ -24,7 +24,7 @@ public class EmailVerificationService {
     private final JavaMailSender javaMailSender;
     private final EmailVerificationRepository emailVerificationRepository;
 
-    @Value("${app.base-url:http://localhost:8080}")
+    @Value("${app.base-url}")
     private String baseUrl;
 
     private static final Duration EMAIL_CODE_TTL = Duration.ofMinutes(10);
