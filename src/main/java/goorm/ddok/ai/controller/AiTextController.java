@@ -5,6 +5,7 @@ import goorm.ddok.ai.dto.request.AiStudyRequest;
 import goorm.ddok.ai.dto.response.AiTextResponse;
 import goorm.ddok.ai.service.AiTextService;
 import goorm.ddok.global.response.ApiResponseDto;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Tag(name = "AI", description = "AI 텍스트 생성 API")
 public class AiTextController {
 
     private final AiTextService ai;

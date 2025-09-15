@@ -4,6 +4,7 @@ import goorm.ddok.global.response.ApiResponseDto;
 import goorm.ddok.global.security.auth.CustomUserDetails;
 import goorm.ddok.notification.dto.response.NotificationResponse;
 import goorm.ddok.notification.service.NotificationQueryService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/notifications")
+@Tag(name = "Notification", description = "수신함 API")
 public class NotificationController {
 
     private final NotificationQueryService notificationQueryService;
