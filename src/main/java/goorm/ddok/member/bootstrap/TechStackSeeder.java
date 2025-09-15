@@ -29,7 +29,7 @@ public class TechStackSeeder implements ApplicationRunner {
     @Transactional
     public void run(ApplicationArguments args) {
         long count = techStackRepository.count();
-        if (count > defaultStacks.size()) {
+        if (count >= defaultStacks.size()) {
             log.info("[TechStackSeeder] Skip seeding. Existing rows: {}", count);
             return;
         }
