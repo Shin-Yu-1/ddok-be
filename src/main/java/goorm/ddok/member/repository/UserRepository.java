@@ -1,6 +1,5 @@
 package goorm.ddok.member.repository;
 
-import goorm.ddok.member.domain.UserLocation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -206,7 +205,7 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Optional<UserOverlayRow> findOverlayById(@Param("id") Long id);
 
     @Query("""
-    SELECT DISTINCT u FROM User u
+    SELECT u FROM User u
     LEFT JOIN FETCH u.location loc
     LEFT JOIN u.positions pos
     WHERE (

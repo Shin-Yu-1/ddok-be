@@ -15,6 +15,7 @@ import goorm.ddok.reputation.repository.UserReputationRepository;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import static org.springframework.util.StringUtils.hasText;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,22 @@ public class ProfileSearchService {
         String searchKeyword = hasText(keyword) ? keyword.trim() : null;
 
         Page<User> rows = userRepository.searchPlayersWithKeyword(searchKeyword, pageable);
-        return rows.map(u -> toResponse(u, currentUserId));
+
+        List<User> distinctUsers = rows.getContent().stream()
+                .collect(Collectors.toMap(User::getId, user -> user, (existing, replacement) -> existing))
+                .values()
+                .stream()
+                .sorted((u1, u2) -> {
+                    int nicknameCompare = u1.getNickname().compareToIgnoreCase(u2.getNickname());
+                    return nicknameCompare != 0 ? nicknameCompare : u1.getId().compareTo(u2.getId());
+                })
+                .toList();
+
+        List<ProfileSearchResponse> responses = distinctUsers.stream()
+                .map(u -> toResponse(u, currentUserId))
+                .toList();
+
+        return new PageImpl<>(responses, pageable, rows.getTotalElements());
     }
 
     // 나머지 메서드들은 그대로 유지
