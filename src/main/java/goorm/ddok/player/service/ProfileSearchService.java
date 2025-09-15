@@ -47,7 +47,7 @@ public class ProfileSearchService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by(Sort.Order.asc("nickname"), Sort.Order.asc("id"))
+                Sort.by(Sort.Order.asc("nickname"))
         );
         Specification<User> spec = Specification.where(null);
 
