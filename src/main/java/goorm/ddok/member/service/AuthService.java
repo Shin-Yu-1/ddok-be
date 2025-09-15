@@ -370,22 +370,26 @@ public class AuthService {
     }
 
     private void saveUserTechStacks(User user, List<String> techStacks) {
+        if (techStacks == null || techStacks.isEmpty()) return;
 
-        if (techStacks != null && !techStacks.isEmpty()) {
             for (String techStackName : techStacks) {
-                if (techStackName != null && !techStackName.trim().isEmpty()) {
-                    TechStack techStack = techStackRepository.findByName(techStackName)
-                            .orElseGet(() -> techStackRepository.save(
-                                    TechStack.builder()
-                                            .name(techStackName.trim())
-                                            .build()
-                            ));
-                    UserTechStack userTechStack = UserTechStack.builder()
-                            .user(user)
-                            .techStack(techStack)
-                            .build();
-                    userTechStackRepository.save(userTechStack);
-                }
+                if (techStackName == null) continue;
+
+                String name = techStackName.trim();
+
+                if (name.isEmpty()) continue;
+
+                TechStack tech = techStackRepository
+                    .findFirstByNameIgnoreCaseOrderByIdAsc(name)
+                    .orElseGet(() -> techStackRepository.save(
+                            TechStack.builder().name(name).build()
+                    ));
+
+                // 같은 유저-스택 중복 연결 방지
+                if (!userTechStackRepository.existsByUserIdAndTechStackId(user.getId(), tech.getId())) {
+                    userTechStackRepository.save(
+                        UserTechStack.builder().user(user).techStack(tech).build()
+                );
             }
         }
     }

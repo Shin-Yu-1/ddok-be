@@ -20,5 +20,5 @@ public interface TechStackRepository extends JpaRepository<TechStack, Long> {
 
     Optional<TechStack> findFirstByNameOrderByIdAsc(String name);
 
-
+    Optional<TechStack> findFirstByNameIgnoreCaseOrderByIdAsc(String name);
 }
