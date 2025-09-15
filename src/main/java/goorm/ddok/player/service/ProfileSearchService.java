@@ -21,6 +21,7 @@ import org.hibernate.query.criteria.JpaOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,37 +47,19 @@ public class ProfileSearchService {
         page = Math.max(page, 0);
         size = (size <= 0) ? 10 : size;
 
-        Pageable pageable = PageRequest.of(page, size);
+        Sort sort = Sort.by(
+                Sort.Order.asc("nickname"),
+                Sort.Order.asc("id")
+        );
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        Specification<User> spec = Specification
-                .where(orderByNicknameAscCaseInsensitive())
-                .and(hasText(keyword) ? keywordSpec(keyword)
-                        : (r, q, cb) -> cb.isTrue(r.get("isPublic")));
+        Specification<User> spec = hasText(keyword)
+                ? keywordSpec(keyword)
+                : (r, q, cb) -> cb.isTrue(r.get("isPublic"));
 
         Page<User> rows = userRepository.findAll(spec, pageable);
         return rows.map(u -> toResponse(u, currentUserId));
     }
-
-    private Specification<User> orderByNicknameAscCaseInsensitive() {
-        return (root, query, cb) -> {
-            Class<?> rt = Objects.requireNonNull(query).getResultType();
-            if (rt != Long.class && rt != long.class) {
-                HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) cb;
-
-                var nickname = root.get("nickname");
-
-                JpaOrder byNickname = (JpaOrder) hcb.asc(nickname);
-                byNickname.nullPrecedence(NullPrecedence.LAST);
-
-                var lowerNick = hcb.lower(hcb.coalesce(nickname, "").asString());
-                JpaOrder byLowerNick = (JpaOrder) hcb.asc(lowerNick);
-
-                query.orderBy(byNickname, byLowerNick);
-            }
-            return null;
-        };
-    }
-
 
     private Specification<User> keywordSpec(String raw) {
         List<String> tokens = splitTokens(raw);
