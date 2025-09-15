@@ -1,11 +1,8 @@
 package goorm.ddok.global.config;
 
 import goorm.ddok.reputation.batch.ReputationRankingWriter;
-import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
-import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
 import goorm.ddok.reputation.service.ReputationQueryService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepScope;
