@@ -226,4 +226,33 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     ORDER BY LOWER(u.nickname) ASC, u.id ASC
     """)
     Page<User> searchPlayersWithKeyword(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("""
+    SELECT DISTINCT u.id, LOWER(u.nickname) as nickname_lower FROM User u
+    LEFT JOIN u.location loc
+    LEFT JOIN u.positions pos
+    WHERE (:keyword IS NULL OR :keyword = '' OR
+           LOWER(u.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(pos.positionName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.region1DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.region2DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.region3DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.roadName, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.mainBuildingNo, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(COALESCE(loc.subBuildingNo, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+           LOWER(CONCAT(COALESCE(loc.region1DepthName, ''), ' ', COALESCE(loc.region2DepthName, ''))) LIKE LOWER(CONCAT('%', :keyword, '%'))
+    )
+    ORDER BY LOWER(u.nickname) ASC, u.id ASC
+    """)
+    Page<Object[]> searchPlayerIdsWithKeywordAndNickname(@Param("keyword") String keyword, Pageable pageable);
+
+    // 2단계: ID 리스트로 User 엔티티 조회 (정렬 유지)
+    @Query("""
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.location
+    LEFT JOIN FETCH u.positions
+    WHERE u.id IN :userIds
+    ORDER BY LOWER(u.nickname) ASC, u.id ASC
+    """)
+    List<User> findUsersByIdsWithDetails(@Param("userIds") List<Long> userIds);
 }
