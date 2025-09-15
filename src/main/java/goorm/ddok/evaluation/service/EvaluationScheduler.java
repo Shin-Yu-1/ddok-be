@@ -14,6 +14,7 @@ import goorm.ddok.reputation.repository.UserReputationRepository;
 import goorm.ddok.team.domain.TeamMember;
 import goorm.ddok.team.repository.TeamMemberRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(value = "ddok.legacy.evaluation.scheduler.enabled", havingValue = "true", matchIfMissing = false)
 public class EvaluationScheduler {
 
     private final TeamEvaluationRepository evaluationRepository;
