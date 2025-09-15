@@ -22,14 +22,14 @@ public class TechStackSeeder implements ApplicationRunner {
     private final TechStackRepository techStackRepository;
 
     // 쉼표로 구분된 기본 스택 목록을 yml에서 주입 (미설정 시 기본값 사용)
-    @Value("#{'${app.techstack.defaults:Spring Boot,Spring Data JPA,Spring Security,Java,Kotlin,Python,Node.js,Express,TypeScript,React,Next.js,Vue.js,Angular,MySQL,PostgreSQL,Redis,MongoDB,Docker,Kubernetes,AWS,GitHub Actions}'.split(',')}")
+    @Value("#{'${app.techstack.defaults}'.split(',')}")
     private List<String> defaultStacks;
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
         long count = techStackRepository.count();
-        if (count > 0) {
+        if (count > defaultStacks.size()) {
             log.info("[TechStackSeeder] Skip seeding. Existing rows: {}", count);
             return;
         }
