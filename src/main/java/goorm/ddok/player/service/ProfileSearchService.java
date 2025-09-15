@@ -43,109 +43,23 @@ public class ProfileSearchService {
         page = Math.max(page, 0);
         size = (size <= 0) ? 10 : size;
 
-        // Sort 제거하고 Pageable만 생성
         Pageable pageable = PageRequest.of(page, size);
 
-        Specification<User> spec = hasText(keyword)
-                ? keywordSpecWithSort(keyword)
-                : publicUsersWithSort();
+        String searchKeyword = hasText(keyword) ? keyword.trim() : null;
 
-        Page<User> rows = userRepository.findAll(spec, pageable);
+        Page<User> rows = userRepository.searchPlayersWithKeyword(searchKeyword, pageable);
         return rows.map(u -> toResponse(u, currentUserId));
     }
 
-    private Specification<User> keywordSpecWithSort(String raw) {
-        List<String> tokens = splitTokens(raw);
-
-        return (root, query, cb) -> {
-            // 기존 검색 로직
-            Join<User, UserLocation> locJoin = root.join("location", JoinType.LEFT);
-
-            List<Predicate> andPerToken = new ArrayList<>();
-            for (String token : tokens) {
-                String like = "%" + token.toLowerCase() + "%";
-                List<Predicate> ors = new ArrayList<>();
-
-                ors.add(cb.like(cb.lower(root.get("nickname")), like));
-
-                Subquery<Long> posSub = Objects.requireNonNull(query).subquery(Long.class);
-                Root<UserPosition> p = posSub.from(UserPosition.class);
-                posSub.select(cb.literal(1L));
-                posSub.where(
-                        cb.equal(p.get("user").get("id"), root.get("id")),
-                        cb.like(cb.lower(p.get("positionName")), like)
-                );
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")), cb.exists(posSub)));
-
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("region1DepthName"), "")), like)));
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("region2DepthName"), "")), like)));
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("region3DepthName"), "")), like)));
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("roadName"), "")), like)));
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("mainBuildingNo"), "")), like)));
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(cb.lower(cb.coalesce(locJoin.get("subBuildingNo"), "")), like)));
-
-                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
-                        cb.like(
-                                cb.lower(
-                                        cb.concat(
-                                                cb.concat(cb.coalesce(locJoin.get("region1DepthName"), ""), " "),
-                                                cb.coalesce(locJoin.get("region2DepthName"), "")
-                                        )
-                                ),
-                                like
-                        )));
-
-                andPerToken.add(cb.or(ors.toArray(new Predicate[0])));
-            }
-
-            // 정렬 추가
-            if (query != null) {
-                query.orderBy(
-                        cb.asc(root.get("nickname")),
-                        cb.asc(root.get("id"))
-                );
-            }
-
-            return cb.and(andPerToken.toArray(new Predicate[0]));
-        };
-    }
-
-    private Specification<User> publicUsersWithSort() {
-        return (root, query, cb) -> {
-            // 정렬 추가
-            if (query != null) {
-                query.orderBy(
-                        cb.asc(root.get("nickname")),
-                        cb.asc(root.get("id"))
-                );
-            }
-            return cb.isTrue(root.get("isPublic"));
-        };
-    }
-
-    private List<String> splitTokens(String raw) {
-        return Arrays.stream(raw.split("[,\\s]+"))
-                .map(String::trim)
-                .filter(t -> !t.isEmpty())
-                .distinct()
-                .toList();
-    }
-
+    // 나머지 메서드들은 그대로 유지
     private ProfileSearchResponse toResponse(User u, Long currentUserId) {
-
+        // 기존 코드 그대로
         boolean isMine = Objects.equals(u.getId(), currentUserId);
         boolean isPublic = u.isPublic();
 
         String address = null;
         String mainPosition = null;
 
-        // isPublic이 true이거나 본인인 경우에만 주소와 포지션 정보 제공
         if (isPublic || isMine) {
             address = shortAddress(
                     u.getLocation() == null ? null : u.getLocation().getRegion1DepthName(),
@@ -153,11 +67,11 @@ public class ProfileSearchService {
             );
             mainPosition = pickMainPosition(u);
         }
+
         BigDecimal temp = userReputationRepository.findByUserId(u.getId())
                 .map(UserReputation::getTemperature)
                 .orElse(null);
 
-        // 대표 배지 조회
         BadgeDto representative = badgeService.getRepresentativeGoodBadge(u);
         ProfileSearchResponse.MainBadge mainBadge = null;
         if (representative != null) {
@@ -167,7 +81,6 @@ public class ProfileSearchService {
                     .build();
         }
 
-        // 나쁜 배지 조회
         AbandonBadgeDto abandon = badgeService.getAbandonBadge(u);
         ProfileSearchResponse.AbandonBadge abandonBadge =
                 ProfileSearchResponse.AbandonBadge.builder()
@@ -183,7 +96,6 @@ public class ProfileSearchService {
                     || dmRequestService.isDmPendingOrAcceptedOrChatExists(currentUserId, u.getId());
         }
 
-
         return ProfileSearchResponse.builder()
                 .userId(u.getId())
                 .category("players")
@@ -191,8 +103,8 @@ public class ProfileSearchService {
                 .profileImageUrl(u.getProfileImageUrl())
                 .mainBadge(mainBadge)
                 .abandonBadge(abandonBadge)
-                .mainPosition(mainPosition) // isPublic이 false이면 null
-                .address(address) // isPublic이 false이면 null
+                .mainPosition(mainPosition)
+                .address(address)
                 .temperature(temp)
                 .IsMine(currentUserId != null && currentUserId.equals(u.getId()))
                 .chatRoomId(chatRoomId)
