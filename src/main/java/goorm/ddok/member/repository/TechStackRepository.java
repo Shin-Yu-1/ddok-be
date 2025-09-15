@@ -17,4 +17,8 @@ public interface TechStackRepository extends JpaRepository<TechStack, Long> {
     List<String> findNamesByKeyword(String keyword, Pageable pageable);
 
     List<TechStack> findByNameIn(Collection<String> names);
+
+    Optional<TechStack> findFirstByNameOrderByIdAsc(String name);
+
+
 }

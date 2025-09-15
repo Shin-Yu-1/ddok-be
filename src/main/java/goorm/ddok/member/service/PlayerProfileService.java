@@ -14,6 +14,8 @@ import goorm.ddok.member.dto.request.*;
 import goorm.ddok.member.repository.*;
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,9 @@ public class PlayerProfileService {
     private final BadgeService badgeService;
     private final ChatRoomService chatRoomService;
     private final DmRequestCommandService dmRequestService;
+
+    @PersistenceContext
+    private EntityManager em;
 
     /* -------- 포지션 수정 -------- */
     public ProfileDto updatePositions(PositionsUpdateRequest req, CustomUserDetails me) {
@@ -171,35 +176,31 @@ public class PlayerProfileService {
     public ProfileDto updateTechStacks(TechStacksUpdateRequest req, CustomUserDetails me) {
         User meUser = requireMe(me);
 
-        // 1) 입력 정규화 + 대소문자 무시 중복 제거 + 공백 정리
-        List<String> names = (req.getTechStacks() == null) ? List.of()
-                : req.getTechStacks().stream()
-                .map(this::trimToNull)
+        // 0) 입력 그대로 받되, 완전 빈값만 제거 (앞뒤 공백만 트림)
+        List<String> names = Optional.ofNullable(req.getTechStacks())
+                .orElse(List.of()).stream()
+                .map(this::trimToNull)       // "  " → null
                 .filter(Objects::nonNull)
-                .map(s -> s.replaceAll("\\s+", " "))
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toMap(String::toLowerCase, s -> s, (a, b) -> a, LinkedHashMap::new),
-                        m -> new ArrayList<>(m.values())
-                ));
+                .toList();
 
-        // 2) 기존 UserTechStack 전부 삭제 (조인 테이블 기준)
+        // 1) 기존 조인 전부 삭제를 DB에 먼저 반영(충돌 방지)
         userTechStackRepository.deleteByUserId(meUser.getId());
+        em.flush(); // <-- 중요: 삭제를 즉시 반영
 
-        // 3) 영속 사용자 재조회 (PC 클리어 대비)
+        // 2) 사용자 재조회 (영속성 컨텍스트 안전하게)
         User user = userRepository.findById(meUser.getId())
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
 
-        // 4) 필요한 TechStack 엔티티 확보 (없으면 생성)
-        //    -> UserTechStack만 추가/재생성 (도메인은 UserTechStack 기준)
-        for (String name : names) {
-            TechStack stack = techStackRepository.findByName(name)
-                    .orElseGet(() -> techStackRepository.save(TechStack.builder().name(name).build()));
+        // 3) 같은 TechStack을 두 번 넣지 않도록 id 레벨에서 차단
+        LinkedHashSet<Long> seenStackIds = new LinkedHashSet<>();
 
-            // 이중 추가 방지(이론상 필요 없지만 안전하게)
-            boolean exists = user.getTechStacks().stream()
-                    .anyMatch(uts -> uts.getTechStack() != null &&
-                            Objects.equals(uts.getTechStack().getId(), stack.getId()));
-            if (!exists) {
+        for (String name : names) {
+            TechStack stack = techStackRepository.findFirstByNameOrderByIdAsc(name)
+                    .orElseGet(() -> techStackRepository.save(
+                            TechStack.builder().name(name).build()
+                    ));
+
+            if (seenStackIds.add(stack.getId())) { // 같은 id 한 번만 추가
                 user.getTechStacks().add(
                         UserTechStack.builder()
                                 .user(user)
@@ -209,14 +210,13 @@ public class PlayerProfileService {
             }
         }
 
-        userRepository.save(user);
-
-        // 5) 최신 프로필로 응답
+        userRepository.saveAndFlush(user); // insert 확정
         return buildProfile(user, me);
     }
 
+
     /* -------- 포트폴리오 전체 치환 -------- */
-    public ProfileDto upsertPortfolio(PortfolioUpdateRequest req, CustomUserDetails me) { // [CHANGED] 구현
+    public ProfileDto upsertPortfolio(PortfolioUpdateRequest req, CustomUserDetails me) {
         User user = requireMe(me);
         user = userRepository.findById(user.getId())
                 .orElseThrow(() -> new GlobalException(ErrorCode.USER_NOT_FOUND));
@@ -226,7 +226,7 @@ public class PlayerProfileService {
 
         // (선택) 개수 제한: 20개
         if (incoming.size() > 20) {
-            throw new GlobalException(ErrorCode.PORTFOLIO_TOO_MANY); // [NEW] 에러코드 필요
+            throw new GlobalException(ErrorCode.PORTFOLIO_TOO_MANY);
         }
 
         // 유효성 & 정규화
@@ -238,14 +238,14 @@ public class PlayerProfileService {
             String url   = trimToNull(link.getLink());
 
             if (title == null || title.length() > 15) {
-                throw new GlobalException(ErrorCode.PORTFOLIO_TITLE_INVALID); // [NEW]
+                throw new GlobalException(ErrorCode.PORTFOLIO_TITLE_INVALID);
             }
             if (url == null) {
-                throw new GlobalException(ErrorCode.PORTFOLIO_URL_REQUIRED);  // [NEW]
+                throw new GlobalException(ErrorCode.PORTFOLIO_URL_REQUIRED);
             }
             // 아주 간단한 URL 체크 (http/https만 허용)
             if (!url.matches("(?i)^https?://.+")) {
-                throw new GlobalException(ErrorCode.PORTFOLIO_URL_INVALID);   // [NEW]
+                throw new GlobalException(ErrorCode.PORTFOLIO_URL_INVALID);
             }
 
             normalized.add(UserPortfolio.builder()
@@ -261,7 +261,7 @@ public class PlayerProfileService {
         if (!normalized.isEmpty()) userPortfolioRepository.saveAll(normalized);
 
         // 변경 후 전체 프로필 반환
-        return buildProfile(user, me); // [CHANGED] 프로필 전체 리턴
+        return buildProfile(user, me);
     }
 
     /* -------- 공개/비공개 토글 -------- */
