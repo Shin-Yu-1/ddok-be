@@ -99,6 +99,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
     implementation 'co.elastic.clients:elasticsearch-java:8.11.0'
 
+    // Spring Batch
+    implementation "org.springframework.boot:spring-boot-starter-batch"
+
     implementation 'org.json:json:20231013'
 
 }

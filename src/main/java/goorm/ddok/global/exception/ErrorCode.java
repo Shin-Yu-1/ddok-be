@@ -120,7 +120,7 @@ public enum ErrorCode {
     TEAM_MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "팀원을 찾을 수 없습니다."),
     RANKING_NOT_READY(HttpStatus.NOT_FOUND, "아직 랭킹 데이터가 준비되지 않았습니다."),
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
-
+    JSON_PARSE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "JSON 파싱 중 오류가 발생했습니다."),
 
     // 409 CONFLICT
     DUPLICATE_NAME_AND_PHONE(HttpStatus.CONFLICT, "해당 이름과 연락처로 이미 가입된 회원이 있습니다."),

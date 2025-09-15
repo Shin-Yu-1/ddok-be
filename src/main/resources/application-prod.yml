@@ -56,6 +56,12 @@ spring:
   elasticsearch:
     uris: http://elasticsearch:9200
 
+  batch:
+    job:
+      enabled: true
+    jdbc:
+      initialize-schema: always
+
 cloud:
   aws:
     credentials:
