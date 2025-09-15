@@ -6,7 +6,6 @@ import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.dto.AbandonBadgeDto;
 import goorm.ddok.global.dto.BadgeDto;
 import goorm.ddok.member.domain.User;
-import goorm.ddok.member.domain.UserLocation;
 import goorm.ddok.member.domain.UserPosition;
 import goorm.ddok.member.domain.UserPositionType;
 import goorm.ddok.member.repository.UserRepository;
@@ -18,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
