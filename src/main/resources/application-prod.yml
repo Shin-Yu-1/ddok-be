@@ -112,7 +112,7 @@ ai:
     model: HCX-005
     studio-api-key: ${CLOVA_STUDIO_API_KEY}
 
-
 app:
+  base-url: https://api.deepdirect.site
   techstack:
     defaults: Spring Boot, Spring Data JPA, Spring Security, Java, Kotlin, Python, Node.js, Express, JavaScript, TypeScript, React, Next.js, Vue.js, Angular, MySQL, PostgreSQL, Redis, MongoDB, Docker, Kubernetes, AWS, GitHub Actions, Go, Rust, C#, .NET, PHP, Ruby, Scala, Dart, C/C++, Spring WebFlux, Spring Cloud, Spring Batch, Hibernate, MyBatis, Micronaut, Quarkus, Vert.x, jOOQ, Maven, Gradle, NestJS, Fastify, Koa, Hapi, TypeORM, Prisma, Sequelize, Django, Flask, FastAPI, Celery, Svelte, SvelteKit, Nuxt.js, Remix, Astro, Tailwind CSS, SCSS, Vite, Webpack, Rollup, SWC, Babel, React Native, Flutter, SwiftUI, Jetpack Compose, Oracle, MariaDB, SQLite, Microsoft SQL Server, Cassandra, DynamoDB, Neo4j, ClickHouse, InfluxDB, TimescaleDB, OpenSearch, Meilisearch, Typesense, MinIO, Apache Kafka, RabbitMQ, NATS, Apache Pulsar, GraphQL, Apollo, gRPC, tRPC, NGINX, Traefik, Envoy, Kong, Prometheus, Grafana, Loki, ELK Stack, EFK Stack, OpenTelemetry, Jaeger, Zipkin, Sentry, Terraform, Ansible, Helm, Argo CD, Flux CD, Docker Compose, Jenkins, GitLab CI, CircleCI, GCP, Azure, Cloudflare, Vercel, Netlify, AWS Lambda, Cloud Run, Cloudflare Workers
