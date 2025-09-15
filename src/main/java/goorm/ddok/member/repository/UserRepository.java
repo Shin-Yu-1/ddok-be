@@ -1,6 +1,8 @@
 package goorm.ddok.member.repository;
 
 import goorm.ddok.member.domain.UserLocation;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import goorm.ddok.member.domain.User;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -202,4 +204,27 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
           AND u.id = :id
         """, nativeQuery = true)
     Optional<UserOverlayRow> findOverlayById(@Param("id") Long id);
+
+    @Query("""
+    SELECT DISTINCT u FROM User u
+    LEFT JOIN FETCH u.location loc
+    LEFT JOIN u.positions pos
+    WHERE (
+        :keyword IS NULL OR :keyword = '' OR
+        LOWER(u.nickname) LIKE LOWER(CONCAT('%', :keyword, '%')) OR
+        (LOWER(pos.positionName) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.region1DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.region2DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.region3DepthName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.roadName, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.mainBuildingNo, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(COALESCE(loc.subBuildingNo, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))) OR
+        (LOWER(CONCAT(COALESCE(loc.region1DepthName, ''), ' ', COALESCE(loc.region2DepthName, ''))) LIKE LOWER(CONCAT('%', :keyword, '%')))
+    )
+    AND (
+        (:keyword IS NOT NULL AND :keyword != '')
+    )
+    ORDER BY LOWER(u.nickname) ASC, u.id ASC
+    """)
+    Page<User> searchPlayersWithKeyword(@Param("keyword") String keyword, Pageable pageable);
 }
