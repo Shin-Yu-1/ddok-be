@@ -44,27 +44,39 @@ public class ProfileSearchService {
         size = (size <= 0) ? 10 : size;
 
         Pageable pageable = PageRequest.of(page, size);
-
         String searchKeyword = hasText(keyword) ? keyword.trim() : null;
 
-        Page<User> rows = userRepository.searchPlayersWithKeyword(searchKeyword, pageable);
+        // 1단계: ID와 정렬용 nickname 조회
+        Page<Object[]> userIdPage = userRepository.searchPlayerIdsWithKeywordAndNickname(searchKeyword, pageable);
 
-        List<User> distinctUsers = rows.getContent().stream()
-                .collect(Collectors.toMap(User::getId, user -> user, (existing, replacement) -> existing))
-                .values()
-                .stream()
-                .sorted((u1, u2) -> {
-                    int nicknameCompare = u1.getNickname().compareToIgnoreCase(u2.getNickname());
-                    return nicknameCompare != 0 ? nicknameCompare : u1.getId().compareTo(u2.getId());
-                })
+        if (userIdPage.getContent().isEmpty()) {
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+
+        // ID만 추출 (이미 정렬된 순서)
+        List<Long> userIds = userIdPage.getContent().stream()
+                .map(row -> (Long) row[0])
                 .toList();
 
-        List<ProfileSearchResponse> responses = distinctUsers.stream()
+        // 2단계: User 엔티티 조회 (정렬 순서 유지)
+        List<User> users = userRepository.findUsersByIdsWithDetails(userIds);
+
+        // ID 순서대로 정렬 (첫 번째 쿼리의 정렬 순서 유지)
+        Map<Long, User> userMap = users.stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+
+        List<User> sortedUsers = userIds.stream()
+                .map(userMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        List<ProfileSearchResponse> responses = sortedUsers.stream()
                 .map(u -> toResponse(u, currentUserId))
                 .toList();
 
-        return new PageImpl<>(responses, pageable, rows.getTotalElements());
+        return new PageImpl<>(responses, pageable, userIdPage.getTotalElements());
     }
+
 
     // 나머지 메서드들은 그대로 유지
     private ProfileSearchResponse toResponse(User u, Long currentUserId) {
