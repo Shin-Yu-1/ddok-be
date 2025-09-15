@@ -13,9 +13,7 @@ import goorm.ddok.member.repository.UserRepository;
 import goorm.ddok.player.dto.response.ProfileSearchResponse;
 import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -44,14 +42,24 @@ public class ProfileSearchService {
     @Transactional(readOnly = true)
     public Page<ProfileSearchResponse> searchPlayers(String keyword, int page, int size, Long currentUserId) {
 
-        Pageable pageable = PageRequest.of(
-                page,
-                size,
-                Sort.by(Sort.Order.asc("nickname"))
-        );
-        Specification<User> spec = Specification.where(null);
+        // 페이지/사이즈 보정
+        page = Math.max(page, 0);
+        size = (size <= 0) ? 10 : size;
 
-        if (hasText(keyword)) {
+        // 닉네임 오름차순 (대소문자 무시)
+        Sort sort = Sort.by(new Sort.Order(Sort.Direction.ASC, "nickname").ignoreCase());
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // 기본 스펙: 항상 distinct 적용
+        Specification<User> spec = (root, query, cb) -> {
+            Objects.requireNonNull(query).distinct(true);
+            return cb.conjunction();
+        };
+
+        if (!hasText(keyword)) {
+            // 키워드 없으면 공개 프로필만
+            spec = spec.and((root, query, cb) -> cb.isTrue(root.get("isPublic")));
+        } else {
             spec = spec.and(keywordSpec(keyword));
         }
 
@@ -63,91 +71,64 @@ public class ProfileSearchService {
     private Specification<User> keywordSpec(String raw) {
         List<String> tokens = splitTokens(raw);
 
-        return (root, q, cb) -> {
-            if (Objects.requireNonNull(q).getResultType() != Long.class && q.getResultType() != long.class) {
-                q.distinct(true);
-            }
+        return (root, query, cb) -> {
+            query.distinct(true); // ★ count 쿼리에도 반영
 
-            Join<User, UserPosition> posJoin = root.join("positions", JoinType.LEFT);
+            // 주소는 1:1이라 LEFT JOIN 사용해도 중복 없음
             Join<User, UserLocation> locJoin = root.join("location", JoinType.LEFT);
 
             List<Predicate> andPerToken = new ArrayList<>();
+
             for (String token : tokens) {
                 String like = "%" + token.toLowerCase() + "%";
 
-                List<Predicate> orPredicates = new ArrayList<>();
+                List<Predicate> ors = new ArrayList<>();
 
-                orPredicates.add(cb.like(cb.lower(root.get("nickname")), like));
+                // 1) 닉네임 LIKE (공개 여부와 무관)
+                ors.add(cb.like(cb.lower(root.get("nickname")), like));
 
-                Predicate isPublicCondition = cb.isTrue(root.get("isPublic"));
+                // 2) (isPublic AND EXISTS 포지션 LIKE)
+                {
+                    Subquery<Long> posSub = query.subquery(Long.class);
+                    Root<UserPosition> p = posSub.from(UserPosition.class);
+                    posSub.select(cb.literal(1L));
+                    Predicate link = cb.equal(p.get("user").get("id"), root.get("id"));
+                    Predicate posLike = cb.like(cb.lower(p.get("positionName")), like);
+                    posSub.where(cb.and(link, posLike));
+                    Predicate posExists = cb.exists(posSub);
 
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(posJoin.get("positionName")), like)
-                        )
-                );
+                    ors.add(cb.and(cb.isTrue(root.get("isPublic")), posExists));
+                }
 
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("region1DepthName"), "")), like)
-                        )
-                );
+                // 3) (isPublic AND 주소 필드 LIKE)
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("region1DepthName"), "")), like)));
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("region2DepthName"), "")), like)));
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("region3DepthName"), "")), like)));
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("roadName"), "")), like)));
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("mainBuildingNo"), "")), like)));
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(cb.lower(cb.coalesce(locJoin.get("subBuildingNo"), "")), like)));
 
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("region2DepthName"), "")), like)
-                        )
-                );
+                // "서울 강남" 같은 합성 주소 매칭
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")),
+                        cb.like(
+                                cb.lower(
+                                        cb.concat(
+                                                cb.concat(cb.coalesce(locJoin.get("region1DepthName"), ""), " "),
+                                                cb.coalesce(locJoin.get("region2DepthName"), "")
+                                        )
+                                ),
+                                like
+                        )));
 
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("region3DepthName"), "")), like)
-                        )
-                );
-
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("roadName"), "")), like)
-                        )
-                );
-
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("mainBuildingNo"), "")), like)
-                        )
-                );
-
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(cb.lower(cb.coalesce(locJoin.get("subBuildingNo"), "")), like)
-                        )
-                );
-
-                orPredicates.add(
-                        cb.and(
-                                isPublicCondition,
-                                cb.like(
-                                        cb.lower(
-                                                cb.concat(
-                                                        cb.concat(cb.coalesce(locJoin.get("region1DepthName"), ""), " "),
-                                                        cb.coalesce(locJoin.get("region2DepthName"), "")
-                                                )
-                                        ),
-                                        like
-                                )
-                        )
-                );
-
-                Predicate orForOneToken = cb.or(orPredicates.toArray(new Predicate[0]));
-                andPerToken.add(orForOneToken);
+                andPerToken.add(cb.or(ors.toArray(new Predicate[0])));
             }
+
             return cb.and(andPerToken.toArray(new Predicate[0]));
         };
     }
