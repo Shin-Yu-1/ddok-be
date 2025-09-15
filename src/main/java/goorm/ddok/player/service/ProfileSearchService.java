@@ -15,10 +15,12 @@ import goorm.ddok.reputation.domain.UserReputation;
 import goorm.ddok.reputation.repository.UserReputationRepository;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.query.NullPrecedence;
+import org.hibernate.query.criteria.HibernateCriteriaBuilder;
+import org.hibernate.query.criteria.JpaOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,66 +43,64 @@ public class ProfileSearchService {
 
     @Transactional(readOnly = true)
     public Page<ProfileSearchResponse> searchPlayers(String keyword, int page, int size, Long currentUserId) {
-
-        // 페이지/사이즈 보정
         page = Math.max(page, 0);
         size = (size <= 0) ? 10 : size;
 
-        // 닉네임 오름차순 (대소문자 무시)
-        Sort sort = Sort.by(new Sort.Order(Sort.Direction.ASC, "nickname").ignoreCase());
-        Pageable pageable = PageRequest.of(page, size, sort);
+        Pageable pageable = PageRequest.of(page, size);
 
-        // 기본 스펙: 항상 distinct 적용
-        Specification<User> spec = (root, query, cb) -> {
-            Objects.requireNonNull(query).distinct(true);
-            return cb.conjunction();
-        };
-
-        if (!hasText(keyword)) {
-            // 키워드 없으면 공개 프로필만
-            spec = spec.and((root, query, cb) -> cb.isTrue(root.get("isPublic")));
-        } else {
-            spec = spec.and(keywordSpec(keyword));
-        }
+        Specification<User> spec = Specification
+                .where(orderByNicknameAscCaseInsensitive())
+                .and(hasText(keyword) ? keywordSpec(keyword)
+                        : (r, q, cb) -> cb.isTrue(r.get("isPublic")));
 
         Page<User> rows = userRepository.findAll(spec, pageable);
-
         return rows.map(u -> toResponse(u, currentUserId));
     }
+
+    private Specification<User> orderByNicknameAscCaseInsensitive() {
+        return (root, query, cb) -> {
+            Class<?> rt = Objects.requireNonNull(query).getResultType();
+            if (rt != Long.class && rt != long.class) {
+                HibernateCriteriaBuilder hcb = (HibernateCriteriaBuilder) cb;
+
+                var nickname = root.get("nickname");
+
+                JpaOrder byNickname = (JpaOrder) hcb.asc(nickname);
+                byNickname.nullPrecedence(NullPrecedence.LAST);
+
+                var lowerNick = hcb.lower(hcb.coalesce(nickname, "").asString());
+                JpaOrder byLowerNick = (JpaOrder) hcb.asc(lowerNick);
+
+                query.orderBy(byNickname, byLowerNick);
+            }
+            return null;
+        };
+    }
+
 
     private Specification<User> keywordSpec(String raw) {
         List<String> tokens = splitTokens(raw);
 
         return (root, query, cb) -> {
-            query.distinct(true); // ★ count 쿼리에도 반영
-
-            // 주소는 1:1이라 LEFT JOIN 사용해도 중복 없음
+            
             Join<User, UserLocation> locJoin = root.join("location", JoinType.LEFT);
 
             List<Predicate> andPerToken = new ArrayList<>();
-
             for (String token : tokens) {
                 String like = "%" + token.toLowerCase() + "%";
-
                 List<Predicate> ors = new ArrayList<>();
 
-                // 1) 닉네임 LIKE (공개 여부와 무관)
                 ors.add(cb.like(cb.lower(root.get("nickname")), like));
 
-                // 2) (isPublic AND EXISTS 포지션 LIKE)
-                {
-                    Subquery<Long> posSub = query.subquery(Long.class);
-                    Root<UserPosition> p = posSub.from(UserPosition.class);
-                    posSub.select(cb.literal(1L));
-                    Predicate link = cb.equal(p.get("user").get("id"), root.get("id"));
-                    Predicate posLike = cb.like(cb.lower(p.get("positionName")), like);
-                    posSub.where(cb.and(link, posLike));
-                    Predicate posExists = cb.exists(posSub);
+                Subquery<Long> posSub = Objects.requireNonNull(query).subquery(Long.class);
+                Root<UserPosition> p = posSub.from(UserPosition.class);
+                posSub.select(cb.literal(1L));
+                posSub.where(
+                        cb.equal(p.get("user").get("id"), root.get("id")),
+                        cb.like(cb.lower(p.get("positionName")), like)
+                );
+                ors.add(cb.and(cb.isTrue(root.get("isPublic")), cb.exists(posSub)));
 
-                    ors.add(cb.and(cb.isTrue(root.get("isPublic")), posExists));
-                }
-
-                // 3) (isPublic AND 주소 필드 LIKE)
                 ors.add(cb.and(cb.isTrue(root.get("isPublic")),
                         cb.like(cb.lower(cb.coalesce(locJoin.get("region1DepthName"), "")), like)));
                 ors.add(cb.and(cb.isTrue(root.get("isPublic")),
@@ -114,7 +114,6 @@ public class ProfileSearchService {
                 ors.add(cb.and(cb.isTrue(root.get("isPublic")),
                         cb.like(cb.lower(cb.coalesce(locJoin.get("subBuildingNo"), "")), like)));
 
-                // "서울 강남" 같은 합성 주소 매칭
                 ors.add(cb.and(cb.isTrue(root.get("isPublic")),
                         cb.like(
                                 cb.lower(
@@ -128,7 +127,6 @@ public class ProfileSearchService {
 
                 andPerToken.add(cb.or(ors.toArray(new Predicate[0])));
             }
-
             return cb.and(andPerToken.toArray(new Predicate[0]));
         };
     }
