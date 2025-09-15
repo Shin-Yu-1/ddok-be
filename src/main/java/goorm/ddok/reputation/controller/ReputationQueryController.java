@@ -3,8 +3,8 @@ package goorm.ddok.reputation.controller;
 import goorm.ddok.chat.service.ChatRoomService;
 import goorm.ddok.chat.service.DmRequestCommandService;
 import goorm.ddok.global.response.ApiResponseDto;
-import goorm.ddok.global.scheduler.ReputationRankingScheduler;
 import goorm.ddok.global.security.auth.CustomUserDetails;
+import goorm.ddok.reputation.batch.ReputationRankingCacheService;
 import goorm.ddok.reputation.dto.response.TemperatureMeResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRankResponse;
 import goorm.ddok.reputation.dto.response.TemperatureRegionResponse;
@@ -31,7 +31,8 @@ import java.util.List;
 public class ReputationQueryController {
 
     private final ReputationQueryService reputationQueryService;
-    private final ReputationRankingScheduler reputationRankingScheduler;
+//    private final ReputationRankingScheduler reputationRankingScheduler;
+    private final ReputationRankingCacheService rankingCache;
     private final ChatRoomService chatRoomService;
     private final DmRequestCommandService dmRequestService;
 
@@ -86,9 +87,9 @@ public class ReputationQueryController {
     })
     @GetMapping("/top10")
     public ApiResponseDto<List<TemperatureRankResponse>> getTop10TemperatureRank(
-            @AuthenticationPrincipal CustomUserDetails currentUser
-            ) {
-        List<TemperatureRankResponse> cached = reputationRankingScheduler.getCachedTop10();
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+
+        List<TemperatureRankResponse> cached = rankingCache.getCachedTop10();
 
         Long meId = (currentUser != null) ? currentUser.getId() : null;
 
@@ -106,11 +107,10 @@ public class ReputationQueryController {
                     return r.toBuilder()
                             .IsMine(meId != null && r.getUserId().equals(meId))
                             .chatRoomId(chatRoomId)
-                            .dmRequestPending(dmPending) // ✅ 실제 값
+                            .dmRequestPending(dmPending)
                             .build();
                 })
                 .toList();
-
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
@@ -169,7 +169,7 @@ public class ReputationQueryController {
     public ApiResponseDto<TemperatureRankResponse> getTop1TemperatureRank(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        TemperatureRankResponse cached = reputationRankingScheduler.peekCachedTop1();
+        TemperatureRankResponse cached = rankingCache.peekCachedTop1();
 
         if (cached == null) {
             return ApiResponseDto.of(200, "조회 결과가 없습니다.", null);
@@ -189,7 +189,7 @@ public class ReputationQueryController {
         TemperatureRankResponse response = cached.toBuilder()
                 .IsMine(meId != null && cached.getUserId().equals(meId))
                 .chatRoomId(chatRoomId)
-                .dmRequestPending(dmPending) // ✅ 실제 값
+                .dmRequestPending(dmPending)
                 .build();
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
@@ -200,7 +200,7 @@ public class ReputationQueryController {
     public ApiResponseDto<List<TemperatureRegionResponse>> getRegionTop1Rank(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        List<TemperatureRegionResponse> cached = reputationRankingScheduler.getCachedRegionTop1();
+        List<TemperatureRegionResponse> cached = rankingCache.getCachedRegionTop1(); // ✅ 변경
 
         Long meId = (currentUser != null) ? currentUser.getId() : null;
 
@@ -218,13 +218,14 @@ public class ReputationQueryController {
                     return r.toBuilder()
                             .IsMine(meId != null && r.getUserId().equals(meId))
                             .chatRoomId(chatRoomId)
-                            .dmRequestPending(dmPending) // ✅ 실제 값
+                            .dmRequestPending(dmPending)
                             .build();
                 })
                 .toList();
 
         return ApiResponseDto.of(200, "요청이 성공적으로 처리되었습니다.", response);
     }
+
 
 
 

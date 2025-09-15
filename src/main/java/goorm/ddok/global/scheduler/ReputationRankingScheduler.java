@@ -8,6 +8,7 @@ import goorm.ddok.reputation.service.ReputationQueryService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ import java.util.stream.IntStream;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@ConditionalOnProperty(value="ddok.legacy.scheduler.enabled", havingValue="true", matchIfMissing=false)
 public class ReputationRankingScheduler {
 
     private final ReputationQueryService reputationQueryService;
