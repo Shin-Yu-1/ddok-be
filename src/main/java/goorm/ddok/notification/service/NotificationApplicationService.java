@@ -79,7 +79,7 @@ public class NotificationApplicationService {
                 .message(action.equals("accept") ? "요청을 수락했습니다." : "요청을 거절했습니다.")
                 .IsRead(true)
                 .createdAt(Instant.now())
-                .userId(String.valueOf(me))
+                .actorUserId(String.valueOf(me))
                 .build());
     }
 
