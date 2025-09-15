@@ -85,7 +85,7 @@ public class ReputationQueryService {
 
     @Transactional(readOnly = true)
     public List<TemperatureRegionResponse> getRegionTop1Rank(CustomUserDetails currentUser) {
-        List<String> mainRegions = List.of("서울", "경기", "강원", "충청", "경상", "전라", "제주");
+        List<String> mainRegions = List.of("서울", "경기도", "강원도", "충청도", "경상도", "전라도", "제주도");
 
         return mainRegions.stream()
                 .map(mainRegion -> {
