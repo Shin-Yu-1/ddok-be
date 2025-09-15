@@ -228,7 +228,7 @@ public class AuthController {
         String email = emailVerificationService.findVerifiedEmailByCode(code);
         if (result) authService.setEmailVerificationService(email);
         RedirectView redirectView = new RedirectView();
-        redirectView.setUrl("http://localhost:5173/sign-in");
+        redirectView.setUrl("https://www.deepdirect.site/auth/signin");
         return redirectView;
     }
 
