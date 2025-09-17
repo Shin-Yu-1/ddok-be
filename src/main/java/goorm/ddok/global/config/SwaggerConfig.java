@@ -9,7 +9,6 @@ import io.swagger.v3.oas.annotations.servers.Server;
 
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
 
 @Configuration
 @OpenAPIDefinition(
