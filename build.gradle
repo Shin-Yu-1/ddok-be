@@ -51,8 +51,8 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
 
     // Swagger
-    implementation 'io.swagger.core.v3:swagger-annotations:2.2.34'
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.9'
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
 
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
