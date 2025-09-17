@@ -45,7 +45,7 @@ Code: [FE](https://github.com/DeepDirect/ddok-fe), [BE](https://github.com/DeepD
 | **프레임워크/언어**    | Java 17, Spring Boot 3.x, Gradle                                                    |
 | **DB/스토리지**       | PostgreSQL (AWS RDS), H2 (테스트 DB), AWS S3                                         |
 | **ORM/데이터 관리**    | Spring Data JPA, Hibernate                                                          |
-| **캐싱/브로커**       | Redis (세션 관리, Pub/Sub)                                                          |
+| **캐싱/브로커**       | Redis (토큰 관리, 랭킹 캐싱)                                                          |
 | **실시간 통신**       | Spring WebSocket, STOMP                                                             |
 | **보안/인증**        | Spring Security, JWT, OAuth2(Kakao), JavaMailSender, CoolSMS                         |
 | **API 문서화**       | SpringDoc OpenAPI (Swagger)                                                         |
